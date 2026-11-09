@@ -95,6 +95,30 @@ export default {
         const allowed = new Map(available.map(c => [c.id, c]));
         const unknown = channelIds.filter(id => !allowed.has(id));
         if (unknown.length) return json({ error: "One or more selected channels are not connected to this Buffer account. Refresh channels and try again." }, 400, origin);
+
+        // Buffer requires stable, publicly reachable HTTPS media URLs.
+        let imageUrl = null;
+        if (body.imageDataUrl) {
+          if (!env.MEDIA_BUCKET || !env.MEDIA_PUBLIC_BASE_URL) {
+            return json({ error: "Image hosting is not configured. Add the Cloudflare R2 binding MEDIA_BUCKET and MEDIA_PUBLIC_BASE_URL Worker variable before publishing graphics to Instagram." }, 503, origin);
+          }
+          const match = /^data:(image\\/(?:png|jpeg|webp));base64,([A-Za-z0-9+/=]+)$/.exec(body.imageDataUrl);
+          if (!match) return json({ error: "The graphic must be a PNG, JPG, or WebP image." }, 400, origin);
+          const mimeType = match[1];
+          const bytes = Uint8Array.from(atob(match[2]), c => c.charCodeAt(0));
+          if (!bytes.length || bytes.length > 12 * 1024 * 1024) {
+            return json({ error: "The exported graphic must be smaller than 12 MB." }, 413, origin);
+          }
+          const extension = mimeType === "image/jpeg" ? "jpg" : mimeType === "image/webp" ? "webp" : "png";
+          const key = `studio/${new Date().toISOString().slice(0,10)}/${crypto.randomUUID()}.${extension}`;
+          await env.MEDIA_BUCKET.put(key, bytes, { httpMetadata: { contentType: mimeType, cacheControl: "public, max-age=31536000, immutable" } });
+          imageUrl = `${env.MEDIA_PUBLIC_BASE_URL.replace(/\\/$/, "")}/${key}`;
+        }
+
+        const instagramSelected = channelIds.some(id => String(allowed.get(id)?.service || "").toLowerCase().includes("instagram"));
+        if (instagramSelected && !imageUrl) {
+          return json({ error: "Instagram requires the finished graphic. Configure the R2 image-hosting settings, then try again." }, 400, origin);
+        }
         const mutation = `
           mutation StudioCreatePost($input: CreatePostInput!) {
             createPost(input: $input) {
@@ -105,13 +129,17 @@ export default {
         `;
         const results = [];
         for (const channelId of channelIds) {
+          const channel = allowed.get(channelId);
+          const isInstagram = String(channel.service || "").toLowerCase().includes("instagram");
           const input = {
             text,
             channelId,
             schedulingType: "automatic",
             mode: mode === "custom" ? "customScheduled" : mode === "now" ? "shareNow" : "addToQueue",
             ...(mode === "custom" ? { dueAt } : {}),
-            ...(mode === "draft" ? { saveToDraft: true } : {})
+            ...(mode === "draft" ? { saveToDraft: true } : {}),
+            ...(imageUrl ? { assets: [{ image: { url: imageUrl } }] } : {}),
+            ...(isInstagram ? { metadata: { instagram: { type: "post", shouldShareToFeed: true } } } : {})
           };
           try {
             const data = await bufferGraphQL(env, mutation, { input });
