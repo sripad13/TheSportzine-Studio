@@ -112,7 +112,6 @@ let subjectTextRequest='';
 $('behindText').addEventListener('input',async()=>{const value=$('behindText').value.trim();subjectTextRequest=value;subjectMaskImage=null;draw();if(!value){$('subjectStatus').textContent='';return}if(!img){$('subjectStatus').textContent='Upload a photograph to separate the subject.';return}await prepareSubjectMask()});
 function imageGeometry(){if(!img)return null;const base=Math.max(W/img.width,H/img.height),s=base*scale,iw=img.width*s,ih=img.height*s;offsetX=Math.max((W-iw)/2,Math.min((iw-W)/2,offsetX));offsetY=Math.max((H-ih)/2,Math.min((ih-H)/2,offsetY));return {x:(W-iw)/2+offsetX,y:(H-ih)/2+offsetY,w:iw,h:ih}}
 function draw(){ctx.clearRect(0,0,W,H);ctx.fillStyle=img?'#17151d':'#ffeb00';ctx.fillRect(0,0,W,H);const geo=imageGeometry();if(img&&geo){ctx.save();ctx.beginPath();ctx.rect(0,0,W,H);ctx.clip();ctx.drawImage(img,geo.x,geo.y,geo.w,geo.h);ctx.restore()}else{ctx.fillStyle='#17151d';ctx.textAlign='center';ctx.font='bold 34px Inter';ctx.fillText('UPLOAD A PHOTOGRAPH TO BEGIN',W/2,H/2)}
-const placement=$('placement').value,alpha=+$('gradient').value/100,grad=ctx.createLinearGradient(0,placement==='bottom'?H*.53:0,0,placement==='bottom'?H: H*.47);if(placement==='bottom'){grad.addColorStop(0,'rgba(12,10,17,0)');grad.addColorStop(.35,`rgba(12,10,17,${alpha*.72})`);grad.addColorStop(1,`rgba(12,10,17,${Math.min(1,alpha+.2)})`)}else{grad.addColorStop(0,`rgba(12,10,17,${alpha})`);grad.addColorStop(1,'rgba(12,10,17,0)')}ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);
 const ghost=$('ghost').value.trim();let ghostDisplayFont=0;if(ghost){ctx.save();const ghostText=ghost.toUpperCase();ctx.font='300px "League Gothic",Impact,sans-serif';const ghostWidth=ctx.measureText(ghostText).width;const ghostScale=(W+10)/Math.max(1,ghostWidth);ghostDisplayFont=300*ghostScale;ctx.translate(W/2,H-15);ctx.scale(ghostScale,ghostScale);ctx.textAlign='center';ctx.textBaseline='bottom';ctx.lineWidth=2/ghostScale;ctx.strokeStyle='#ffffff24';ctx.strokeText(ghostText,0,0);ctx.restore()}
 const behindText=$('behindText').value.trim().toUpperCase();
 if(behindText){
@@ -121,6 +120,7 @@ if(behindText){
  while(ctx.measureText(behindText).width>W-36&&behindFont>36){behindFont-=4;ctx.font=`900 ${behindFont}px "League Gothic",Impact,sans-serif`}
  ctx.fillStyle='#e7c47c';ctx.fillText(behindText,W/2,Math.round(H*.035),W-36);ctx.restore();
 }
+const placement=$('placement').value,alpha=+$('gradient').value/100,grad=ctx.createLinearGradient(0,placement==='bottom'?H*.53:0,0,placement==='bottom'?H: H*.47);if(placement==='bottom'){grad.addColorStop(0,'rgba(12,10,17,0)');grad.addColorStop(.35,`rgba(12,10,17,${alpha*.72})`);grad.addColorStop(1,`rgba(12,10,17,${Math.min(1,alpha+.2)})`)}else{grad.addColorStop(0,`rgba(12,10,17,${alpha})`);grad.addColorStop(1,'rgba(12,10,17,0)')}ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);
 if(behindText&&subjectMaskImage&&geo){
  const foreground=document.createElement('canvas');foreground.width=W;foreground.height=H;
  const fctx=foreground.getContext('2d');fctx.drawImage(img,geo.x,geo.y,geo.w,geo.h);
