@@ -45,3 +45,8 @@ The Worker allows browser requests only from `https://canvas.thesportzine.com` a
 - **Save as draft:** Creates a Buffer draft instead of scheduling it.
 
 Buffer uses its GraphQL API at `https://api.buffer.com`. See the [Buffer authentication guide](https://developers.buffer.com/guides/authentication.html) and [posts and scheduling guide](https://developers.buffer.com/guides/posts-and-scheduling.html).
+
+
+## Sports Studio custom domain
+
+The GitHub Pages custom domain is `tsc.falsewinger.com`. The Buffer Worker CORS allowlist permits this hostname. Cloudflare Access should be configured for this hostname after GitHub Pages verifies the custom domain and DNS is ready.
