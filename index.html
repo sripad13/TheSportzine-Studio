@@ -96,7 +96,7 @@ $('posX').oninput=e=>{offsetX=+e.target.value;draw()};$('posY').oninput=e=>{offs
 function imageGeometry(){if(!img)return null;const base=Math.max(W/img.width,H/img.height),s=base*scale,iw=img.width*s,ih=img.height*s;offsetX=Math.max((W-iw)/2,Math.min((iw-W)/2,offsetX));offsetY=Math.max((H-ih)/2,Math.min((ih-H)/2,offsetY));return {x:(W-iw)/2+offsetX,y:(H-ih)/2+offsetY,w:iw,h:ih}}
 function draw(){ctx.clearRect(0,0,W,H);ctx.fillStyle=img?'#17151d':'#ffeb00';ctx.fillRect(0,0,W,H);const geo=imageGeometry();if(img&&geo){ctx.save();ctx.beginPath();ctx.rect(0,0,W,H);ctx.clip();ctx.drawImage(img,geo.x,geo.y,geo.w,geo.h);ctx.restore()}else{ctx.fillStyle='#17151d';ctx.textAlign='center';ctx.font='bold 34px Inter';ctx.fillText('UPLOAD A PHOTOGRAPH TO BEGIN',W/2,H/2)}
 const placement=$('placement').value,alpha=+$('gradient').value/100,grad=ctx.createLinearGradient(0,placement==='bottom'?H*.53:0,0,placement==='bottom'?H: H*.47);if(placement==='bottom'){grad.addColorStop(0,'rgba(12,10,17,0)');grad.addColorStop(.35,`rgba(12,10,17,${alpha*.72})`);grad.addColorStop(1,`rgba(12,10,17,${Math.min(1,alpha+.2)})`)}else{grad.addColorStop(0,`rgba(12,10,17,${alpha})`);grad.addColorStop(1,'rgba(12,10,17,0)')}ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);
-const ghost=$('ghost').value.trim();if(ghost){ctx.save();const ghostText=ghost.toUpperCase();ctx.font='300px "League Gothic",Impact,sans-serif';const ghostWidth=ctx.measureText(ghostText).width;const ghostScale=(W+10)/Math.max(1,ghostWidth);ctx.translate(W/2,placement==='bottom'?H*.88:220);ctx.scale(ghostScale,1);ctx.textAlign='center';ctx.textBaseline='middle';ctx.lineWidth=2;ctx.strokeStyle='#ffffff24';ctx.strokeText(ghostText,0,0);ctx.restore()}
+const ghost=$('ghost').value.trim();if(ghost){ctx.save();const ghostText=ghost.toUpperCase();ctx.font='300px "League Gothic",Impact,sans-serif';const ghostWidth=ctx.measureText(ghostText).width;const ghostScale=(W+10)/Math.max(1,ghostWidth);ctx.translate(W/2,H-15);ctx.scale(ghostScale,ghostScale);ctx.textAlign='center';ctx.textBaseline='bottom';ctx.lineWidth=2/ghostScale;ctx.strokeStyle='#ffffff24';ctx.strokeText(ghostText,0,0);ctx.restore()}
 const wordmarkEl=$('wordmarkBrand'),shieldEl=$('squareBrand');wordmarkEl.style.display=$('brand').value==='yes'?'block':'none';shieldEl.style.display='block';wordmarkEl.style.top=(placement==='bottom'?'69.5%':'13%');
 const headline=$('headline').value.trim().toUpperCase(),highlight=$('highlight').value.trim().toUpperCase(),align=$('alignment').value,anchor=align==='left'?5:align==='right'?W-5:W/2,maxWidth=W-10;
 let font=118,lines=[];function wrap(){ctx.font=`${font}px "League Gothic",Impact,sans-serif`;lines=[];let line='';for(const word of headline.split(/\s+/)){const test=line?line+' '+word:word;if(ctx.measureText(test).width>maxWidth&&line){lines.push(line);line=word}else line=test}if(line)lines.push(line)}
@@ -125,11 +125,8 @@ function drawRichLine(line,phrasesRaw,x,y,size,align){
    }
  }
  const widths=tokens.map(([s])=>ctx.measureText(s).width),total=widths.reduce((a,b)=>a+b,0);
- const targetWidth=W-10,scaleX=targetWidth/Math.max(1,total);
- ctx.save();ctx.translate(5,y);ctx.scale(scaleX,1);
- let cur=0;
- tokens.forEach(([s,hi],idx)=>{ctx.fillStyle=hi?'#ffeb00':'#fff';ctx.textAlign='left';ctx.fillText(s,cur,0);cur+=widths[idx]});
- ctx.restore();
+ let cur=align==='left'?x:align==='right'?x-total:x-total/2;
+ tokens.forEach(([s,hi],idx)=>{ctx.fillStyle=hi?'#ffeb00':'#fff';ctx.textAlign='left';ctx.fillText(s,cur,y);cur+=widths[idx]});
 }
 let fontReady=false;document.fonts.load('100px "League Gothic"').then(()=>{fontReady=true;$('fontStatus').textContent='League Gothic: loaded';draw()}).catch(()=>{$('fontStatus').textContent='League Gothic unavailable — upload licensed font file';});
 $('fontFile').onchange=async e=>{const f=e.target.files[0];if(!f)return;const url=URL.createObjectURL(f),face=new FontFace('League Gothic',`url(${url})`);try{await face.load();document.fonts.add(face);fontReady=true;$('fontStatus').textContent='League Gothic: custom font loaded';draw()}catch{$('fontStatus').textContent='Font could not be loaded. Check file format.'}};
