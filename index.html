@@ -182,23 +182,38 @@ canvas.addEventListener('pointermove',e=>{if(!pointerStart)return;const r=canvas
 canvas.addEventListener('pointerup',()=>pointerStart=null);canvas.addEventListener('pointercancel',()=>pointerStart=null);
 async function prepareSubjectMask(){
  if(!img)return;
- $('subjectStatus').textContent='Loading subject separation model…';
+ const requestedText=$('behindText').value.trim();
+ if(!requestedText)return;
+ $('subjectStatus').textContent='Separating the person from the background…';
  try{
   if(!subjectSegmenter){
    const vision=await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/+esm');
    const fileset=await vision.FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
-   subjectSegmenter=await vision.ImageSegmenter.createFromOptions(fileset,{baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/1/selfie_segmenter.tflite'},runningMode:'IMAGE',outputCategoryMask:true,outputConfidenceMasks:false});
+   subjectSegmenter=await vision.ImageSegmenter.createFromOptions(fileset,{baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/1/selfie_segmenter.tflite'},runningMode:'IMAGE',outputCategoryMask:false,outputConfidenceMasks:true});
   }
-  const result=subjectSegmenter.segment(img),mask=result.categoryMask;
-  if(!mask)throw new Error('The model did not return a subject mask.');
-  const values=mask.getAsUint8Array(),mw=mask.width,mh=mask.height;
+  const result=subjectSegmenter.segment(img);
+  if($('behindText').value.trim()!==requestedText)return;
+  const masks=result.confidenceMasks||[];
+  if(!masks.length)throw new Error('No confidence masks returned by the segmentation model.');
+  // Selfie Segmenter exposes background and person confidence masks; class 1 is the person.
+  const mask=masks.length>1?masks[1]:masks[0];
+  const values=mask.getAsFloat32Array(),mw=mask.width,mh=mask.height;
   const maskCanvas=document.createElement('canvas');maskCanvas.width=mw;maskCanvas.height=mh;
   const mctx=maskCanvas.getContext('2d'),pixels=mctx.createImageData(mw,mh);
-  for(let i=0;i<values.length;i++){const person=values[i]===1?255:0,p=i*4;pixels.data[p]=pixels.data[p+1]=pixels.data[p+2]=255;pixels.data[p+3]=person}
-  mctx.putImageData(pixels,0,0);subjectMaskImage=maskCanvas;subjectMask=values;
-  $('subjectStatus').textContent='Person separated. Your top-centred text is behind the subject.';
+  for(let i=0;i<values.length;i++){
+   const confidence=Math.max(0,Math.min(1,values[i]));
+   const alpha=Math.round(255*Math.max(0,Math.min(1,(confidence-.28)/.42)));
+   const p=i*4;pixels.data[p]=pixels.data[p+1]=pixels.data[p+2]=255;pixels.data[p+3]=alpha;
+  }
+  mctx.putImageData(pixels,0,0);
+  subjectMaskImage=maskCanvas;subjectMask=values;
+  $('subjectStatus').textContent='Person separated. Text is layered behind the subject.';
   draw();
- }catch(err){subjectMaskImage=null;$('subjectStatus').textContent='Could not separate the person. Try a clear, well-lit photo.';console.error('Subject segmentation failed:',err)}
+ }catch(err){
+  subjectMaskImage=null;
+  $('subjectStatus').textContent='Could not separate the person. Try a clear, well-lit photo.';
+  console.error('Subject segmentation failed:',err);
+ }
 }
 $('autoFace').onclick=async()=>{if(!img){$('faceStatus').textContent='Upload a photograph first.';return}$('faceStatus').textContent='Loading face detector…';try{const vision=await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/+esm');const fileset=await vision.FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');faceDetector=await vision.FaceDetector.createFromOptions(fileset,{baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite'},runningMode:'IMAGE'});const result=faceDetector.detect(img);if(!result.detections?.length){$('faceStatus').textContent='No face detected. Drag the image manually or try another photograph.';return}const box=result.detections[0].boundingBox,cx=box.originX+box.width/2,cy=box.originY+box.height/2,geo=imageGeometry();const sx=geo.w/img.width,sy=geo.h/img.height;facePoint={x:geo.x+cx*sx,y:geo.y+cy*sy};const targetY=H*Number($('faceTarget').value);offsetX+=W/2-facePoint.x;offsetY+=targetY-facePoint.y;$('posX').value=Math.max(-500,Math.min(500,offsetX));$('posY').value=Math.max(-500,Math.min(500,offsetY));draw();$('faceStatus').textContent=`Face detected (${Math.round(result.detections[0].categories?.[0]?.score*100||0)}% confidence). Image positioned for the headline-safe area. You can still drag it manually.`}catch(err){$('faceStatus').textContent='Face detection could not load. Check your internet connection; manual positioning remains available.';console.error(err)}};
 function exportGraphic(fmt){document.fonts.ready.then(()=>{const mime=fmt==='jpeg'?'image/jpeg':fmt==='webp'?'image/webp':'image/png',ext=fmt==='jpeg'?'jpg':fmt,a=document.createElement('a');a.download=`thesportzine-${W}x${H}.${ext}`;a.href=canvas.toDataURL(mime,fmt==='png'?undefined:.92);a.click();$('downloadModal').classList.add('hidden')})}
