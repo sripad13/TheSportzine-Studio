@@ -97,11 +97,9 @@ export default {
         if (unknown.length) return json({ error: "One or more selected channels are not connected to this Buffer account. Refresh channels and try again." }, 400, origin);
 
         // Buffer requires stable, publicly reachable HTTPS media URLs.
+        const instagramSelected = channelIds.some(id => String(allowed.get(id)?.service || "").toLowerCase().includes("instagram"));
         let imageUrl = null;
-        if (body.imageDataUrl) {
-          if (!env.MEDIA_BUCKET || !env.MEDIA_PUBLIC_BASE_URL) {
-            return json({ error: "Image hosting is not configured. Add the Cloudflare R2 binding MEDIA_BUCKET and MEDIA_PUBLIC_BASE_URL Worker variable before publishing graphics to Instagram." }, 503, origin);
-          }
+        if (body.imageDataUrl && env.MEDIA_BUCKET && env.MEDIA_PUBLIC_BASE_URL) {
           const match = /^data:(image\/(?:png|jpeg|webp));base64,([A-Za-z0-9+/=]+)$/.exec(body.imageDataUrl);
           if (!match) return json({ error: "The graphic must be a PNG, JPG, or WebP image." }, 400, origin);
           const mimeType = match[1];
@@ -115,7 +113,6 @@ export default {
           imageUrl = `${env.MEDIA_PUBLIC_BASE_URL.replace(/\/$/, "")}/${key}`;
         }
 
-        const instagramSelected = channelIds.some(id => String(allowed.get(id)?.service || "").toLowerCase().includes("instagram"));
         if (instagramSelected && !imageUrl) {
           return json({ error: "Instagram requires the finished graphic. Configure the R2 image-hosting settings, then try again." }, 400, origin);
         }
