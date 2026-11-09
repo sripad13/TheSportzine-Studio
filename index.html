@@ -156,7 +156,7 @@ $('createBtn').onclick=()=>openEditor('Breaking With Text');
 $('headerBrand').src=$('wordmarkBrand').src;
 
 // Buffer scheduling integration. API credentials remain on the Cloudflare Worker.
-const BUFFER_API='https://buffer-api.thesportzine.com';
+const BUFFER_API='https://thesportzine-buffer-api.sripad48.workers.dev';
 let bufferChannels=[];
 const caption=$('socialCaption'),captionCount=$('captionCount'),bufferStatus=$('bufferStatus');
 function updateCaptionCount(){const n=[...caption.value].length;captionCount.textContent=`${n} / 280`;captionCount.classList.toggle('over',n>280)}
