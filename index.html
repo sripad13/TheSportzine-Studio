@@ -114,14 +114,21 @@ const placement=$('placement').value,alpha=+$('gradient').value/100,grad=ctx.cre
 const ghost=$('ghost').value.trim();let ghostDisplayFont=0;if(ghost){ctx.save();const ghostText=ghost.toUpperCase();ctx.font='300px "League Gothic",Impact,sans-serif';const ghostWidth=ctx.measureText(ghostText).width;const ghostScale=(W+10)/Math.max(1,ghostWidth);ghostDisplayFont=300*ghostScale;ctx.translate(W/2,H-15);ctx.scale(ghostScale,ghostScale);ctx.textAlign='center';ctx.textBaseline='bottom';ctx.lineWidth=2/ghostScale;ctx.strokeStyle='#ffffff24';ctx.strokeText(ghostText,0,0);ctx.restore()}
 const wordmarkEl=$('wordmarkBrand'),shieldEl=$('squareBrand');wordmarkEl.style.display=$('brand').value==='yes'?'block':'none';shieldEl.style.display='block';wordmarkEl.style.top=(placement==='bottom'?'69.5%':'13%');
 const headline=$('headline').value.trim().toUpperCase(),highlight=$('highlight').value.trim().toUpperCase(),align=$('alignment').value,anchor=align==='left'?5:align==='right'?W-5:W/2,maxWidth=W-10;
-let font=ghostDisplayFont?Math.round(ghostDisplayFont*.88):118,lines=[];function wrap(){ctx.font=`${font}px "League Gothic",Impact,sans-serif`;lines=[];let line='';for(const word of headline.split(/\s+/)){const test=line?line+' '+word:word;if(ctx.measureText(test).width>maxWidth&&line){lines.push(line);line=word}else line=test}if(line)lines.push(line)}
-wrap();while((lines.length>3||lines.some(l=>ctx.measureText(l).width>maxWidth))&&font>48){font-=2;wrap()}
-const lineHeight=font*1.02,subtitle=$('subtitle').value.trim(),subH=subtitle?58:0,blockH=lines.length*lineHeight+subH+16;let y=placement==='bottom'?H-45-blockH:125;if(y<20)y=20;
-wordmarkEl.style.top=`${Math.max(0,(y-105)/H*100)}%`;
+// Headline and oversized background word are independent layers.
+let font=ghostDisplayFont||118,lines=[];
+function wrap(){ctx.font=`${font}px "League Gothic",Impact,sans-serif`;lines=[];let line='';for(const word of headline.split(/\s+/)){const test=line?line+' '+word:word;if(ctx.measureText(test).width>maxWidth&&line){lines.push(line);line=word}else line=test}if(line)lines.push(line)}
+wrap();
+while((lines.length>2||lines.some(l=>ctx.measureText(l).width>maxWidth))&&font>32){font-=2;wrap()}
+const lineHeight=font*1.02,subtitle=$('subtitle').value.trim(),subH=subtitle?58:0,blockH=lines.length*lineHeight+subH+16;
+const logoWidth=335,logoHeight=wordmarkEl.naturalWidth?logoWidth*wordmarkEl.naturalHeight/wordmarkEl.naturalWidth:42,logoGap=20;
+let y=placement==='bottom'?H-45-blockH:Math.max(125,Math.round(H*.30));
+if(placement==='bottom')y=Math.max(logoHeight+logoGap+24,y);
+const logoTop=placement==='bottom'?Math.max(8,y-logoHeight-logoGap):Math.max(8,Math.round(H*.13));
+wordmarkEl.style.top=`${logoTop/H*100}%`;
 ctx.textBaseline='top';ctx.textAlign=align;
 for(let i=0;i<lines.length;i++)drawRichLine(lines[i],highlight,anchor,y+i*lineHeight,font,align);
 if(subtitle){ctx.font='bold 29px Inter';const sw=Math.min(W-70,ctx.measureText(subtitle).width+36),sx=(W-sw)/2,sy=y+lines.length*lineHeight+12;ctx.fillStyle='#ffeb00';ctx.beginPath();ctx.roundRect(sx,sy,sw,47,9);ctx.fill();ctx.fillStyle='#111';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(subtitle,W/2,sy+23,sw-20)}
-if($('brand').value==='yes'){const wm=$('wordmarkBrand');if(wm.complete&&wm.naturalWidth){const ww=335,wh=ww*wm.naturalHeight/wm.naturalWidth;ctx.drawImage(wm,(W-ww)/2,Math.max(10,y-105),ww,wh)}}const sh=$('squareBrand');if($('squareLogo').value==='yes'&&sh.complete&&sh.naturalWidth){const sw=104,shh=sw*sh.naturalHeight/sh.naturalWidth;ctx.drawImage(sh,W-sw-5,5,sw,shh)}
+if($('brand').value==='yes'){const wm=$('wordmarkBrand');if(wm.complete&&wm.naturalWidth){const ww=logoWidth,wh=ww*wm.naturalHeight/wm.naturalWidth;ctx.drawImage(wm,(W-ww)/2,logoTop,ww,wh)}}const sh=$('squareBrand');if($('squareLogo').value==='yes'&&sh.complete&&sh.naturalWidth){const sw=104,shh=sw*sh.naturalHeight/sh.naturalWidth;ctx.drawImage(sh,W-sw-5,5,sw,shh)}
 
 }
 function drawRichLine(line,phrasesRaw,x,y,size,align){
