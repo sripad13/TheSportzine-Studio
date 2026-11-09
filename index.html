@@ -67,11 +67,11 @@
     <div class="field"><label>Headline placement</label><select id="placement"><option value="bottom">Bottom</option><option value="top">Top</option></select></div>
     <div class="field"><label>Text alignment</label><select id="alignment"><option value="center">Centre</option><option value="left">Left</option><option value="right">Right</option></select></div>
     <div class="field"><label>Image zoom <output id="zoomOut">100%</output></label><input id="zoom" type="range" min="100" max="250" value="100"></div>
-    <div class="field"><label>Face vertical target</label><select id="faceTarget"><option value=".34">Upper-middle (editorial default)</option><option value=".42">Centre</option><option value=".27">Higher</option></select></div>
+    <div class="field"><label>Text behind subject · top-centre</label><input id="behindText" placeholder="BEST"><div class="status" id="subjectStatus">Enter text to place it behind the person in the upper centre of the image.</div></div>
     <div class="field"><label>Gradient strength <output id="gradientOut">78%</output></label><input id="gradient" type="range" min="0" max="100" value="78"></div>
     <div class="field"><label>Watermark</label><select id="watermark"><option value="none">None</option><option value="wordmark" selected>Wordmark</option><option value="square">Square</option><option value="both">Wordmark + square</option></select></div>
     <div class="field"><label>Oversized background word (optional)</label><input id="ghost" placeholder="BREAKING"></div>
-    <div class="field"><label><input type="checkbox" id="behindSubject" style="width:auto;margin-right:8px"> Place this word behind the person</label><div class="status" id="subjectStatus">Uses automatic subject separation. Upload a clear person photo to begin.</div></div>
+    <span id="behindSubject" hidden></span>
     <div class="field"><label>League Gothic font file (.woff2/.woff/.ttf)</label><input type="file" id="fontFile" accept=".woff2,.woff,.ttf,.otf"></div>
     <div class="status" id="fontStatus">League Gothic: checking font availability…</div>
     <div class="divider"></div><h3>Image positioning</h3>
@@ -100,7 +100,7 @@ document.querySelectorAll('[data-nav]').forEach(b=>b.onclick=()=>show(({home:'ho
 $('createBtn').onclick=()=>openEditor('Breaking With Text');
 function openEditor(t){template=t;setCanvasSize(t);$('template').value=t;$('editorName').textContent=t;$('headline').value=t==='Player Feature'?'PLAYER NAME':t==='Player Comparison'?'PLAYER A VS PLAYER B':'HARRY KANE SET TO SIGN NEW DEAL AT BAYERN MUNICH';$('highlight').value=t==='Breaking With Text'?'HARRY KANE':'';$('subtitle').value=t==='Player Feature'?'PLAYER FEATURE':t==='Player Comparison'?'HEAD-TO-HEAD COMPARISON':'';scale=1;offsetX=0;offsetY=0;$('zoom').value=100;$('posX').value=0;$('posY').value=0;show('editorView');draw()}
 $('template').onchange=e=>{template=e.target.value;$('editorName').textContent=template;draw()};
-function loadImage(file){if(!file||!file.type.startsWith('image/'))return;const url=URL.createObjectURL(file),im=new Image();im.onload=()=>{if(imgUrl)URL.revokeObjectURL(imgUrl);img=im;imgUrl=url;scale=1;offsetX=offsetY=0;facePoint=null;subjectMask=null;subjectMaskImage=null;$('behindSubject').checked=false;$('subjectStatus').textContent='Ready to separate the person from the background.';$('zoom').value=100;$('posX').value=0;$('posY').value=0;draw()};im.src=url}
+function loadImage(file){if(!file||!file.type.startsWith('image/'))return;const url=URL.createObjectURL(file),im=new Image();im.onload=()=>{if(imgUrl)URL.revokeObjectURL(imgUrl);img=im;imgUrl=url;scale=1;offsetX=offsetY=0;facePoint=null;subjectMask=null;subjectMaskImage=null;$('behindText').value='';$('subjectStatus').textContent='Enter text to place it behind the person in the upper centre of the image.';$('zoom').value=100;$('posX').value=0;$('posY').value=0;draw()};im.src=url}
 $('photoFile').onchange=e=>loadImage(e.target.files[0]);
 document.addEventListener('paste',e=>{if(!$('editorView').classList.contains('hidden'))for(const item of e.clipboardData?.items||[])if(item.type.startsWith('image/')){loadImage(item.getAsFile());e.preventDefault();break}});
 $('fitImage').onclick=()=>{scale=1;offsetX=offsetY=0;$('zoom').value=100;$('posX').value=$('posY').value=0;draw()};
@@ -108,12 +108,20 @@ $('removeImage').onclick=()=>{img=null;facePoint=null;draw()};
 $('zoom').oninput=e=>{scale=+e.target.value/100;$('zoomOut').value=e.target.value+'%';draw()};
 $('posX').oninput=e=>{offsetX=+e.target.value;draw()};$('posY').oninput=e=>{offsetY=+e.target.value;draw()};
 ['headline','highlight','subtitle','placement','alignment','gradient','watermark','ghost'].forEach(id=>$(id).addEventListener('input',()=>{if(id==='gradient')$('gradientOut').value=$('gradient').value+'%';draw()}));
-$('behindSubject').addEventListener('change',async()=>{if(!$('behindSubject').checked){draw();$('subjectStatus').textContent='Subject separation is off.';return}if(!img){$('behindSubject').checked=false;$('subjectStatus').textContent='Upload a photograph first.';return}await prepareSubjectMask()});
+let subjectTextRequest='';
+$('behindText').addEventListener('input',async()=>{const value=$('behindText').value.trim();subjectTextRequest=value;subjectMaskImage=null;draw();if(!value){$('subjectStatus').textContent='';return}if(!img){$('subjectStatus').textContent='Upload a photograph to separate the subject.';return}await prepareSubjectMask()});
 function imageGeometry(){if(!img)return null;const base=Math.max(W/img.width,H/img.height),s=base*scale,iw=img.width*s,ih=img.height*s;offsetX=Math.max((W-iw)/2,Math.min((iw-W)/2,offsetX));offsetY=Math.max((H-ih)/2,Math.min((ih-H)/2,offsetY));return {x:(W-iw)/2+offsetX,y:(H-ih)/2+offsetY,w:iw,h:ih}}
 function draw(){ctx.clearRect(0,0,W,H);ctx.fillStyle=img?'#17151d':'#ffeb00';ctx.fillRect(0,0,W,H);const geo=imageGeometry();if(img&&geo){ctx.save();ctx.beginPath();ctx.rect(0,0,W,H);ctx.clip();ctx.drawImage(img,geo.x,geo.y,geo.w,geo.h);ctx.restore()}else{ctx.fillStyle='#17151d';ctx.textAlign='center';ctx.font='bold 34px Inter';ctx.fillText('UPLOAD A PHOTOGRAPH TO BEGIN',W/2,H/2)}
 const placement=$('placement').value,alpha=+$('gradient').value/100,grad=ctx.createLinearGradient(0,placement==='bottom'?H*.53:0,0,placement==='bottom'?H: H*.47);if(placement==='bottom'){grad.addColorStop(0,'rgba(12,10,17,0)');grad.addColorStop(.35,`rgba(12,10,17,${alpha*.72})`);grad.addColorStop(1,`rgba(12,10,17,${Math.min(1,alpha+.2)})`)}else{grad.addColorStop(0,`rgba(12,10,17,${alpha})`);grad.addColorStop(1,'rgba(12,10,17,0)')}ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);
 const ghost=$('ghost').value.trim();let ghostDisplayFont=0;if(ghost){ctx.save();const ghostText=ghost.toUpperCase();ctx.font='300px "League Gothic",Impact,sans-serif';const ghostWidth=ctx.measureText(ghostText).width;const ghostScale=(W+10)/Math.max(1,ghostWidth);ghostDisplayFont=300*ghostScale;ctx.translate(W/2,H-15);ctx.scale(ghostScale,ghostScale);ctx.textAlign='center';ctx.textBaseline='bottom';ctx.lineWidth=2/ghostScale;ctx.strokeStyle='#ffffff24';ctx.strokeText(ghostText,0,0);ctx.restore()}
-if($('behindSubject').checked&&subjectMaskImage&&geo){
+const behindText=$('behindText').value.trim().toUpperCase();
+if(behindText){
+ ctx.save();ctx.textAlign='center';ctx.textBaseline='top';
+ let behindFont=Math.round(W*.34);ctx.font=`900 ${behindFont}px "League Gothic",Impact,sans-serif`;
+ while(ctx.measureText(behindText).width>W-36&&behindFont>36){behindFont-=4;ctx.font=`900 ${behindFont}px "League Gothic",Impact,sans-serif`}
+ ctx.fillStyle='#e7c47c';ctx.fillText(behindText,W/2,Math.round(H*.035),W-36);ctx.restore();
+}
+if(behindText&&subjectMaskImage&&geo){
  const foreground=document.createElement('canvas');foreground.width=W;foreground.height=H;
  const fctx=foreground.getContext('2d');fctx.drawImage(img,geo.x,geo.y,geo.w,geo.h);
  fctx.globalCompositeOperation='destination-in';fctx.drawImage(subjectMaskImage,geo.x,geo.y,geo.w,geo.h);fctx.globalCompositeOperation='source-over';
@@ -188,9 +196,9 @@ async function prepareSubjectMask(){
   const mctx=maskCanvas.getContext('2d'),pixels=mctx.createImageData(mw,mh);
   for(let i=0;i<values.length;i++){const person=values[i]===1?255:0,p=i*4;pixels.data[p]=pixels.data[p+1]=pixels.data[p+2]=255;pixels.data[p+3]=person}
   mctx.putImageData(pixels,0,0);subjectMaskImage=maskCanvas;subjectMask=values;
-  $('subjectStatus').textContent='Person separated. The oversized word now sits behind the subject.';
+  $('subjectStatus').textContent='Person separated. Your top-centred text is behind the subject.';
   draw();
- }catch(err){$('behindSubject').checked=false;subjectMaskImage=null;$('subjectStatus').textContent='Could not separate the person. Try a clear, well-lit photo.';console.error('Subject segmentation failed:',err)}
+ }catch(err){subjectMaskImage=null;$('subjectStatus').textContent='Could not separate the person. Try a clear, well-lit photo.';console.error('Subject segmentation failed:',err)}
 }
 $('autoFace').onclick=async()=>{if(!img){$('faceStatus').textContent='Upload a photograph first.';return}$('faceStatus').textContent='Loading face detector…';try{const vision=await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/+esm');const fileset=await vision.FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');faceDetector=await vision.FaceDetector.createFromOptions(fileset,{baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite'},runningMode:'IMAGE'});const result=faceDetector.detect(img);if(!result.detections?.length){$('faceStatus').textContent='No face detected. Drag the image manually or try another photograph.';return}const box=result.detections[0].boundingBox,cx=box.originX+box.width/2,cy=box.originY+box.height/2,geo=imageGeometry();const sx=geo.w/img.width,sy=geo.h/img.height;facePoint={x:geo.x+cx*sx,y:geo.y+cy*sy};const targetY=H*Number($('faceTarget').value);offsetX+=W/2-facePoint.x;offsetY+=targetY-facePoint.y;$('posX').value=Math.max(-500,Math.min(500,offsetX));$('posY').value=Math.max(-500,Math.min(500,offsetY));draw();$('faceStatus').textContent=`Face detected (${Math.round(result.detections[0].categories?.[0]?.score*100||0)}% confidence). Image positioned for the headline-safe area. You can still drag it manually.`}catch(err){$('faceStatus').textContent='Face detection could not load. Check your internet connection; manual positioning remains available.';console.error(err)}};
 function exportGraphic(fmt){document.fonts.ready.then(()=>{const mime=fmt==='jpeg'?'image/jpeg':fmt==='webp'?'image/webp':'image/png',ext=fmt==='jpeg'?'jpg':fmt,a=document.createElement('a');a.download=`thesportzine-${W}x${H}.${ext}`;a.href=canvas.toDataURL(mime,fmt==='png'?undefined:.92);a.click();$('downloadModal').classList.add('hidden')})}
