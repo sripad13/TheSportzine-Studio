@@ -115,7 +115,15 @@ const ghost=$('ghost').value.trim();let ghostDisplayFont=0;if(ghost){ctx.save();
 const wordmarkEl=$('wordmarkBrand'),shieldEl=$('squareBrand');wordmarkEl.style.display=$('brand').value==='yes'?'block':'none';shieldEl.style.display='block';wordmarkEl.style.top=(placement==='bottom'?'69.5%':'13%');
 const headline=$('headline').value.trim().toUpperCase(),highlight=$('highlight').value.trim().toUpperCase(),align=$('alignment').value,anchor=align==='left'?5:align==='right'?W-5:W/2,maxWidth=W-10;
 // Headline and oversized background word are independent layers.
-let font=ghostDisplayFont||118,lines=[];
+let headlineBaseFont=118;
+if(ghost){
+ ctx.save();
+ ctx.font='300px "League Gothic",Impact,sans-serif';
+ const eightLetterReferenceWidth=ctx.measureText('BREAKING').width;
+ headlineBaseFont=300*(W+10)/Math.max(1,eightLetterReferenceWidth);
+ ctx.restore();
+}
+let font=headlineBaseFont,lines=[];
 function wrap(){ctx.font=`${font}px "League Gothic",Impact,sans-serif`;lines=[];let line='';for(const word of headline.split(/\s+/)){const test=line?line+' '+word:word;if(ctx.measureText(test).width>maxWidth&&line){lines.push(line);line=word}else line=test}if(line)lines.push(line)}
 wrap();
 while((lines.length>2||lines.some(l=>ctx.measureText(l).width>maxWidth))&&font>32){font-=2;wrap()}
