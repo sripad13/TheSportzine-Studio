@@ -107,7 +107,7 @@ ctx.textBaseline='top';ctx.textAlign=align;
 for(let i=0;i<lines.length;i++)drawRichLine(lines[i],highlight,anchor,y+i*lineHeight,font,align);
 if(subtitle){ctx.font='bold 29px Inter';const sw=Math.min(W-70,ctx.measureText(subtitle).width+36),sx=(W-sw)/2,sy=y+lines.length*lineHeight+12;ctx.fillStyle='#ffeb00';ctx.beginPath();ctx.roundRect(sx,sy,sw,47,9);ctx.fill();ctx.fillStyle='#111';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(subtitle,W/2,sy+23,sw-20)}
 if($('brand').value==='yes'){const wm=$('wordmarkBrand');if(wm.complete&&wm.naturalWidth){const ww=335,wh=ww*wm.naturalHeight/wm.naturalWidth;ctx.drawImage(wm,(W-ww)/2,Math.max(10,y-105),ww,wh)}}const sh=$('squareBrand');if($('squareLogo').value==='yes'&&sh.complete&&sh.naturalWidth){const sw=104,shh=sw*sh.naturalHeight/sh.naturalWidth;ctx.drawImage(sh,W-sw-5,5,sw,shh)}
-if(facePoint){ctx.save();ctx.strokeStyle='#ffeb00';ctx.lineWidth=3;ctx.beginPath();ctx.arc(facePoint.x,facePoint.y,18,0,Math.PI*2);ctx.stroke();ctx.restore()}
+
 }
 function drawRichLine(line,phrasesRaw,x,y,size,align){
  ctx.font=`${size}px "League Gothic",Impact,sans-serif`;
