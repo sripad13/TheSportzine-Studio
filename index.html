@@ -32,7 +32,7 @@
 <body>
 <div class="app">
 <main class="main">
- <header class="top"><img id="headerBrand" alt="TheSportzine" style="display:block;width:190px;max-width:42vw;height:auto;opacity:.72;object-fit:contain;object-position:left center"><button class="btn primary" id="createBtn">＋ Create graphic</button></header>
+ <header class="top"><img id="headerBrand" alt="TheSportzine" style="display:block;width:190px;max-width:42vw;height:auto;opacity:.72;object-fit:contain;object-position:left center"><button class="btn primary" id="createBtn">＋ New graphic</button></header>
  <section class="dashboard" id="homeView">
   <h2 style="margin-top:0">Templates</h2><div class="grid" id="categoryTiles"></div>
   <h2>Specialised formats</h2><div class="grid special" id="specialTiles"></div>
@@ -168,6 +168,6 @@ async function loadBufferChannels(){bufferStatus.textContent='Connecting to Buff
 $('refreshBuffer').onclick=loadBufferChannels;
 async function sendBufferPost(saveDraft=false,publishNow=false){const text=caption.value.trim();if(!text){bufferStatus.textContent='Write a caption first.';return}if([...text].length>280){bufferStatus.textContent='Caption exceeds the 280-character limit.';return}const channelIds=[...document.querySelectorAll('.buffer-channel.selected')].map(x=>x.dataset.channelId);if(!channelIds.length){bufferStatus.textContent='Select at least one Buffer channel.';return}const mode=saveDraft?'draft':publishNow?'now':$('bufferScheduleMode').value;let dueAt=null;if(mode==='custom'){const v=$('bufferDueAt').value;if(!v){bufferStatus.textContent='Choose a date and time.';return}const d=new Date(v);if(Number.isNaN(d.getTime())||d.getTime()<=Date.now()){bufferStatus.textContent='Choose a future date and time.';return}dueAt=d.toISOString()}bufferStatus.textContent=saveDraft?'Saving draft to Buffer…':publishNow?'Publishing now via Buffer…':'Sending post to Buffer…';$('bufferPublishNow').disabled=true;$('bufferSchedule').disabled=true;$('bufferDraft').disabled=true;try{const r=await fetch(BUFFER_API+'/posts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text,channelIds,mode:saveDraft?'draft':mode==='now'?'now':mode,dueAt,imageDataUrl:canvas.toDataURL('image/png')})});const data=await r.json();if(!r.ok)throw new Error(data.error||'Buffer request failed');const ok=(data.results||[]).filter(x=>x.ok).length,failed=(data.results||[]).filter(x=>!x.ok);bufferStatus.textContent=failed.length?`${ok} completed; ${failed.length} failed: ${failed.map(x=>x.channelName+': '+x.error).join('; ')}`:`Success · ${ok} post(s) ${saveDraft?'saved as drafts':publishNow?'sent to Buffer for immediate publishing':mode==='queue'?'added to your Buffer queue':'scheduled'}.`;if(ok){caption.value='';updateCaptionCount()}}catch(e){bufferStatus.textContent=e.message}finally{$('bufferPublishNow').disabled=false;$('bufferSchedule').disabled=false;$('bufferDraft').disabled=false}}
 $('bufferPublishNow').onclick=()=>sendBufferPost(false,true);$('bufferSchedule').onclick=()=>sendBufferPost(false);$('bufferDraft').onclick=()=>sendBufferPost(true);
-draw();
+openEditor('Breaking With Text');
 </script>
 </body></html>
