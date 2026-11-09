@@ -49,7 +49,15 @@
     <div class="row" style="margin-top:10px"><button class="btn" id="autoFace">◎ Detect face & auto-position</button><button class="btn" id="fitImage">Fit image</button><button class="btn" id="removeImage">Remove image</button></div>
     <p class="hint" id="faceStatus">Face detection loads on demand. If unavailable, drag the image manually. Image and text remain separate editable elements.</p>
     <div class="divider"></div>
-
+    <section class="panel buffer-panel" style="grid-column:1/-1">
+      <h3>Social post · Buffer</h3>
+      <div class="field" style="margin-top:10px"><label for="socialCaption">Caption (maximum 280 characters)</label><textarea id="socialCaption" maxlength="280" rows="4" placeholder="Write your social media caption…"></textarea><div class="counter" id="captionCount">0 / 280</div></div>
+      <div class="field"><label>Connected Buffer channels</label><div class="buffer-channels" id="bufferChannels"><span class="hint">Connect Buffer to load your channels.</span></div><button class="btn" id="refreshBuffer" type="button" style="margin-top:8px">↻ Load / refresh channels</button></div>
+      <div class="field"><label for="bufferScheduleMode">Scheduling</label><select id="bufferScheduleMode"><option value="queue">Add to next available queue slot</option><option value="custom">Choose date and time</option></select></div>
+      <div class="field hidden" id="bufferDateWrap"><label for="bufferDueAt">Publish date and time (your local time)</label><input type="datetime-local" id="bufferDueAt"></div>
+      <div class="buffer-actions"><button class="btn primary" id="bufferPublishNow" type="button">Publish Now</button><button class="btn" id="bufferSchedule" type="button">Schedule via Buffer</button><button class="btn" id="bufferDraft" type="button">Save as draft</button></div>
+      <div class="status" id="bufferStatus">Buffer connection needs setup. Your API key will be stored securely in a Cloudflare Worker, never in this page.</div>
+    </section>
    </aside>
   </div>
  </section>
