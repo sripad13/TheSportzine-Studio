@@ -102,7 +102,7 @@ export default {
           if (!env.MEDIA_BUCKET || !env.MEDIA_PUBLIC_BASE_URL) {
             return json({ error: "Image hosting is not configured. Add the Cloudflare R2 binding MEDIA_BUCKET and MEDIA_PUBLIC_BASE_URL Worker variable before publishing graphics to Instagram." }, 503, origin);
           }
-          const match = /^data:(image\\/(?:png|jpeg|webp));base64,([A-Za-z0-9+/=]+)$/.exec(body.imageDataUrl);
+          const match = /^data:(image\/(?:png|jpeg|webp));base64,([A-Za-z0-9+/=]+)$/.exec(body.imageDataUrl);
           if (!match) return json({ error: "The graphic must be a PNG, JPG, or WebP image." }, 400, origin);
           const mimeType = match[1];
           const bytes = Uint8Array.from(atob(match[2]), c => c.charCodeAt(0));
@@ -112,7 +112,7 @@ export default {
           const extension = mimeType === "image/jpeg" ? "jpg" : mimeType === "image/webp" ? "webp" : "png";
           const key = `studio/${new Date().toISOString().slice(0,10)}/${crypto.randomUUID()}.${extension}`;
           await env.MEDIA_BUCKET.put(key, bytes, { httpMetadata: { contentType: mimeType, cacheControl: "public, max-age=31536000, immutable" } });
-          imageUrl = `${env.MEDIA_PUBLIC_BASE_URL.replace(/\\/$/, "")}/${key}`;
+          imageUrl = `${env.MEDIA_PUBLIC_BASE_URL.replace(/\/$/, "")}/${key}`;
         }
 
         const instagramSelected = channelIds.some(id => String(allowed.get(id)?.service || "").toLowerCase().includes("instagram"));
