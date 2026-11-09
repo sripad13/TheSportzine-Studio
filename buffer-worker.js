@@ -82,7 +82,7 @@ export default {
         if (!channelIds.length || channelIds.length > 20 || channelIds.some(id => typeof id !== "string" || !/^[a-f0-9]{24}$/i.test(id))) {
           return json({ error: "Select one or more valid Buffer channels." }, 400, origin);
         }
-        if (!["queue", "custom", "draft"].includes(mode)) return json({ error: "Invalid scheduling mode." }, 400, origin);
+        if (!["queue", "custom", "draft", "now"].includes(mode)) return json({ error: "Invalid scheduling mode." }, 400, origin);
         let dueAt = null;
         if (mode === "custom") {
           const date = new Date(body.dueAt);
@@ -109,7 +109,7 @@ export default {
             text,
             channelId,
             schedulingType: "automatic",
-            mode: mode === "custom" ? "customScheduled" : "addToQueue",
+            mode: mode === "custom" ? "customScheduled" : mode === "now" ? "shareNow" : "addToQueue",
             ...(mode === "custom" ? { dueAt } : {}),
             ...(mode === "draft" ? { saveToDraft: true } : {})
           };
