@@ -32,7 +32,7 @@
 <body>
 <div class="app">
 <main class="main">
- <header class="top"><img id="headerBrand" alt="TheSportzine" style="display:block;width:190px;max-width:42vw;height:auto;opacity:.72;object-fit:contain;object-position:left center"><button class="btn primary" id="createBtn">＋ New graphic</button></header>
+ <header class="top"><img id="headerBrand" alt="TheSportzine" style="display:block;width:190px;max-width:42vw;height:auto;opacity:.72;object-fit:contain;object-position:left center"></header>
  <section class="dashboard" id="homeView">
   <h2 style="margin-top:0">Templates</h2><div class="grid" id="categoryTiles"></div>
   <h2>Specialised formats</h2><div class="grid special" id="specialTiles"></div>
@@ -41,7 +41,7 @@
  <section class="dashboard hidden" id="templatesView"><h2 style="margin-top:0">All templates</h2><div class="grid special" id="allTiles"></div></section>
  <section class="dashboard hidden" id="projectsView"><h2 style="margin-top:0">Saved projects</h2><div class="saved" id="projectTiles"><p class="muted">No saved projects yet.</p></div></section>
  <section class="editor" id="editorView">
-  <div class="editorhead"><div><b id="editorName">Breaking With Text</b><div class="muted" id="canvasDimensions" style="font-size:11px;margin-top:4px">1080 × 1440 px · drag image to reposition</div></div><div class="row" style="flex:0 0 auto"><button class="btn" id="saveBtn">Save project</button><button class="btn primary" id="exportBtn">↓ Download PNG</button></div></div>
+  <div class="editorhead" style="display:none" aria-hidden="true"><b id="editorName">Breaking With Text</b><span id="canvasDimensions">1080 × 1440 px · drag image to reposition</span><button class="btn" id="saveBtn">Save project</button><button class="btn primary" id="exportBtn">↓ Download PNG</button></div>
   <div class="editgrid">
    <div class="panel canvaspanel">
     <label class="upload" for="photoFile">＋ Upload or replace photograph · You can also paste with Ctrl/Cmd + V</label><input type="file" accept="image/*" id="photoFile" class="hidden">
