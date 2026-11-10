@@ -56,9 +56,9 @@ async function getFeed(feed) {
     });
     if (!response.ok) throw new Error("HTTP " + response.status);
     const xml = await response.text();
-    const rootMatch = /<(rss|feed|rdf:RDF)\\b/i.exec(xml);
+    const rootMatch = /<(rss|feed|rdf:RDF)\b/i.exec(xml);
     if (!rootMatch) throw new Error("Response is not RSS/Atom");
-    const blocks = [...xml.matchAll(/<(item|entry)(?:\\s[^>]*)?>([\\s\\S]*?)<\\/\\1>/gi)];
+    const blocks = [...xml.matchAll(/<(item|entry)(?:\s[^>]*)?>([\s\S]*?)<\/\1>/gi)];
     const items = parseFeed(xml, feed);
     const firstBlock = blocks[0]?.[2] || "";
     const firstTitle = firstBlock ? tag(firstBlock, "title") : "";
@@ -77,7 +77,7 @@ async function getFeed(feed) {
         root: rootMatch[1],
         entryBlocks: blocks.length,
         firstEntryHasTitle: Boolean(firstTitle),
-        firstEntryHasHttpLink: /^https?:\\/\\//i.test(firstLink),
+        firstEntryHasHttpLink: /^https?:\/\//i.test(firstLink),
         firstEntryStart: firstBlock.slice(0, 350)
       }
     };
