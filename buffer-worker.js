@@ -77,8 +77,6 @@ export default {
         const now = new Date();
         const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
         const currentStart = new Date(end.getTime() - 29 * 86400000);
-        const previousEnd = new Date(currentStart.getTime() - 86400000);
-        const previousStart = new Date(previousEnd.getTime() - 29 * 86400000);
         const query = `
           query StudioAggregatedInsights($input: AggregatedPostMetricsInput!) {
             aggregatedPostMetrics(input: $input) {
@@ -105,13 +103,16 @@ export default {
           }
           return { metrics: Object.values(totals), metricsUpdatedAt: updatedAt };
         }
-        const [current, previous] = await Promise.all([
-          aggregate(currentStart, end), aggregate(previousStart, previousEnd)
-        ]);
+        // Buffer Free-plan Insights only exposes the most recent 31 days.
+        // Fetch the current 30-day window only; a prior-period comparison
+        // would request data outside the plan's available history.
+        const current = await aggregate(currentStart, end);
         return json({
           period: "last 30 days",
           current,
-          previous,
+          previous: null,
+          comparisonAvailable: false,
+          comparisonNote: "Previous-period comparisons require Insights history beyond the current Free-plan 31-day window.",
           followerCountAvailable: false,
           followerCountNote: "Buffer's public API does not expose channel-level total follower counts. Its experimental post metrics can report post-attributed follows, not total followers."
         }, 200, origin);
