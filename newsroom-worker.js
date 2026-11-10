@@ -302,12 +302,12 @@ export default {
       }
       if (request.method === "POST" && url.pathname === "/api/subreddits") {
         await env.DB.prepare("CREATE TABLE IF NOT EXISTS newsroom_subreddits (id TEXT PRIMARY KEY, subreddit TEXT NOT NULL UNIQUE, sport TEXT NOT NULL DEFAULT 'general', created_at TEXT NOT NULL)").run();
-        const body=await request.json();const subreddit=String(body.subreddit||"").trim().replace(/^r\\//i,"");const sport=String(body.sport||"general").trim();
+        const body=await request.json();const subreddit=String(body.subreddit||"").trim().replace(/^r\//i,"");const sport=String(body.sport||"general").trim();
         if(!/^[A-Za-z0-9_]{2,21}$/.test(subreddit))return json({error:"Enter a valid subreddit name (2–21 letters, numbers or underscores)."},400,origin);
         const id=crypto.randomUUID();try{await env.DB.prepare("INSERT INTO newsroom_subreddits (id,subreddit,sport,created_at) VALUES (?,?,?,?)").bind(id,subreddit,sport,new Date().toISOString()).run()}catch(e){if(/unique/i.test(e.message))return json({error:"That subreddit is already being tracked."},409,origin);throw e}
         return json({id,subreddit,sport},201,origin);
       }
-      const subMatch=url.pathname.match(/^\\/api\\/subreddits\\/([a-f0-9-]{36})$/i);
+      const subMatch=url.pathname.match(/^\/api\/subreddits\/([a-f0-9-]{36})$/i);
       if(subMatch&&request.method==="DELETE"){const result=await env.DB.prepare("DELETE FROM newsroom_subreddits WHERE id=?").bind(subMatch[1]).run();if(!result.meta?.changes)return json({error:"Subreddit not found."},404,origin);return json({ok:true},200,origin)}
       if (request.method === "GET" && url.pathname === "/api/sources") {
         return json({ sources: await listSources(env.DB) }, 200, origin);
