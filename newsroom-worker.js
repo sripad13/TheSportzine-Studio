@@ -128,7 +128,9 @@ async function getRedditStories(env, sort="new") {
       return {items,error:items.length?null:"No indexed Reddit posts found for r/"+row.subreddit};
     }catch(error){return {items:[],error:"r/"+row.subreddit+": "+(error.message||"Search feed unavailable")};}
   }));
-  const stories=outcomes.flatMap(x=>x.items);\n  if(safeSort==="new")stories.sort((a,b)=>(b.timestamp||0)-(a.timestamp||0));\n  return {stories,errors:outcomes.map(x=>x.error).filter(Boolean)};
+  const stories=outcomes.flatMap(x=>x.items);
+  if(safeSort==="new")stories.sort((a,b)=>(b.timestamp||0)-(a.timestamp||0));
+  return {stories,errors:outcomes.map(x=>x.error).filter(Boolean)};
 }
 async function fetchStories(env) {
   const configured = await getConfiguredFeeds(env);
