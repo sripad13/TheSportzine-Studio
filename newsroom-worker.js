@@ -31,7 +31,7 @@ function decodeXml(value) {
   return String(value || "").replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g,"$1").replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,'"').replace(/&#39;|&apos;/g,"'").replace(/&#(\d+);/g,(_,n)=>String.fromCodePoint(Number(n))).replace(/<[^>]*>/g," ").replace(/\s+/g," ").trim();
 }
 function tag(block,name) {
-  const re=new RegExp("<(?:[\\w.-]+:)?" + name + "(?:\s[^>]*)?>([\s\S]*?)<\/(?:[\\w.-]+:)?" + name + "\s*>","i");
+  const re=new RegExp("<(?:[\\w.-]+:)?" + name + "(?:\\s[^>]*)?>([\\s\\S]*?)<\\/(?:[\\w.-]+:)?" + name + "\\s*>","i");
   const m=block.match(re);return m?decodeXml(m[1]):"";
 }
 function parseFeed(xml,feed) {
