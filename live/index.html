@@ -183,9 +183,7 @@ function openStory(id){
  $('#detail').innerHTML='<div class="meta">'+esc(s.source)+' · '+esc(s.sport==='f1'?'FORMULA 1':'FOOTBALL')+' · '+esc(relativeAge(s))+'</div><h2>'+esc(s.title)+'</h2><div class="dactions"><a class="btn primary" href="'+esc(s.link||'#')+'" target="_blank" rel="noopener">Open original</a><button class="btn" id="saveStory">'+(saved.has(s.id)?'Unsave':'Save story')+'</button><button class="btn" id="createPostFromStory">Create Post</button></div><div class="article-body">'+(body?esc(body):'<p>The RSS feed provides a headline only. Open the original publication to read the full article.</p>')+'</div><div class="short-title-error" id="createPostError"></div>';
  $('#drawer').classList.add('open');
  $('#saveStory').onclick=()=>{saved.has(id)?saved.delete(id):saved.add(id);localStorage.setItem('tsz_saved',JSON.stringify([...saved]));render();openStory(id)};
- $('#copyTitle').onclick=()=>navigator.clipboard?.writeText(s.title);
- const generateButton=$('#generateShortTitle');if(generateButton)generateButton.onclick=()=>generateShortTitle(id);
- const copyShortButton=$('#copyShortTitle');if(copyShortButton)copyShortButton.onclick=()=>navigator.clipboard?.writeText(generatedTitles.get(id)?.title||'');
+  const createPostButton=$('#createPostFromStory');if(createPostButton)createPostButton.onclick=()=>createPostFromStory(id);
  render();
 }
 
