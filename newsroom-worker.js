@@ -268,6 +268,13 @@ export default {
         return json({ title: shortTitle, words: wordCount }, 200, origin);
       }
 
+      if (request.method === "POST" && url.pathname === "/api/discover-feed") {
+        const body=await request.json();const homepage=String(body.url||"").trim();
+        if(!validFeedUrl(homepage)||homepage.length>2048)return json({error:"Enter a valid public website URL."},400,origin);
+        const base=new URL(homepage);const candidates=[homepage,base.origin+"/feed",base.origin+"/rss",base.origin+"/feed.xml",base.origin+"/rss.xml",base.origin+"/atom.xml",base.origin+"/index.xml"];const found=[];
+        for(const candidate of candidates){try{const res=await fetch(candidate,{headers:{"Accept":"application/rss+xml, application/atom+xml, application/xml, text/xml, text/html","User-Agent":"TheSportzine-Newsroom/1.0"},signal:AbortSignal.timeout(6000)});if(!res.ok)continue;const bodyText=await res.text();if(/<(rss|feed|rdf:RDF)\b/i.test(bodyText)){found.push({url:candidate,title:base.hostname});break;}if(candidate===homepage){const tags=bodyText.match(/<link\b[^>]*>/gi)||[];for(const tagText of tags){if(!/alternate/i.test(tagText)||!/(rss|atom)\+xml/i.test(tagText))continue;const href=tagText.match(/href=["']([^"']+)["']/i);if(href){found.push({url:new URL(href[1],homepage).href,title:base.hostname});}}}}catch{}}
+        return json({feeds:found},200,origin);
+      }
       if (request.method === "GET" && url.pathname === "/api/subreddits") {
         await env.DB.prepare("CREATE TABLE IF NOT EXISTS newsroom_subreddits (id TEXT PRIMARY KEY, subreddit TEXT NOT NULL UNIQUE, sport TEXT NOT NULL DEFAULT 'general', created_at TEXT NOT NULL)").run();
         const rows=await env.DB.prepare("SELECT id,subreddit,sport,created_at FROM newsroom_subreddits ORDER BY subreddit COLLATE NOCASE").all();
