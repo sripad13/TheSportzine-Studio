@@ -1,0 +1,11 @@
+name = "thesportzine-newsroom-api"
+main = "newsroom-worker.js"
+compatibility_date = "2026-11-10"
+workers_dev = true
+
+[observability]
+enabled = true
+
+[[routes]]
+pattern = "newsroom-api.falsewinger.com/*"
+zone_name = "falsewinger.com"
