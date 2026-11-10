@@ -106,26 +106,32 @@ async function getConfiguredFeeds(env) {
   return [...DEFAULT_FEEDS, ...custom].filter(feed => !deleted.includes(feed.url))
     .filter((feed,index,all)=>all.findIndex(item=>item.url===feed.url)===index);
 }
-async function getRedditStories(env) {
-  if (!env.DB) return [];
+async function getRedditStories(env, sort="new") {
+  if (!env.DB) return {stories:[],errors:["D1 database is not configured."]};
+  const safeSort=["new","hot","rising"].includes(sort)?sort:"new";
   await env.DB.prepare("CREATE TABLE IF NOT EXISTS newsroom_subreddits (id TEXT PRIMARY KEY, subreddit TEXT NOT NULL UNIQUE, sport TEXT NOT NULL DEFAULT 'general', created_at TEXT NOT NULL)").run();
   const rows=await env.DB.prepare("SELECT subreddit,sport FROM newsroom_subreddits ORDER BY subreddit COLLATE NOCASE").all();
-  const results=await Promise.all((rows.results||[]).map(async row=>{
+  const outcomes=await Promise.all((rows.results||[]).map(async row=>{
+    const url="https://www.reddit.com/r/"+encodeURIComponent(row.subreddit)+"/.rss?sort="+safeSort+"&limit=25";
     try {
-      const response=await fetch("https://www.reddit.com/r/"+encodeURIComponent(row.subreddit)+"/new.json?limit=30",{headers:{"User-Agent":"TheSportzineNewsroom/1.0"},signal:AbortSignal.timeout(8000)});
-      if(!response.ok) return []; const data=await response.json();
-      return (data.data?.children||[]).map(({data:p})=>({id:"reddit:"+p.id,title:p.title,summary:p.selftext||"",link:"https://www.reddit.com"+p.permalink,source:"r/"+row.subreddit,sport:sportCode(row.sport),published:new Date(p.created_utc*1000).toISOString(),timestamp:p.created_utc*1000,timeLabel:new Date(p.created_utc*1000).toLocaleString("en-GB"),breaking:false,priority:false,isReddit:true,score:p.score,comments:p.num_comments}));
-    } catch { return []; }
+      const response=await fetch(url,{headers:{"Accept":"application/atom+xml, application/rss+xml, application/xml, text/xml","User-Agent":"Mozilla/5.0 (compatible; TheSportzineNewsroom/1.0; +https://newsroom.falsewinger.com)","Cache-Control":"no-cache"},signal:AbortSignal.timeout(10000)});
+      if(!response.ok)throw new Error("Reddit returned HTTP "+response.status);
+      const xml=await response.text();
+      if(!/<(feed|rss|rdf:RDF)\b/i.test(xml))throw new Error("Reddit did not return an RSS/Atom feed");
+      const items=parseFeed(xml,{name:"r/"+row.subreddit,sport:sportCode(row.sport)});
+      return {items:items.map(item=>({...item,id:"reddit:"+item.id,isReddit:true,redditSort:safeSort})),error:null};
+    } catch(error) { return {items:[],error:"r/"+row.subreddit+": "+error.message}; }
   }));
-  return results.flat();
+  return {stories:outcomes.flatMap(x=>x.items),errors:outcomes.map(x=>x.error).filter(Boolean)};
 }
 async function fetchStories(env) {
   const configured = await getConfiguredFeeds(env);
   const results=await Promise.all(configured.map(async feed=>({feed,...await getFeed(feed)})));
-  const redditStories=await getRedditStories(env);
+  const redditResult=await getRedditStories(env,"new");
+  const redditStories=redditResult.stories;
   const seen=new Map();
   for(const story of [...results.flatMap(result=>result.items),...redditStories]){const key=story.title.toLowerCase().replace(/[^a-z0-9]+/g," ").trim().split(" ").filter(Boolean).slice(0,10).join(" ");const existing=seen.get(key);if(existing){existing.duplicateCount=(existing.duplicateCount||1)+1;existing.sources=[...(existing.sources||[existing.source]),story.source];}else seen.set(key,story);}
-  return{stories:[...seen.values()].sort((a,b)=>b.timestamp-a.timestamp),feeds:results.map(({feed,items,error,diagnostic})=>({name:feed.name,sport:feed.sport,count:items.length,error,diagnostic})).concat([{name:"Reddit",sport:"reddit",count:redditStories.length,error:null}]),fetched_at:new Date().toISOString()};
+  return{stories:[...seen.values()].sort((a,b)=>b.timestamp-a.timestamp),feeds:results.map(({feed,items,error,diagnostic})=>({name:feed.name,sport:feed.sport,count:items.length,error,diagnostic})).concat([{name:"Reddit",sport:"reddit",count:redditStories.length,error:redditResult.errors.length?redditResult.errors.join("; "):null}]),fetched_at:new Date().toISOString()};
 }
 
 async function searchStories(env, keyword) {
@@ -191,6 +197,13 @@ export default {
     }
     if (!ALLOWED_ORIGINS.has(origin) && origin !== "") return json({ error: "Origin not allowed." }, 403, origin);
     try {
+
+      if (request.method === "GET" && url.pathname === "/api/reddit") {
+        const sort=url.searchParams.get("sort")||"new";
+        if(!["new","hot","rising"].includes(sort))return json({error:"Sort must be new, hot or rising."},400,origin);
+        const result=await getRedditStories(env,sort);
+        return json({stories:result.stories,errors:result.errors,sort,fetched_at:new Date().toISOString()},200,origin);
+      }
       if (request.method === "GET" && url.pathname === "/api/feed") return json(await fetchStories(env),200,origin);
       if (request.method === "GET" && url.pathname === "/api/version") {
         return json({
