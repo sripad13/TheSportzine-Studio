@@ -307,6 +307,39 @@ export default {
       }
 
       // Generate one short headline on demand (maximum nine words).
+      if (request.method === "POST" && url.pathname === "/api/ideas") {
+        if (!env.AI) return json({error:"Workers AI binding AI is not configured."},503,origin);
+        const body=await request.json();
+        const account=String(body.account||"").toLowerCase();
+        if(!["boxedninja","factodile"].includes(account))return json({error:"Account must be boxedninja or factodile."},400,origin);
+        const boxed=account==="boxedninja";
+        const system=boxed
+          ? "You are a witty Instagram micro-copywriter for @boxedninja, a cute black-clad ninja mascot with a bright pink headband. Write funny, relatable, self-deprecating one-line captions about everyday life: procrastination, social anxiety, snacks, low battery, unread messages, introversion, motivation, overthinking, sleep and small failures. Match the sample style: short punchy setup plus a playful twist; occasional wordplay. No hashtags, emojis, image directions, numbering, quotes or explanations. Every line must stand alone and be suitable as large text on a vertical Instagram graphic. Avoid repeating common meme templates."
+          : "You are a fact editor for @factodile, a friendly crocodile facts Instagram account. Write ten surprising, accurate, accessible one-line facts about nature, animals, science, space, geography or history. Each line must contain one specific factual claim, be concise and readable as large text on a vertical Instagram graphic. Do not invent statistics, dates, records or superlatives. Avoid myths and disputed claims. No hashtags, emojis, image directions, numbering, quotes or explanations. Return only facts you are confident are established.";
+        const user=boxed
+          ? "Create exactly 10 fresh, original one-line Instagram text ideas. Keep most between 5 and 12 words. Make the ideas varied; do not repeat the same joke structure."
+          : "Create exactly 10 varied one-line fact posts. Prefer specific, memorable facts over generic statements. Keep each between 8 and 18 words. Return JSON only in this shape: {\"ideas\":[\"fact one\",...]}";
+        const result=await env.AI.run("@cf/google/gemma-4-26b-a4b-it",{
+          messages:[{role:"system",content:system},{role:"user",content:user}],
+          temperature:0.85,
+          max_completion_tokens:1400,
+          chat_template_kwargs:{enable_thinking:false}
+        });
+        const raw=result?.response??result?.choices?.[0]?.message?.content??result?.choices?.[0]?.text??result?.output_text??result?.content??"";
+        let output=(typeof raw==="string"?raw:Array.isArray(raw)?raw.map(x=>x?.text||"").join(" "):String(raw||"")).replace(/<think>[\s\S]*?<\/think>/gi,"").trim();
+        let ideas=[];
+        if(boxed){
+          ideas=output.split(/\r?\n/).map(line=>line.replace(/^\s*(?:\d+[.)]|[-*•])\s*/,"").replace(/^["'“”]+|["'“”]+$/g,"").trim()).filter(Boolean);
+        }else{
+          const match=output.match(/\{[\s\S]*\}/);
+          if(match){try{const parsed=JSON.parse(match[0]);ideas=Array.isArray(parsed.ideas)?parsed.ideas:[]}catch{}}
+          if(!ideas.length)ideas=output.split(/\r?\n/).map(line=>line.replace(/^\s*(?:\d+[.)]|[-*•])\s*/,"").replace(/^["'“”]+|["'“”]+$/g,"").trim()).filter(Boolean);
+        }
+        ideas=ideas.map(x=>String(x).replace(/\s+/g," ").replace(/^["'“”]+|["'“”]+$/g,"").trim()).filter(x=>x&&x.length<=180).slice(0,10);
+        if(ideas.length!==10)return json({error:"The AI returned "+ideas.length+" usable ideas instead of 10. Please generate again.",diagnostic:{responseKeys:result&&typeof result==="object"?Object.keys(result):[]}},502,origin);
+        return json({account,ideas,generated_at:new Date().toISOString(),note:boxed?null:"Factodile facts should be checked against a reliable source before publishing."},200,origin);
+      }
+
       if (request.method === "POST" && url.pathname === "/api/short-title") {
         if (!env.AI) return json({ error: "Workers AI binding AI is not configured." }, 503, origin);
         const body = await request.json();
