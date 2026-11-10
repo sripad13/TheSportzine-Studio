@@ -112,11 +112,11 @@ async function getConfiguredFeeds(env) {
 }
 async function getRedditStories(env, sort="new") {
   if (!env.DB) return {stories:[],errors:["D1 database is not configured."]};
-  const safeSort=["new","hot","rising"].includes(sort)?sort:"new";
+  const safeSort=["new","hot"].includes(sort)?sort:"new";
   await env.DB.prepare("CREATE TABLE IF NOT EXISTS newsroom_subreddits (id TEXT PRIMARY KEY, subreddit TEXT NOT NULL UNIQUE, sport TEXT NOT NULL DEFAULT 'general', created_at TEXT NOT NULL)").run();
   const rows=await env.DB.prepare("SELECT subreddit,sport FROM newsroom_subreddits ORDER BY subreddit COLLATE NOCASE").all();
   const outcomes=await Promise.all((rows.results||[]).map(async row=>{
-    const timeFilter=safeSort==="new"?" when:7d":safeSort==="rising"?" when:1d":"";
+    const timeFilter=safeSort==="new"?" when:7d":"";
     const query="site:reddit.com/r/"+row.subreddit+timeFilter;
     const url="https://news.google.com/rss/search?q="+encodeURIComponent(query)+"&hl=en-IN&gl=IN&ceid=IN:en";
     try{
@@ -128,7 +128,7 @@ async function getRedditStories(env, sort="new") {
       return {items,error:items.length?null:"No indexed Reddit posts found for r/"+row.subreddit};
     }catch(error){return {items:[],error:"r/"+row.subreddit+": "+(error.message||"Search feed unavailable")};}
   }));
-  return {stories:outcomes.flatMap(x=>x.items),errors:outcomes.map(x=>x.error).filter(Boolean)};
+  const stories=outcomes.flatMap(x=>x.items);\n  if(safeSort==="new")stories.sort((a,b)=>(b.timestamp||0)-(a.timestamp||0));\n  return {stories,errors:outcomes.map(x=>x.error).filter(Boolean)};
 }
 async function fetchStories(env) {
   const configured = await getConfiguredFeeds(env);
@@ -209,7 +209,7 @@ export default {
 
       if (request.method === "GET" && url.pathname === "/api/reddit") {
         const sort=url.searchParams.get("sort")||"new";
-        if(!["new","hot","rising"].includes(sort))return json({error:"Sort must be new, hot or rising."},400,origin);
+        if(!["new","hot"].includes(sort))return json({error:"Sort must be new or hot."},400,origin);
         const result=await getRedditStories(env,sort);
         return json({stories:result.stories,errors:result.errors,sort,fetched_at:new Date().toISOString()},200,origin);
       }
