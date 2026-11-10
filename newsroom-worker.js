@@ -89,7 +89,7 @@ export default {
       if (request.method === "GET" && url.pathname === "/api/feed") return json(await fetchStories(),200,origin);
       if (request.method === "GET" && url.pathname === "/api/health") {
         if (env.DB) await env.DB.prepare("SELECT 1 AS ok").first();
-        return json({ ok: true, service: "thesportzine-newsroom", database: "connected" }, 200, origin);
+        return json({ ok: true, service: "thesportzine-newsroom", database: env.DB ? "connected" : "not_configured", feeds: "available" }, 200, origin);
       }
       if (!env.DB) return json({ error: "D1 binding DB is not configured; RSS feed endpoint remains available." }, 503, origin);
       if (request.method === "GET" && url.pathname === "/api/sources") {
