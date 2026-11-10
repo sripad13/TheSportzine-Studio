@@ -115,6 +115,7 @@ $('createBtn').onclick=()=>openEditor('Breaking With Text');
 const postParams=new URLSearchParams(window.location.search);
 const incomingHeadline=postParams.get('headline');
 const incomingSource=postParams.get('subtitle');
+const incomingCaption=postParams.get('caption')||'';
 if(incomingHeadline){
  $('headline').value=incomingHeadline;
  $('highlight').value='';
@@ -307,6 +308,7 @@ if(incomingHeadline){
  $('subtitle').value=incomingSource||'';
  draw();
 }
+if(incomingCaption){$('socialCaption').value=incomingCaption;updateCaptionCount();}
 loadBufferChannels(false);
 loadBufferInsights(false);
 </script>
