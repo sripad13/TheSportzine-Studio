@@ -56,6 +56,43 @@ async function fetchStories() {
   return{stories:[...seen.values()].sort((a,b)=>b.timestamp-a.timestamp),feeds:results.map(({feed,items,error})=>({name:feed.name,sport:feed.sport,count:items.length,error})),fetched_at:new Date().toISOString()};
 }
 
+async function searchStories(env, keyword) {
+  const custom = await env.DB.prepare(
+    "SELECT name, feed_url, sport FROM newsroom_sources WHERE enabled = 1 ORDER BY priority ASC, name COLLATE NOCASE ASC"
+  ).all();
+  const configured = [
+    ...DEFAULT_FEEDS,
+    ...(custom.results || []).map(row => ({
+      name: row.name,
+      url: row.feed_url,
+      sport: row.sport || "football"
+    }))
+  ];
+  const uniqueFeeds = [...new Map(configured.map(feed => [feed.url, feed])).values()];
+  const results = await Promise.all(uniqueFeeds.map(async feed => ({ feed, ...await getFeed(feed) })));
+  const needle = keyword.toLocaleLowerCase();
+  const matches = results.flatMap(result => result.items)
+    .filter(story => (story.title + " " + story.summary).toLocaleLowerCase().includes(needle))
+    .sort((a, b) => b.timestamp - a.timestamp);
+  const seen = new Set();
+  const stories = matches.filter(story => {
+    const key = story.link || story.title;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  }).slice(0, 100);
+  return {
+    keyword,
+    stories,
+    feeds: results.map(({ feed, items, error }) => ({
+      name: feed.name, count: items.length, matches: items.filter(story =>
+        (story.title + " " + story.summary).toLocaleLowerCase().includes(needle)
+      ).length, error
+    })),
+    fetched_at: new Date().toISOString()
+  };
+}
+
 function cleanSource(row) {
   return {
     id: row.id, name: row.name, feed_url: row.feed_url, sport: row.sport,
@@ -92,6 +129,14 @@ export default {
         return json({ ok: true, service: "thesportzine-newsroom", database: env.DB ? "connected" : "not_configured", feeds: "available" }, 200, origin);
       }
       if (!env.DB) return json({ error: "D1 binding DB is not configured; RSS feed endpoint remains available." }, 503, origin);
+      if (request.method === "GET" && url.pathname === "/api/search") {
+        const keyword = (url.searchParams.get("keyword") || "").trim();
+        if (!keyword || keyword.length > 120) {
+          return json({ error: "Enter a keyword or phrase (maximum 120 characters)." }, 400, origin);
+        }
+        return json(await searchStories(env, keyword), 200, origin);
+      }
+
       // Generate one short headline on demand (maximum nine words).
       if (request.method === "POST" && url.pathname === "/api/short-title") {
         if (!env.AI) return json({ error: "Workers AI binding AI is not configured." }, 503, origin);
