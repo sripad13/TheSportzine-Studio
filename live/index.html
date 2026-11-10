@@ -187,7 +187,7 @@ function plainArticleText(value){
 function storyCard(s,col){const keyword=String(col?.keyword||'').trim().toLowerCase();const sport=String(s.sport||'').trim().toLowerCase();const showSport=col?.type==='priority'&&keyword&&keyword===sport;const showPriority=col?.type==='priority'&&keyword==='priority'&&s.priority;return '<article class="story '+(selected===s.id?'selected':'')+'" data-id="'+esc(s.id)+'"><div class="meta"><span class="source">'+esc(s.source)+'</span><span>·</span><span>'+esc(relativeAge(s))+'</span>'+(s.breaking?'<span class="pill breaking">BREAKING</span>':'')+'</div><h3>'+esc(s.title)+'</h3><div class="storyfoot">'+(showPriority?'<span class="pill priority">PRIORITY</span>':'')+(showSport?'<span class="pill">'+esc(s.sport.toUpperCase()==='F1'?'FORMULA 1':s.sport.toUpperCase())+'</span>':'')+(s.duplicateCount>1?'<span class="pill duplicate">'+s.duplicateCount+' SOURCES</span>':'')+'</div></article>'}
 
 async function createPostFromStory(id){
- const s=stories.find(x=>x.id===id);if(!s)return;
+ const s=stories.find(x=>x.id===id)||redditStories.find(x=>x.id===id);if(!s)return;
  const button=$('#createPostFromStory');if(button){button.disabled=true;button.textContent='Preparing…'}
  const error=$('#createPostError');if(error)error.textContent='';
  try{
@@ -222,7 +222,9 @@ function openStory(id){
 
 async function searchPriority(col,rawKeyword){const keyword=String(rawKeyword||'').trim();if(!keyword){col.searchResults=[];col.keyword='';persist();render();return}col.keyword=keyword;col.searching=true;persist();render();const base=$('#apiBase').value.trim().replace(/\/$/,'');try{const response=await fetch(base+'/api/search?keyword='+encodeURIComponent(keyword));const data=await response.json();if(!response.ok)throw new Error(data.error||'Search failed (HTTP '+response.status+').');col.searchResults=(data.stories||[]).map((s,i)=>({...s,id:s.id||s.link||String(i)}));col.searchMeta={searchedAt:data.fetched_at,feeds:data.feeds||[]};col.searching=false;render();}catch(error){col.searching=false;col.searchResults=[];render();const cards=document.querySelector('[data-id="'+CSS.escape(col.id)+'"] .cards');if(cards)cards.innerHTML='<div class="empty"><b>Keyword search failed</b>'+esc(error.message)+'</div>';}}
 
-async function loadReddit(sort=redditSort){if(redditLoading)return;redditSort=sort;redditLoading=true;render();try{const base=$('#apiBase').value.trim().replace(/\\/$/,'');const response=await fetch(base+'/api/reddit?sort='+encodeURIComponent(sort));const data=await response.json();if(!response.ok)throw new Error(data.error||'Reddit request failed.');redditStories=(data.stories||[]).map((s,i)=>({...s,id:s.id||s.link||'reddit-'+i,isReddit:true}));const col=columns.find(x=>x.type==='reddit');if(col)col.redditErrors=data.errors||[];}catch(error){redditStories=[];const col=columns.find(x=>x.type==='reddit');if(col)col.redditErrors=[error.message];}finally{redditLoading=false;render()}}\n\nasync function refresh(){
+async function loadReddit(sort=redditSort){if(redditLoading)return;redditSort=sort;redditLoading=true;render();try{const base=$('#apiBase').value.trim().replace(/\/$/,'');const response=await fetch(base+'/api/reddit?sort='+encodeURIComponent(sort));const data=await response.json();if(!response.ok)throw new Error(data.error||'Reddit request failed.');redditStories=(data.stories||[]).map((s,i)=>({...s,id:s.id||s.link||'reddit-'+i,isReddit:true}));const col=columns.find(x=>x.type==='reddit');if(col)col.redditErrors=data.errors||[];}catch(error){redditStories=[];const col=columns.find(x=>x.type==='reddit');if(col)col.redditErrors=[error.message];}finally{redditLoading=false;render()}}
+
+async function refresh(){
  if(refreshing)return;
  const base=$('#apiBase').value.trim().replace(/\/$/,'');if(!base){setStatus('API not configured');return}
  refreshing=true;localStorage.setItem(API_KEY,base);setStatus('Fetching feeds…');
