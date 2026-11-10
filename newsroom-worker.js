@@ -298,48 +298,54 @@ export default {
         return json({feeds:found},200,origin);
       }
       if (request.method === "POST" && url.pathname === "/api/ideas") {
-        if (!env.AI) return json({error:"Workers AI binding AI is not configured."},503,origin);
+        if (!env.OPENAI_API_KEY) return json({error:"OpenAI is not configured on the Newsroom Worker. Add the OPENAI_API_KEY secret in Cloudflare."},503,origin);
         const body=await request.json();
         const account=String(body.account||"").toLowerCase();
         if(!["boxedninja","factodile"].includes(account))return json({error:"Account must be boxedninja or factodile."},400,origin);
         const boxed=account==="boxedninja";
-        const system=boxed
-          ? "You are a witty Instagram micro-copywriter for @boxedninja, a cute black-clad ninja mascot with a bright pink headband. Write funny, relatable, self-deprecating one-line captions about everyday life: procrastination, social anxiety, snacks, low battery, unread messages, introversion, motivation, overthinking, sleep and small failures. Match the sample style: short punchy setup plus a playful twist; occasional wordplay. No hashtags, emojis, image directions, numbering, quotes or explanations. Every line must stand alone and be suitable as large text on a vertical Instagram graphic. Avoid repeating common meme templates."
-          : "You are a fact editor for @factodile, a friendly crocodile facts Instagram account. Write ten surprising, accurate, accessible one-line facts about nature, animals, science, space, geography or history. Each line must contain one specific factual claim, be concise and readable as large text on a vertical Instagram graphic. Do not invent statistics, dates, records or superlatives. Avoid myths and disputed claims. No hashtags, emojis, image directions, numbering, quotes or explanations. Return only facts you are confident are established.";
-        const user=boxed
-          ? "Create exactly 10 fresh, original one-line Instagram text ideas. Keep most between 5 and 12 words. Make the ideas varied; do not repeat the same joke structure."
-          : "Create exactly 10 varied one-line fact posts. Prefer specific, memorable facts over generic statements. Keep each between 8 and 18 words. Return JSON only in this shape: {\"ideas\":[\"fact one\",...]}";
-        const result=await env.AI.run("@cf/google/gemma-4-26b-a4b-it",{
-          messages:[{role:"system",content:system},{role:"user",content:user}],
+        const instructions=boxed
+          ? "You are the dedicated Instagram micro-copywriter for @boxedninja. The character is a cute black-clad ninja mascot with a bright pink headband. Write witty, relatable, short one-line jokes about everyday life: overthinking, procrastination, introversion, snacks, low battery, unread messages, sleep, motivation and small failures. Match the samples' tone: punchy, instantly understandable, playful and suitable as large text on a vertical social graphic. Vary the joke structures. No hashtags, emojis, image directions, numbering or explanations."
+          : "You are the fact editor for @factodile, an Instagram account with a friendly crocodile mascot. Write surprising, genuinely accurate, accessible one-line facts across animals, nature, science, space, geography and history. Use well-established facts only; never invent statistics, records, dates or superlatives. Avoid myths and disputed claims. Each line should be specific, memorable and suitable as large text on a vertical social graphic. No hashtags, emojis, image directions, numbering or explanations.";
+        const requestBody={
+          model:"gpt-5.5",
+          instructions,
+          input:boxed
+            ? "Create exactly 10 fresh, original one-line Instagram text ideas. Aim for 5–12 words each. Keep the set varied and avoid generic recycled meme phrases. Return only valid JSON in this exact shape: {\"ideas\":[\"...\", \"...\"]}."
+            : "Create exactly 10 varied one-line factual posts. Aim for 8–18 words each. Return only valid JSON in this exact shape: {\"ideas\":[\"...\", \"...\"]}. Choose facts you are confident are established.",
+          text:{format:{type:"json_object"}},
+          max_output_tokens:900,
           temperature:0.85,
-          max_completion_tokens:1400,
-          chat_template_kwargs:{enable_thinking:false}
-        });
-        const raw=result?.response??result?.choices?.[0]?.message?.content??result?.choices?.[0]?.text??result?.output_text??result?.content??"";
-        let output=(typeof raw==="string"?raw:Array.isArray(raw)?raw.map(x=>x?.text||"").join(" "):String(raw||"")).replace(/<think>[\s\S]*?<\/think>/gi,"").trim();
-        let ideas=[];
-        if(boxed){
-          ideas=output.split(/\r?\n/).map(line=>line.replace(/^\s*(?:\d+[.)]|[-*•])\s*/,"").replace(/^["'“”]+|["'“”]+$/g,"").trim()).filter(Boolean);
-        }else{
-          const match=output.match(/\{[\s\S]*\}/);
-          if(match){try{const parsed=JSON.parse(match[0]);ideas=Array.isArray(parsed.ideas)?parsed.ideas:[]}catch{}}
-          if(!ideas.length)ideas=output.split(/\r?\n/).map(line=>line.replace(/^\s*(?:\d+[.)]|[-*•])\s*/,"").replace(/^["'“”]+|["'“”]+$/g,"").trim()).filter(Boolean);
+          store:false
+        };
+        let response;
+        try{
+          response=await fetch("https://api.openai.com/v1/responses",{
+            method:"POST",
+            headers:{"Authorization":"Bearer "+env.OPENAI_API_KEY,"Content-Type":"application/json"},
+            body:JSON.stringify(requestBody),
+            signal:AbortSignal.timeout(26000)
+          });
+        }catch(error){
+          const timedOut=error?.name==="TimeoutError"||error?.name==="AbortError";
+          return json({error:timedOut?"OpenAI took longer than 26 seconds. Please try again.":"Could not connect to OpenAI. Please try again."},504,origin);
         }
-        ideas=ideas.map(x=>String(x).replace(/\s+/g," ").replace(/^["'“”]+|["'“”]+$/g,"").trim()).filter(x=>x&&x.length<=180).slice(0,10);
-        if(ideas.length!==10)return json({error:"The AI returned "+ideas.length+" usable ideas instead of 10. Please generate again.",diagnostic:{responseKeys:result&&typeof result==="object"?Object.keys(result):[]}},502,origin);
-        return json({account,ideas,generated_at:new Date().toISOString(),note:boxed?null:"Factodile facts should be checked against a reliable source before publishing."},200,origin);
+        const rawBody=await response.text();
+        let payload={};try{payload=JSON.parse(rawBody)}catch{}
+        if(!response.ok){
+          const detail=payload?.error?.message||("OpenAI API returned HTTP "+response.status);
+          return json({error:detail.slice(0,260)},response.status===429?429:502,origin);
+        }
+        let output=typeof payload.output_text==="string"?payload.output_text:"";
+        if(!output&&Array.isArray(payload.output)){
+          output=payload.output.flatMap(item=>Array.isArray(item.content)?item.content.map(part=>part.text||""):[]).join("\n");
+        }
+        let parsed;try{parsed=JSON.parse(output)}catch{}
+        let ideas=Array.isArray(parsed?.ideas)?parsed.ideas:[];
+        ideas=ideas.map(x=>String(x).replace(/\s+/g," ").trim()).filter(x=>x&&x.length<=180).slice(0,10);
+        if(ideas.length!==10)return json({error:"OpenAI responded, but did not return exactly 10 usable ideas. Please generate again."},502,origin);
+        return json({account,ideas,generated_at:new Date().toISOString(),model:"gpt-5.5",note:boxed?null:"Verify each factual claim against a reliable source before publishing."},200,origin);
       }
 
-      if (!env.DB) return json({ error: "D1 binding DB is not configured; RSS feed endpoint remains available." }, 503, origin);
-      if (request.method === "GET" && url.pathname === "/api/search") {
-        const keyword = (url.searchParams.get("keyword") || "").trim();
-        if (!keyword || keyword.length > 120) {
-          return json({ error: "Enter a keyword or phrase (maximum 120 characters)." }, 400, origin);
-        }
-        return json(await searchStories(env, keyword), 200, origin);
-      }
-
-      // Generate one short headline on demand (maximum nine words).
       if (request.method === "POST" && url.pathname === "/api/short-title") {
         if (!env.AI) return json({ error: "Workers AI binding AI is not configured." }, 503, origin);
         const body = await request.json();
