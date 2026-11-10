@@ -85,27 +85,31 @@ async function getFeed(feed) {
     return { items: [], error: error.message, diagnostic: null };
   }
 }
-async function fetchStories() {
-  const results=await Promise.all(DEFAULT_FEEDS.map(async feed=>({feed,...await getFeed(feed)})));
+async function getConfiguredFeeds(env) {
+  let custom = [], deleted = [];
+  if (env.DB) {
+    await env.DB.prepare("CREATE TABLE IF NOT EXISTS newsroom_source_overrides (feed_url TEXT PRIMARY KEY, deleted INTEGER NOT NULL DEFAULT 0, updated_at TEXT NOT NULL)").run();
+    const [customRows, overrideRows] = await Promise.all([
+      env.DB.prepare("SELECT name, feed_url, sport FROM newsroom_sources WHERE enabled = 1 ORDER BY priority ASC, name COLLATE NOCASE ASC").all(),
+      env.DB.prepare("SELECT feed_url FROM newsroom_source_overrides WHERE deleted = 1").all()
+    ]);
+    custom = (customRows.results || []).map(row => ({name:row.name,url:row.feed_url,sport:row.sport||"football"}));
+    deleted = (overrideRows.results || []).map(row => row.feed_url);
+  }
+  return [...DEFAULT_FEEDS, ...custom].filter(feed => !deleted.includes(feed.url))
+    .filter((feed,index,all)=>all.findIndex(item=>item.url===feed.url)===index);
+}
+async function fetchStories(env) {
+  const configured = await getConfiguredFeeds(env);
+  const results=await Promise.all(configured.map(async feed=>({feed,...await getFeed(feed)})));
   const seen=new Map();
   for(const story of results.flatMap(result=>result.items)){const key=story.title.toLowerCase().replace(/[^a-z0-9]+/g," ").trim().split(" ").filter(Boolean).slice(0,10).join(" ");const existing=seen.get(key);if(existing){existing.duplicateCount=(existing.duplicateCount||1)+1;existing.sources=[...(existing.sources||[existing.source]),story.source];}else seen.set(key,story);}
   return{stories:[...seen.values()].sort((a,b)=>b.timestamp-a.timestamp),feeds:results.map(({feed,items,error,diagnostic})=>({name:feed.name,sport:feed.sport,count:items.length,error,diagnostic})),fetched_at:new Date().toISOString()};
 }
 
 async function searchStories(env, keyword) {
-  const custom = await env.DB.prepare(
-    "SELECT name, feed_url, sport FROM newsroom_sources WHERE enabled = 1 ORDER BY priority ASC, name COLLATE NOCASE ASC"
-  ).all();
-  const configured = [
-    ...DEFAULT_FEEDS,
-    ...(custom.results || []).map(row => ({
-      name: row.name,
-      url: row.feed_url,
-      sport: row.sport || "football"
-    }))
-  ];
-  const uniqueFeeds = [...new Map(configured.map(feed => [feed.url, feed])).values()];
-  const results = await Promise.all(uniqueFeeds.map(async feed => ({ feed, ...await getFeed(feed) })));
+  const configured = await getConfiguredFeeds(env);
+  const results = await Promise.all(configured.map(async feed => ({ feed, ...await getFeed(feed) })));
   const needle = keyword.toLocaleLowerCase();
   const matches = results.flatMap(result => result.items)
     .filter(story => (story.title + " " + story.summary).toLocaleLowerCase().includes(needle))
@@ -144,10 +148,17 @@ function validFeedUrl(value) {
   } catch { return false; }
 }
 async function listSources(db) {
-  const result = await db.prepare(
-    "SELECT id, name, feed_url, sport, priority, enabled, created_at, updated_at, last_fetched_at FROM newsroom_sources ORDER BY priority ASC, name COLLATE NOCASE ASC"
-  ).all();
-  return (result.results || []).map(cleanSource);
+  await db.prepare("CREATE TABLE IF NOT EXISTS newsroom_source_overrides (feed_url TEXT PRIMARY KEY, deleted INTEGER NOT NULL DEFAULT 0, updated_at TEXT NOT NULL)").run();
+  const [result, overrides] = await Promise.all([
+    db.prepare("SELECT id, name, feed_url, sport, priority, enabled, created_at, updated_at, last_fetched_at FROM newsroom_sources ORDER BY priority ASC, name COLLATE NOCASE ASC").all(),
+    db.prepare("SELECT feed_url FROM newsroom_source_overrides WHERE deleted = 1").all()
+  ]);
+  const deleted = new Set((overrides.results || []).map(row=>row.feed_url));
+  const builtins = DEFAULT_FEEDS.map((feed,index)=>({
+    id:"builtin-"+index,name:feed.name,feed_url:feed.url,sport:feed.sport,priority:1,enabled:!deleted.has(feed.url),
+    is_default:true
+  }));
+  return [...builtins,...(result.results||[]).map(row=>({...cleanSource(row),is_default:false}))];
 }
 export default {
   async fetch(request, env) {
@@ -159,7 +170,7 @@ export default {
     }
     if (!ALLOWED_ORIGINS.has(origin) && origin !== "") return json({ error: "Origin not allowed." }, 403, origin);
     try {
-      if (request.method === "GET" && url.pathname === "/api/feed") return json(await fetchStories(),200,origin);
+      if (request.method === "GET" && url.pathname === "/api/feed") return json(await fetchStories(env),200,origin);
       if (request.method === "GET" && url.pathname === "/api/version") {
         return json({
           service: "thesportzine-newsroom",
@@ -290,6 +301,13 @@ export default {
         return json({ source: cleanSource(await env.DB.prepare("SELECT * FROM newsroom_sources WHERE id = ?").bind(match[1]).first()) }, 200, origin);
       }
       if (match && request.method === "DELETE") {
+        if (match[1].startsWith("builtin-")) {
+          const index = Number(match[1].slice(8));
+          const feed = DEFAULT_FEEDS[index];
+          if (!feed) return json({ error: "Source not found." }, 404, origin);
+          await env.DB.prepare("INSERT INTO newsroom_source_overrides (feed_url,deleted,updated_at) VALUES (?,1,?) ON CONFLICT(feed_url) DO UPDATE SET deleted=1,updated_at=excluded.updated_at").bind(feed.url,new Date().toISOString()).run();
+          return json({ ok:true,id:match[1] },200,origin);
+        }
         const result = await env.DB.prepare("DELETE FROM newsroom_sources WHERE id = ?").bind(match[1]).run();
         if (!result.meta?.changes) return json({ error: "Source not found." }, 404, origin);
         return json({ ok: true, id: match[1] }, 200, origin);
