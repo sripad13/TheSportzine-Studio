@@ -301,6 +301,12 @@ $('confirmCustomTime').onclick=()=>{const v=$('bufferDueAt').value;$('scheduleMo
 document.querySelectorAll('[data-close-modal]').forEach(b=>b.onclick=()=>b.closest('.modal-backdrop').classList.add('hidden'));
 document.querySelectorAll('.modal-backdrop').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.add('hidden')}));
 openEditor('Breaking With Text');
+if(incomingHeadline){
+ $('headline').value=incomingHeadline;
+ $('highlight').value='';
+ $('subtitle').value=incomingSource||'';
+ draw();
+}
 loadBufferChannels(false);
 loadBufferInsights(false);
 </script>
