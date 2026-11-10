@@ -1,0 +1,11 @@
+name = "thesportzine-buffer-api"
+main = "buffer-worker.js"
+compatibility_date = "2026-11-10"
+workers_dev = true
+
+[[r2_buckets]]
+binding = "MEDIA_BUCKET"
+bucket_name = "thesportzine-studio-media"
+
+[vars]
+MEDIA_PUBLIC_BASE_URL = "https://pub-8e104d03e4514a40b722c36161da36e3.r2.dev"
