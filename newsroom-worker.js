@@ -144,6 +144,53 @@ async function fetchGoogleTrends(windowName){
  }).filter(Boolean).sort((a,b)=>(Number(b.search_volume)||0)-(Number(a.search_volume)||0)).slice(0,30);
 }
 
+
+function extractHtmlAttribute(tag,name){const re=new RegExp("\\b"+name+"\\s*=\\s*(?:\"([^\"]*)\"|'([^']*)'|([^\\s>]+))","i");const m=tag.match(re);return m?(m[1]||m[2]||m[3]||"").trim():"";}
+function decodeHtml(value){return String(value||"").replace(/&amp;/g,"&").replace(/&quot;/g,'"').replace(/&#39;|&apos;/g,"'").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&#(\\d+);/g,(_,n)=>String.fromCharCode(Number(n))).replace(/&#x([\\da-f]+);/gi,(_,n)=>String.fromCharCode(parseInt(n,16)));}
+async function auditSiteUrl(raw){
+ let target;try{target=new URL(raw)}catch{return {error:"Enter a valid URL."}}
+ if(!["http:","https:"].includes(target.protocol)||!["thesportzine.com","www.thesportzine.com"].includes(target.hostname.toLowerCase())||target.username||target.password)return {error:"Only public thesportzine.com URLs are allowed."};
+ target.hash="";
+ const started=Date.now();
+ const response=await fetch(target.href,{redirect:"manual",headers:{"User-Agent":"TheSportzine-SEO-Audit/1.0 (+https://thesportzine.com)","Accept":"text/html,application/xhtml+xml"},signal:AbortSignal.timeout(12000)});
+ const elapsed=Date.now()-started;
+ if(response.status>=300&&response.status<400)return {error:"The URL redirects (HTTP "+response.status+"). Audit the final destination URL directly."};
+ const type=response.headers.get("content-type")||"";
+ if(!response.ok)return {error:"Page returned HTTP "+response.status+"."};
+ if(!/text\\/html|application\\/xhtml\\+xml/i.test(type))return {error:"The URL did not return an HTML page ("+type+")."};
+ const reader=response.body?.getReader();let html="",bytes=0;
+ if(reader){while(true){const part=await reader.read();if(part.done)break;bytes+=part.value.byteLength;if(bytes>1500000){await reader.cancel();return {error:"Page exceeds the 1.5 MB audit limit."};}html+=new TextDecoder().decode(part.value,{stream:true});}html+=new TextDecoder().decode();}
+ else html=await response.text();
+ const titleMatch=html.match(/<title\\b[^>]*>([\\s\\S]*?)<\\/title>/i);
+ const title=titleMatch?decodeHtml(titleMatch[1].replace(/<[^>]+>/g," ").replace(/\\s+/g," ").trim()):"";
+ const metaTags=html.match(/<meta\\b[^>]*>/gi)||[];
+ const metaContent=name=>{const tag=metaTags.find(t=>extractHtmlAttribute(t,"name").toLowerCase()===name);return tag?decodeHtml(extractHtmlAttribute(tag,"content")):"";};
+ const description=metaContent("description"),robots=metaContent("robots")||metaContent("googlebot");
+ const canonicalTag=(html.match(/<link\\b[^>]*>/gi)||[]).find(t=>extractHtmlAttribute(t,"rel").toLowerCase().split(/\\s+/).includes("canonical"));
+ const canonical=canonicalTag?extractHtmlAttribute(canonicalTag,"href"):"";
+ const h1=(html.match(/<h1\\b[^>]*>/gi)||[]).length,h2=(html.match(/<h2\\b[^>]*>/gi)||[]).length;
+ const images=html.match(/<img\\b[^>]*>/gi)||[],missingAlt=images.filter(t=>!extractHtmlAttribute(t,"alt")).length;
+ const links=html.match(/<a\\b[^>]*href\\s*=\\s*(?:"[^"]*"|'[^']*'|[^\\s>]+)/gi)||[];
+ const base=new URL(target.href),internal=links.filter(t=>{const href=extractHtmlAttribute(t,"href");try{return new URL(href,base).hostname===base.hostname}catch{return false}}).length;
+ const textContent=html.replace(/<script\\b[\\s\\S]*?<\\/script>|<style\\b[\\s\\S]*?<\\/style>/gi," ").replace(/<[^>]+>/g," ").replace(/&nbsp;|&#160;/g," ").replace(/\\s+/g," ").trim();
+ const wordCount=textContent?textContent.split(/\\s+/).length:0;
+ const checks=[];
+ const add=(ok,label,detail)=>checks.push({status:ok?"pass":"warning",label,detail});
+ add(!!title,"HTML title",title?title.length+" characters":"Missing title tag.");
+ add(title.length>=30&&title.length<=60,"Title length",title.length+" characters; editorial target is roughly 30–60.");
+ add(!!description,"Meta description",description?description.length+" characters":"Missing meta description.");
+ add(description.length>=120&&description.length<=160,"Description length",description.length+" characters; target roughly 120–160.");
+ add(h1===1,"Single H1",h1+" H1 elements found; aim for one descriptive H1.");
+ add(h2>0,"H2 structure",h2+" H2 elements found.");
+ add(!!canonical,"Canonical URL",canonical||"No canonical link found.");
+ add(!/noindex/i.test(robots),"Indexability",robots||"No noindex directive found in meta robots.");
+ add(images.length===0||missingAlt===0,"Image alt text",missingAlt+" of "+images.length+" images lack an alt attribute.");
+ add(internal>0,"Internal links",internal+" internal links detected.");
+ add(wordCount>=300,"Visible content",wordCount+" approximate visible words; thin pages may be intentional.");
+ const score=Math.round(checks.filter(c=>c.status==="pass").length/checks.length*100);
+ return {url:target.href,status:response.status,response_time_ms:elapsed,content_type:type,content_bytes:bytes,title,meta_description:description,canonical,h1,h2,image_count:images.length,images_missing_alt:missingAlt,internal_links:internal,word_count:wordCount,robots,score,checks,audited_at:new Date().toISOString()};
+}
+
 async function fetchStories(env) {
   const configured = await getConfiguredFeeds(env);
   const results=await Promise.all(configured.map(async feed=>({feed,...await getFeed(feed)})));
@@ -219,6 +266,12 @@ export default {
     if (!ALLOWED_ORIGINS.has(origin) && origin !== "") return json({ error: "Origin not allowed." }, 403, origin);
     try {
 
+      if (request.method === "GET" && url.pathname === "/api/seo/audit") {
+        const raw=url.searchParams.get("url")||"";
+        const result=await auditSiteUrl(raw);
+        if(result.error)return json({error:result.error},400,origin);
+        return json(result,200,origin);
+      }
       if (request.method === "GET" && url.pathname === "/api/trends") {
         const windowName=url.searchParams.get("window")||"rising";
         if(!["rising","hot","trending"].includes(windowName))return json({error:"Window must be rising, hot or trending."},400,origin);
