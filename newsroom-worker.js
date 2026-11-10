@@ -112,15 +112,24 @@ async function getRedditStories(env, sort="new") {
   await env.DB.prepare("CREATE TABLE IF NOT EXISTS newsroom_subreddits (id TEXT PRIMARY KEY, subreddit TEXT NOT NULL UNIQUE, sport TEXT NOT NULL DEFAULT 'general', created_at TEXT NOT NULL)").run();
   const rows=await env.DB.prepare("SELECT subreddit,sport FROM newsroom_subreddits ORDER BY subreddit COLLATE NOCASE").all();
   const outcomes=await Promise.all((rows.results||[]).map(async row=>{
-    const url="https://www.reddit.com/r/"+encodeURIComponent(row.subreddit)+"/.rss?sort="+safeSort+"&limit=25";
-    try {
-      const response=await fetch(url,{headers:{"Accept":"application/atom+xml, application/rss+xml, application/xml, text/xml","User-Agent":"Mozilla/5.0 (compatible; TheSportzineNewsroom/1.0; +https://newsroom.falsewinger.com)","Cache-Control":"no-cache"},signal:AbortSignal.timeout(10000)});
-      if(!response.ok)throw new Error("Reddit returned HTTP "+response.status);
-      const xml=await response.text();
-      if(!/<(feed|rss|rdf:RDF)\b/i.test(xml))throw new Error("Reddit did not return an RSS/Atom feed");
-      const items=parseFeed(xml,{name:"r/"+row.subreddit,sport:sportCode(row.sport)});
-      return {items:items.map(item=>({...item,id:"reddit:"+item.id,isReddit:true,redditSort:safeSort})),error:null};
-    } catch(error) { return {items:[],error:"r/"+row.subreddit+": "+error.message}; }
+    const base="https://www.reddit.com/r/"+encodeURIComponent(row.subreddit)+"/";
+    const headers={"Accept":"application/atom+xml, application/rss+xml, application/xml, text/xml, application/json","User-Agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36","Cache-Control":"no-cache"};
+    let lastError="Reddit feed unavailable";
+    for(const candidate of [base+".rss?sort="+safeSort+"&limit=25","https://old.reddit.com/r/"+encodeURIComponent(row.subreddit)+"/.rss?sort="+safeSort+"&limit=25",base+safeSort+".json?limit=25&raw_json=1"]){
+      try{
+        const response=await fetch(candidate,{headers,signal:AbortSignal.timeout(10000),redirect:"follow"});
+        if(!response.ok){lastError="Reddit returned HTTP "+response.status;continue;}
+        const body=await response.text();let items=[];
+        if(/<(feed|rss|rdf:RDF)\\b/i.test(body))items=parseFeed(body,{name:"r/"+row.subreddit,sport:sportCode(row.sport)});
+        else{
+          const data=JSON.parse(body),children=data?.data?.children||[];
+          items=children.map(({data:p})=>({id:"reddit:"+p.id,title:p.title||"",summary:String(p.selftext||"").slice(0,420),link:"https://www.reddit.com"+(p.permalink||""),source:"r/"+row.subreddit,sport:sportCode(row.sport),published:p.created_utc?new Date(p.created_utc*1000).toISOString():"",timestamp:p.created_utc?Math.round(p.created_utc*1000):0,timeLabel:p.created_utc?new Date(p.created_utc*1000).toLocaleString("en-GB",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit",timeZone:"UTC"})+" UTC":"Time unavailable",breaking:false,priority:false,isReddit:true,redditSort:safeSort}));
+        }
+        if(items.length)return {items,error:null};
+        lastError="Reddit returned no parseable posts";
+      }catch(error){lastError=error.message||lastError;}
+    }
+    return {items:[],error:"r/"+row.subreddit+": "+lastError};
   }));
   return {stories:outcomes.flatMap(x=>x.items),errors:outcomes.map(x=>x.error).filter(Boolean)};
 }
@@ -176,15 +185,18 @@ function validFeedUrl(value) {
 }
 async function listSources(db) {
   await db.prepare("CREATE TABLE IF NOT EXISTS newsroom_source_overrides (feed_url TEXT PRIMARY KEY, deleted INTEGER NOT NULL DEFAULT 0, updated_at TEXT NOT NULL)").run();
-  const [result, overrides] = await Promise.all([
+  await db.prepare("CREATE TABLE IF NOT EXISTS newsroom_source_edits (feed_url TEXT PRIMARY KEY, name TEXT, override_feed_url TEXT, sport TEXT, updated_at TEXT NOT NULL)").run();
+  const [result, overrides, edits] = await Promise.all([
     db.prepare("SELECT id, name, feed_url, sport, priority, enabled, created_at, updated_at, last_fetched_at FROM newsroom_sources ORDER BY priority ASC, name COLLATE NOCASE ASC").all(),
-    db.prepare("SELECT feed_url FROM newsroom_source_overrides WHERE deleted = 1").all()
+    db.prepare("SELECT feed_url FROM newsroom_source_overrides WHERE deleted = 1").all(),
+    db.prepare("SELECT feed_url,name,override_feed_url,sport FROM newsroom_source_edits").all()
   ]);
   const deleted = new Set((overrides.results || []).map(row=>row.feed_url));
-  const builtins = DEFAULT_FEEDS.map((feed,index)=>({
-    id:"builtin-"+index,name:feed.name,feed_url:feed.url,sport:feed.sport,priority:1,enabled:true,
-    is_default:true
-  })).filter(feed=>!deleted.has(feed.feed_url));
+  const editMap = new Map((edits.results || []).map(row=>[row.feed_url,row]));
+  const builtins = DEFAULT_FEEDS.map((feed,index)=>{
+    const edit=editMap.get(feed.url)||{};
+    return {id:"builtin-"+index,name:edit.name||feed.name,feed_url:edit.override_feed_url||feed.url,sport:edit.sport||feed.sport,priority:1,enabled:true,is_default:true};
+  }).filter(feed=>!deleted.has(feed.url));
   return [...builtins,...(result.results||[]).map(row=>({...cleanSource(row),is_default:false}))];
 }
 export default {
@@ -333,6 +345,17 @@ export default {
         return json({ source: (await env.DB.prepare("SELECT * FROM newsroom_sources WHERE id = ?").bind(id).first()) }, 201, origin);
       }
       const match = url.pathname.match(/^\/api\/sources\/([a-z0-9-]{1,80})$/i);
+      if (match && request.method === "PATCH" && match[1].startsWith("builtin-")) {
+        const index=Number(match[1].slice(8)),feed=DEFAULT_FEEDS[index];
+        if(!feed)return json({error:"Source not found."},404,origin);
+        const body=await request.json(),name=String(body.name??feed.name).trim(),feedUrl=String(body.feed_url??feed.url).trim(),sport=String(body.sport??feed.sport).trim();
+        if(!name||name.length>100)return json({error:"Publication name is required (maximum 100 characters)."},400,origin);
+        if(!validFeedUrl(feedUrl)||feedUrl.length>2048)return json({error:"Enter a valid public HTTP or HTTPS RSS/Atom URL."},400,origin);
+        if(!sport||sport.length>60)return json({error:"A valid sport tag is required."},400,origin);
+        await env.DB.prepare("CREATE TABLE IF NOT EXISTS newsroom_source_edits (feed_url TEXT PRIMARY KEY, name TEXT, override_feed_url TEXT, sport TEXT, updated_at TEXT NOT NULL)").run();
+        await env.DB.prepare("INSERT INTO newsroom_source_edits (feed_url,name,override_feed_url,sport,updated_at) VALUES (?,?,?,?,?) ON CONFLICT(feed_url) DO UPDATE SET name=excluded.name,override_feed_url=excluded.override_feed_url,sport=excluded.sport,updated_at=excluded.updated_at").bind(feed.url,name,feedUrl===feed.url?null:feedUrl,sport,new Date().toISOString()).run();
+        return json({ok:true,id:match[1]},200,origin);
+      }
       if (match && request.method === "PATCH") {
         const current = await env.DB.prepare("SELECT * FROM newsroom_sources WHERE id = ?").bind(match[1]).first();
         if (!current) return json({ error: "Source not found." }, 404, origin);
