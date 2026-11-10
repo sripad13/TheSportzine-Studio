@@ -1,26 +1,28 @@
 # TheSportzine Studio — Newsroom
 
-The Studio now has two modules: **Newsroom** (root) and **Graphics** (/graphics.html).
+The Studio has two modules: **Newsroom** (root) and the original **Graphics editor** at `/graphics.html`.
 
-## Domain
-GitHub Pages custom domain: `newsroom.falsewinger.com`. The repository CNAME file must match. Add/verify the custom domain in GitHub Pages and point the DNS CNAME at the GitHub Pages host. Do not remove the existing DNS record until the new domain is verified and serving correctly.
+## Newsroom interface
+The root page is a TweetDeck-inspired editorial workspace: independently scrolling, resizable columns; All Sports, Football, Formula 1 and Breaking workspaces; keyword columns; saved stories; and a right-side story inspection drawer. Column layout and saved stories persist in the current browser.
 
-## Newsroom Phase 1
-- Editorial feed UI for Football and Formula 1.
-- Article Desk, Social Desk, Breaking queue and Saved stories.
-- Rules-based editorial triage; this is not AI fact-checking.
-- RSS API in `newsroom-worker.js`; deployment config in `wrangler.toml`.
-- Optional persistence schema in `newsroom-schema.sql`.
+## RSS aggregation API
+The Worker exposes:
+- `GET /api/health` — service health and D1 status.
+- `GET /api/feed` — fetches the configured football and F1 RSS/Atom feeds, extracts headlines/excerpts and source links, and groups exact/near-exact headline matches.
 
-## Deploy RSS Worker
-1. Create a Cloudflare Worker named `thesportzine-newsroom-api`.
-2. Deploy `newsroom-worker.js` with the provided `wrangler.toml` or paste it into the Worker editor.
-3. Attach `newsroom-api.falsewinger.com` as a Worker custom domain. If using a route, ensure the zone is `falsewinger.com`.
-4. Test `https://newsroom-api.falsewinger.com/health` and `/feed` from the newsroom site.
-5. The UI currently uses browser local storage for saved stories and desk decisions. Shared users and cross-device persistence require D1 and authenticated endpoints.
+Configured feeds: BBC Sport Football, Sky Sports Football, BBC Sport Formula 1, Sky Sports Formula 1, Autosport F1, Motorsport.com F1 and Formula1.com. Feed availability and formats can change; individual failures are returned in the `feeds` array while other sources continue to load. The initial editorial priority/breaking flags are keyword heuristics, not AI analysis or fact-checking.
 
-## RSS and publisher terms
-Configured feeds: BBC Sport Football, Sky Sports Football, BBC Sport Formula 1, Sky Sports Formula 1, Autosport F1 and Motorsport.com F1. Feed availability can change. The Guardian feed is listed in the UI but disabled pending commercial-use permission. Formula1.com is intentionally disabled: its published RSS terms prohibit commercial aggregation and republishing. Check each publisher's current terms before production use. Headlines/excerpts should link directly to the source; do not copy full articles or images.
+### Deploy
+1. Deploy `newsroom-worker.js` as the Cloudflare Worker `thesportzine-newsroom-api`.
+2. Attach the custom domain `newsroom-api.falsewinger.com`.
+3. In the Newsroom header, enter `https://newsroom-api.falsewinger.com` and select **Connect**.
+4. Test `https://newsroom-api.falsewinger.com/api/health` and `/api/feed`.
+5. D1 is only required for the existing source-management endpoints. Add the binding and apply `newsroom-schema.sql` if you want to use those endpoints; RSS aggregation itself does not require D1.
+
+The Newsroom API CORS allowlist includes `https://newsroom.falsewinger.com` and the GitHub Pages origin. Cloudflare Access should be used to protect the app/API if desired; CORS is not authentication.
+
+## RSS terms and editorial use
+Formula1.com is included as requested. Personal use does not by itself establish permission under a publisher's feed terms, so confirm the current terms and keep use within the permitted scope. Feed access is not permission to republish full articles or images. The interface displays headlines and short feed excerpts with links to the publisher. Review each publisher's terms before any wider distribution.
 
 ## Graphics module
-The original graphics editor is preserved at `graphics.html`. Its Buffer integration continues to use `buffer-worker.js`; the new hostname must be added to that Worker CORS allowlist.
+The original graphics editor remains preserved at `graphics.html`. Its Buffer integration continues to use `buffer-worker.js`; the Newsroom hostname has been added to that Worker's CORS allowlist.
