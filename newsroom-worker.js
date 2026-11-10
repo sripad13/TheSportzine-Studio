@@ -146,7 +146,7 @@ async function fetchGoogleTrends(windowName){
 
 
 function extractHtmlAttribute(tag,name){const re=new RegExp("\\b"+name+"\\s*=\\s*(?:\"([^\"]*)\"|'([^']*)'|([^\\s>]+))","i");const m=tag.match(re);return m?(m[1]||m[2]||m[3]||"").trim():"";}
-function decodeHtml(value){return String(value||"").replace(/&amp;/g,"&").replace(/&quot;/g,'"').replace(/&#39;|&apos;/g,"'").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&#(\\d+);/g,(_,n)=>String.fromCharCode(Number(n))).replace(/&#x([\\da-f]+);/gi,(_,n)=>String.fromCharCode(parseInt(n,16)));}
+function decodeHtml(value){return String(value||"").replace(/&amp;/g,"&").replace(/&quot;/g,'"').replace(/&#39;|&apos;/g,"'").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&#(\d+);/g,(_,n)=>String.fromCharCode(Number(n))).replace(/&#x([\da-f]+);/gi,(_,n)=>String.fromCharCode(parseInt(n,16)));}
 async function auditSiteUrl(raw){
  let target;try{target=new URL(raw)}catch{return {error:"Enter a valid URL."}}
  if(!["http:","https:"].includes(target.protocol)||!["thesportzine.com","www.thesportzine.com"].includes(target.hostname.toLowerCase())||target.username||target.password)return {error:"Only public thesportzine.com URLs are allowed."};
@@ -157,23 +157,23 @@ async function auditSiteUrl(raw){
  if(response.status>=300&&response.status<400)return {error:"The URL redirects (HTTP "+response.status+"). Audit the final destination URL directly."};
  const type=response.headers.get("content-type")||"";
  if(!response.ok)return {error:"Page returned HTTP "+response.status+"."};
- if(!/text\\/html|application\\/xhtml\\+xml/i.test(type))return {error:"The URL did not return an HTML page ("+type+")."};
+ if(!/text\/html|application\/xhtml\+xml/i.test(type))return {error:"The URL did not return an HTML page ("+type+")."};
  const reader=response.body?.getReader();let html="",bytes=0;
  if(reader){while(true){const part=await reader.read();if(part.done)break;bytes+=part.value.byteLength;if(bytes>1500000){await reader.cancel();return {error:"Page exceeds the 1.5 MB audit limit."};}html+=new TextDecoder().decode(part.value,{stream:true});}html+=new TextDecoder().decode();}
  else html=await response.text();
- const titleMatch=html.match(/<title\\b[^>]*>([\\s\\S]*?)<\\/title>/i);
- const title=titleMatch?decodeHtml(titleMatch[1].replace(/<[^>]+>/g," ").replace(/\\s+/g," ").trim()):"";
- const metaTags=html.match(/<meta\\b[^>]*>/gi)||[];
+ const titleMatch=html.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i);
+ const title=titleMatch?decodeHtml(titleMatch[1].replace(/<[^>]+>/g," ").replace(/\s+/g," ").trim()):"";
+ const metaTags=html.match(/<meta\b[^>]*>/gi)||[];
  const metaContent=name=>{const tag=metaTags.find(t=>extractHtmlAttribute(t,"name").toLowerCase()===name);return tag?decodeHtml(extractHtmlAttribute(tag,"content")):"";};
  const description=metaContent("description"),robots=metaContent("robots")||metaContent("googlebot");
- const canonicalTag=(html.match(/<link\\b[^>]*>/gi)||[]).find(t=>extractHtmlAttribute(t,"rel").toLowerCase().split(/\\s+/).includes("canonical"));
+ const canonicalTag=(html.match(/<link\b[^>]*>/gi)||[]).find(t=>extractHtmlAttribute(t,"rel").toLowerCase().split(/\s+/).includes("canonical"));
  const canonical=canonicalTag?extractHtmlAttribute(canonicalTag,"href"):"";
- const h1=(html.match(/<h1\\b[^>]*>/gi)||[]).length,h2=(html.match(/<h2\\b[^>]*>/gi)||[]).length;
- const images=html.match(/<img\\b[^>]*>/gi)||[],missingAlt=images.filter(t=>!extractHtmlAttribute(t,"alt")).length;
- const links=html.match(/<a\\b[^>]*href\\s*=\\s*(?:"[^"]*"|'[^']*'|[^\\s>]+)/gi)||[];
+ const h1=(html.match(/<h1\b[^>]*>/gi)||[]).length,h2=(html.match(/<h2\b[^>]*>/gi)||[]).length;
+ const images=html.match(/<img\b[^>]*>/gi)||[],missingAlt=images.filter(t=>!extractHtmlAttribute(t,"alt")).length;
+ const links=html.match(/<a\b[^>]*href\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi)||[];
  const base=new URL(target.href),internal=links.filter(t=>{const href=extractHtmlAttribute(t,"href");try{return new URL(href,base).hostname===base.hostname}catch{return false}}).length;
- const textContent=html.replace(/<script\\b[\\s\\S]*?<\\/script>|<style\\b[\\s\\S]*?<\\/style>/gi," ").replace(/<[^>]+>/g," ").replace(/&nbsp;|&#160;/g," ").replace(/\\s+/g," ").trim();
- const wordCount=textContent?textContent.split(/\\s+/).length:0;
+ const textContent=html.replace(/<script\b[\s\S]*?<\/script>|<style\b[\s\S]*?<\/style>/gi," ").replace(/<[^>]+>/g," ").replace(/&nbsp;|&#160;/g," ").replace(/\s+/g," ").trim();
+ const wordCount=textContent?textContent.split(/\s+/).length:0;
  const checks=[];
  const add=(ok,label,detail)=>checks.push({status:ok?"pass":"warning",label,detail});
  add(!!title,"HTML title",title?title.length+" characters":"Missing title tag.");
