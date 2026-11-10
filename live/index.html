@@ -148,7 +148,7 @@ const feeds=[
 {name:'Motorsport.com F1',sport:'f1',url:'https://www.motorsport.com/rss/f1/news/',enabled:true},
 {name:'Formula1.com',sport:'f1',url:'https://www.formula1.com/content/fom-website/en/latest/all.xml',enabled:true}
 ];
-let columns=JSON.parse(localStorage.getItem('tsz_columns')||'null')||defaultColumns;let stories=[];let saved=new Set(JSON.parse(localStorage.getItem('tsz_saved')||'[]'));let activeWorkspace='All Sports';let selected=null;let generatedTitles=new Map();let refreshing=false;let lastRefreshAt=0;
+let columns=JSON.parse(localStorage.getItem('tsz_columns')||'null')||defaultColumns;columns=columns.map(col=>col.type==='saved'&&col.id==='c6'?{...col,type:'reddit',name:'Reddit'}:col);if(!columns.some(col=>col.type==='reddit'))columns.push({id:'c6',type:'reddit',name:'Reddit'});let stories=[];let saved=new Set(JSON.parse(localStorage.getItem('tsz_saved')||'[]'));let activeWorkspace='All Sports';let selected=null;let generatedTitles=new Map();let refreshing=false;let lastRefreshAt=0;
 const $=s=>document.querySelector(s);const esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function persist(){localStorage.setItem('tsz_columns',JSON.stringify(columns));}
 function setStatus(t,kind=''){const el=$('#status');el.textContent=t;el.className='status '+kind}
