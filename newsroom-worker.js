@@ -124,6 +124,13 @@ export default {
     if (!ALLOWED_ORIGINS.has(origin) && origin !== "") return json({ error: "Origin not allowed." }, 403, origin);
     try {
       if (request.method === "GET" && url.pathname === "/api/feed") return json(await fetchStories(),200,origin);
+      if (request.method === "GET" && url.pathname === "/api/version") {
+        return json({
+          service: "thesportzine-newsroom",
+          workerVersion: "headline-fix-2026-11-10-02",
+          headlineModel: "@cf/google/gemma-4-26b-a4b-it"
+        }, 200, origin);
+      }
       if (request.method === "GET" && url.pathname === "/api/health") {
         if (env.DB) await env.DB.prepare("SELECT 1 AS ok").first();
         return json({ ok: true, service: "thesportzine-newsroom", database: env.DB ? "connected" : "not_configured", feeds: "available" }, 200, origin);
