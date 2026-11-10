@@ -138,7 +138,7 @@ body{background:#0b0d12;color:#edf1f7}
 
  .priority-search{display:flex;gap:7px}.priority-search input{flex:1;min-width:0}.priority-search .btn{white-space:nowrap;padding:7px 13px}
 </style></head><body>
-<header class="top"><a class="brand" href="/" style="text-decoration:none;color:inherit">THE SPORTZINE <em>NEWSROOM</em></a><nav class="workspaces" id="workspaces"><button class="ws active" data-ws="All Sports">All Sports</button><button class="ws" data-ws="Football">Football</button><button class="ws" data-ws="Formula 1">Formula 1</button><button class="ws" data-ws="Breaking">Breaking</button></nav><div class="topright"><span class="status" id="status">Preview mode</span><a class="btn primary" href="/post/" style="text-decoration:none">Create Post</a><details class="settings-menu" id="settingsMenu"><summary class="btn">Settings ▾</summary><div class="settings-panel"><label for="apiBase">Newsroom API URL</label><input class="api" id="apiBase" value="https://newsroom-api.falsewinger.com" aria-label="Newsroom API URL"><button class="btn" id="connect">Connect</button><a class="btn" id="sourcesButton" href="/live/sources/">Sources</a><button class="btn" id="savedStoriesButton">Saved Stories</button><button class="btn" id="addColumn">＋ Column</button></div></details></div></header>
+<header class="top"><a class="brand" href="/" style="text-decoration:none;color:inherit">THE SPORTZINE <em>NEWSROOM</em></a><nav class="workspaces" id="workspaces"><button class="ws active" data-ws="All Sports">All Sports</button><button class="ws" data-ws="Football">Football</button><button class="ws" data-ws="Formula 1">Formula 1</button><button class="ws" data-ws="Breaking">Breaking</button></nav><div class="topright"><span class="status" id="status">Preview mode</span><a class="btn primary" href="/post/" target="_blank" rel="noopener" style="text-decoration:none">Create Post</a><details class="settings-menu" id="settingsMenu"><summary class="btn">Settings ▾</summary><div class="settings-panel"><label for="apiBase">Newsroom API URL</label><input class="api" id="apiBase" value="https://newsroom-api.falsewinger.com" aria-label="Newsroom API URL"><button class="btn" id="connect">Connect</button><a class="btn" id="sourcesButton" href="/live/sources/">Sources</a><button class="btn" id="savedStoriesButton">Saved Stories</button><button class="btn" id="addColumn">＋ Column</button></div></details></div></header>
 <div class="bar"><input id="globalSearch" placeholder="Search stories, clubs, drivers…"><button class="btn" id="refresh">↻ Refresh</button></div>
 <main class="board" id="board" aria-label="Newsroom columns"></main>
 <aside class="drawer" id="drawer"><div class="dhead"><strong></strong><button class="tiny" id="closeDrawer">✕</button></div><div class="dcontent" id="detail"><div class="empty">Select a story to inspect it.</div></div></aside>
@@ -194,6 +194,7 @@ function storyCard(s,col){const keyword=String(col?.keyword||'').trim().toLowerC
 
 async function createPostFromStory(id){
  const s=stories.find(x=>x.id===id)||redditStories.find(x=>x.id===id);if(!s)return;
+ const postTab=window.open('/post/','_blank');
  const button=$('#createPostFromStory');if(button){button.disabled=true;button.textContent='Preparing…'}
  const error=$('#createPostError');if(error)error.textContent='';
  try{
@@ -208,8 +209,9 @@ async function createPostFromStory(id){
   }
   const caption=plainArticleText(s.summary||s.description||s.contentSnippet||'').slice(0,280);
   const params=new URLSearchParams({headline:item.title,subtitle:'Source: '+s.source,caption});
-  window.location.href='/post/?'+params.toString();
+  if(postTab&&!postTab.closed)postTab.location.href='/post/?'+params.toString();else throw new Error('Your browser blocked the new tab. Allow pop-ups for newsroom.falsewinger.com and try again.');
  }catch(e){
+  if(postTab&&!postTab.closed)postTab.close();
   if(error)error.textContent=e.message||'Could not prepare the post.';
   if(button){button.disabled=false;button.textContent='Create Post'}
  }
