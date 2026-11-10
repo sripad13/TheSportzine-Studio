@@ -155,9 +155,9 @@ async function listSources(db) {
   ]);
   const deleted = new Set((overrides.results || []).map(row=>row.feed_url));
   const builtins = DEFAULT_FEEDS.map((feed,index)=>({
-    id:"builtin-"+index,name:feed.name,feed_url:feed.url,sport:feed.sport,priority:1,enabled:!deleted.has(feed.url),
+    id:"builtin-"+index,name:feed.name,feed_url:feed.url,sport:feed.sport,priority:1,enabled:true,
     is_default:true
-  }));
+  })).filter(feed=>!deleted.has(feed.feed_url));
   return [...builtins,...(result.results||[]).map(row=>({...cleanSource(row),is_default:false}))];
 }
 export default {
