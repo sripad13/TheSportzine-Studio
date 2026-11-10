@@ -136,7 +136,7 @@ if(behindText&&subjectMaskImage&&geo){
  fctx.globalCompositeOperation='destination-in';fctx.drawImage(subjectMaskImage,geo.x,geo.y,geo.w,geo.h);fctx.globalCompositeOperation='source-over';
  ctx.drawImage(foreground,0,0);
 }
-const placement=$('placement').value,alpha=+$('gradient').value/100,grad=ctx.createLinearGradient(0,placement==='bottom'?H*.53:0,0,placement==='bottom'?H: H*.47);if(placement==='bottom'){grad.addColorStop(0,'rgba(12,10,17,0)');grad.addColorStop(.25,`rgba(12,10,17,${Math.min(1,alpha*.92)})`);grad.addColorStop(1,`rgba(12,10,17,${Math.min(1,alpha+.3)})`)}else{grad.addColorStop(0,`rgba(12,10,17,${alpha})`);grad.addColorStop(1,'rgba(12,10,17,0)')}ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);
+const placement=$('placement').value,alpha=+$('gradient').value/100,grad=ctx.createLinearGradient(0,placement==='bottom'?H*.5:0,0,placement==='bottom'?H:H*.47);if(placement==='bottom'){grad.addColorStop(0,'rgba(12,10,17,0)');grad.addColorStop(1,'rgba(12,10,17,1)')}else{grad.addColorStop(0,`rgba(12,10,17,${alpha})`);grad.addColorStop(1,'rgba(12,10,17,0)')}ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);
 const wordmarkEl=$('wordmarkBrand'),shieldEl=$('squareBrand');const watermarkMode=$('watermark').value;wordmarkEl.style.display=(watermarkMode==='wordmark'||watermarkMode==='both')?'block':'none';shieldEl.style.display='block';wordmarkEl.style.top=(placement==='bottom'?'69.5%':'13%');
 const headline=$('headline').value.trim().toUpperCase(),highlight=$('highlight').value.trim().toUpperCase(),align=$('alignment').value,anchor=align==='left'?5:align==='right'?W-5:W/2,maxWidth=W-10;
 // Headline and oversized background word are independent layers.
