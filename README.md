@@ -1,52 +1,28 @@
-# Sports Studio
+# TheSportzine Studio — Newsroom
 
-Sports Studio is a browser-based sports editorial graphics editor prototype.
+The Studio has two modules: **Newsroom** (root) and the original **Graphics editor** at `/graphics.html`.
 
-## Run locally
-Open `index.html` in a modern browser, or serve this directory with any static web server.
+## Newsroom interface
+The root page is a TweetDeck-inspired editorial workspace: independently scrolling, resizable columns; All Sports, Football, Formula 1 and Breaking workspaces; keyword columns; saved stories; and a right-side story inspection drawer. Column layout and saved stories persist in the current browser.
 
-## Prototype features
-- 1080 × 1440 (3:4) canvas
-- League Gothic headline typography via Google Fonts
-- Image upload and clipboard paste
-- Drag-to-reposition and zoom
-- Comma-separated highlighted phrases
-- Headline wrapping and PNG export
-- Optional MediaPipe face detection (requires internet access)
+## RSS aggregation API
+The Worker exposes:
+- `GET /api/health` — service health and D1 status.
+- `GET /api/feed` — fetches the configured football and F1 RSS/Atom feeds, extracts headlines/excerpts and source links, and groups exact/near-exact headline matches.
 
-## Deploy with GitHub Pages
-The included GitHub Actions workflow deploys the repository root to GitHub Pages when changes are pushed to `main`. In repository Settings → Pages, select **GitHub Actions** as the build and deployment source if it is not already selected.
+Configured feeds: BBC Sport Football, Sky Sports Football, BBC Sport Formula 1, Sky Sports Formula 1, Autosport F1, Motorsport.com F1 and Formula1.com. Feed availability and formats can change; individual failures are returned in the `feeds` array while other sources continue to load. The initial editorial priority/breaking flags are keyword heuristics, not AI analysis or fact-checking.
 
-## Current limitations
-This is an MVP prototype, not the full production application. Cloud project storage, full layer editing, the exact supplied logo image assets, and the complete reference-matched template set still need implementation.
+### Deploy
+1. Deploy `newsroom-worker.js` as the Cloudflare Worker `thesportzine-newsroom-api`.
+2. Attach the custom domain `newsroom-api.falsewinger.com`.
+3. In the Newsroom header, enter `https://newsroom-api.falsewinger.com` and select **Connect**.
+4. Test `https://newsroom-api.falsewinger.com/api/health` and `/api/feed`.
+5. D1 is only required for the existing source-management endpoints. Add the binding and apply `newsroom-schema.sql` if you want to use those endpoints; RSS aggregation itself does not require D1.
 
+The Newsroom API CORS allowlist includes `https://newsroom.falsewinger.com` and the GitHub Pages origin. Cloudflare Access should be used to protect the app/API if desired; CORS is not authentication.
 
-## Buffer scheduling integration
+## RSS terms and editorial use
+Formula1.com is included as requested. Personal use does not by itself establish permission under a publisher's feed terms, so confirm the current terms and keep use within the permitted scope. Feed access is not permission to republish full articles or images. The interface displays headlines and short feed excerpts with links to the publisher. Review each publisher's terms before any wider distribution.
 
-The editor includes a 280-character caption composer with multi-channel selection, queue scheduling, custom date/time scheduling, and draft saving.
-
-**Security:** The Buffer API key must never be placed in `index.html`, browser storage, or Git. The browser calls the separate Cloudflare Worker in `buffer-worker.js`; the key is stored as a Worker secret.
-
-### Deploy the Buffer Worker
-
-1. In the Cloudflare dashboard, open **Workers & Pages** and create a Worker named `thesportzine-buffer-api`.
-2. Deploy the contents of `buffer-worker.js` as the Worker script.
-3. In the Worker **Settings → Variables and Secrets**, add a secret named `BUFFER_API_KEY`. Generate the key in Buffer under **Settings → API**.
-4. In the Worker **Settings → Domains & Routes**, add the custom domain `buffer-api.thesportzine.com`.
-5. Redeploy the Worker after saving the secret, if Cloudflare prompts you.
-6. Open `https://buffer-api.thesportzine.com/channels` from the Sports Studio editor using **Load / refresh channels**. The editor should show the connected Buffer channels.
-
-The Worker allows browser requests only from `https://canvas.thesportzine.com` and `https://sripad13.github.io`. It validates the 280-character limit server-side and confirms selected channels against the connected Buffer account before creating posts.
-
-### Scheduling behaviour
-
-- **Queue:** Adds each selected channel's post to its next available Buffer queue slot.
-- **Choose date and time:** Schedules each selected channel's post for the chosen local date/time (converted to UTC for Buffer).
-- **Save as draft:** Creates a Buffer draft instead of scheduling it.
-
-Buffer uses its GraphQL API at `https://api.buffer.com`. See the [Buffer authentication guide](https://developers.buffer.com/guides/authentication.html) and [posts and scheduling guide](https://developers.buffer.com/guides/posts-and-scheduling.html).
-
-
-## Sports Studio custom domain
-
-The GitHub Pages custom domain is `tsc.falsewinger.com`. The Buffer Worker CORS allowlist permits this hostname. Cloudflare Access should be configured for this hostname after GitHub Pages verifies the custom domain and DNS is ready.
+## Graphics module
+The original graphics editor remains preserved at `graphics.html`. Its Buffer integration continues to use `buffer-worker.js`; the Newsroom hostname has been added to that Worker's CORS allowlist.
