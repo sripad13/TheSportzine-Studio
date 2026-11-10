@@ -28,12 +28,23 @@
 
 .modal-backdrop{position:fixed;inset:0;background:#000b;display:flex;align-items:center;justify-content:center;padding:18px;z-index:1000}.modal-backdrop.hidden{display:none!important}.modal-card{width:min(100%,380px);background:#191c24;border:1px solid #3b3e49;border-radius:14px;padding:20px;box-shadow:0 20px 70px #000b}.modal-card h3{margin:0 0 8px}.modal-actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}.modal-actions .btn{flex:1}.modal-cancel{margin-top:14px;width:100%}.modal-card input[type=datetime-local]{width:100%;background:#101218;border:1px solid #383b46;color:#fff;border-radius:7px;padding:10px}
 .buffer-panel{margin-top:14px;padding:15px}.buffer-panel textarea{min-height:100px}.buffer-channels{display:flex;align-items:center;gap:10px;flex-wrap:wrap;max-height:none;overflow:visible}.buffer-channel{width:58px;height:54px;display:grid;place-items:center;background:#101218;border:1px solid #383b46;border-radius:10px;padding:8px;color:#777b86;opacity:.42;cursor:pointer;transition:background .15s,border-color .15s,color .15s,opacity .15s}.buffer-channel.selected{opacity:1;color:#fff;border-color:var(--yellow);background:#24232a;box-shadow:0 0 0 1px var(--yellow) inset}.buffer-channel svg{width:27px;height:27px;display:block;fill:currentColor}.buffer-channel:focus-visible{outline:2px solid var(--yellow);outline-offset:3px}.buffer-channel .channel-fallback{font-size:10px;font-weight:700;text-transform:uppercase}.buffer-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.buffer-actions button{width:100%}.buffer-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.buffer-actions button{width:100%}.counter{font-size:11px;color:var(--muted);text-align:right}.counter.over{color:#ff6b6b}.buffer-panel input[type=datetime-local]{width:100%;background:#101218;border:1px solid #383b46;color:#fff;border-radius:7px;padding:9px}
+.insights-block{margin:0 0 22px}.insights-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px}.insights-head h2{margin:0;font-size:17px}.insights-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.insight-card{background:#202322;border:1px solid #303633;border-radius:13px;padding:17px 18px;min-height:112px;min-width:0}.insight-label{color:#aeb4b1;font-size:13px;margin-bottom:15px}.insight-value-row{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}.insight-value{font-size:clamp(22px,2.2vw,30px);font-weight:750;letter-spacing:-.7px}.insight-change{font-size:14px;color:#8ecb91}.insight-change.down{color:#e99a91}.insight-change.neutral{color:#9ca39f}.insight-foot{font-size:10px;color:#89918d;margin-top:7px}.insight-refresh{font-size:11px;padding:6px 9px}@media(max-width:900px){.insights-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:480px){.insight-card{padding:13px;min-height:98px}.insight-label{font-size:12px;margin-bottom:11px}.insight-value{font-size:23px}.insight-change{font-size:12px}}
 </style>
 </head>
 <body>
 <div class="app">
 <main class="main">
  <header class="top"><button type="button" id="createBtn" style="display:none" aria-hidden="true" tabindex="-1">New graphic</button><img id="headerBrand" alt="TheSportzine" style="display:block;width:190px;max-width:42vw;height:auto;opacity:.72;object-fit:contain;object-position:left center"></header>
+ <section class="insights-block" aria-label="Buffer performance insights">
+  <div class="insights-head"><h2>Buffer Insights <span class="muted" style="font-size:11px;font-weight:400">· Last 30 days</span></h2><button class="btn insight-refresh" id="refreshInsights" type="button">↻ Refresh</button></div>
+  <div class="insights-grid">
+   <article class="insight-card" title="Buffer's public API does not currently expose total channel follower counts."><div class="insight-label">Total Followers</div><div class="insight-value" id="kpiFollowers">—</div><div class="insight-foot" id="kpiFollowersNote">Not available through Buffer's public API</div></article>
+   <article class="insight-card"><div class="insight-label">Reactions</div><div class="insight-value-row"><span class="insight-value" id="kpiReactions">—</span><span class="insight-change neutral" id="kpiReactionsChange">—</span></div></article>
+   <article class="insight-card"><div class="insight-label">Comments</div><div class="insight-value-row"><span class="insight-value" id="kpiComments">—</span><span class="insight-change neutral" id="kpiCommentsChange">—</span></div></article>
+   <article class="insight-card"><div class="insight-label">Eng. Rate</div><div class="insight-value-row"><span class="insight-value" id="kpiEngagement">—</span><span class="insight-change neutral" id="kpiEngagementChange">—</span></div></article>
+  </div>
+  <div class="insight-foot" id="insightsStatus" aria-live="polite">Loading Buffer insights…</div>
+ </section>
  <section class="dashboard" id="homeView">
   <h2 style="margin-top:0">Templates</h2><div class="grid" id="categoryTiles"></div>
   <h2>Specialised formats</h2><div class="grid special" id="specialTiles"></div>
@@ -238,6 +249,31 @@ $('headerBrand').src=$('wordmarkBrand').src;
 
 // Buffer scheduling integration. API credentials remain on the Cloudflare Worker.
 const BUFFER_API='https://thesportzine-buffer-api.sripad48.workers.dev';
+const INSIGHTS_CACHE_KEY='tsz-buffer-insights-v1';
+function formatKpi(value,unit){if(value===null||value===undefined||!Number.isFinite(Number(value)))return '—';const n=Number(value);if(unit==='percentage')return n.toFixed(2)+'%';return Math.round(n).toLocaleString('en-US')}
+function metricValue(result,type){const item=(result?.metrics||[]).find(m=>m.type===type);return item?Number(item.value):null}
+function renderKpiChange(id,current,previous){const el=$(id);if(current===null||previous===null){el.textContent='—';el.className='insight-change neutral';return}const delta=previous===0?(current===0?0:null):((current-previous)/Math.abs(previous))*100;if(delta===null){el.textContent='New';el.className='insight-change';return}el.textContent=(delta>0?'↗ +':delta<0?'↘ ':'→ ')+Math.abs(delta).toFixed(1)+'%';el.className='insight-change '+(delta>0?'':delta<0?'down':'neutral')}
+function renderBufferInsights(data){
+ const c=data.current||{},p=data.previous||{};
+ const reactions=metricValue(c,'reactions'),prevReactions=metricValue(p,'reactions');
+ const comments=metricValue(c,'comments'),prevComments=metricValue(p,'comments');
+ const engagement=metricValue(c,'engagementRate'),prevEngagement=metricValue(p,'engagementRate');
+ $('kpiReactions').textContent=formatKpi(reactions,'count');$('kpiComments').textContent=formatKpi(comments,'count');
+ $('kpiEngagement').textContent=formatKpi(engagement,'percentage');
+ renderKpiChange('kpiReactionsChange',reactions,prevReactions);renderKpiChange('kpiCommentsChange',comments,prevComments);renderKpiChange('kpiEngagementChange',engagement,prevEngagement);
+ $('kpiFollowersNote').textContent=data.followerCountNote||'Not available through Buffer API';
+ $('insightsStatus').textContent='Compared with the previous 30 days · Buffer metrics may be up to 24 hours behind'+(c.metricsUpdatedAt?' · Updated '+new Date(c.metricsUpdatedAt).toLocaleString():'');
+}
+async function loadBufferInsights(force=false){
+ const status=$('insightsStatus'),button=$('refreshInsights');
+ if(!force){try{const cached=JSON.parse(localStorage.getItem(INSIGHTS_CACHE_KEY)||'null');if(cached&&Date.now()-cached.savedAt<12*60*60*1000&&cached.data){renderBufferInsights(cached.data);return}}catch{}}
+ status.textContent='Loading Buffer insights…';if(button)button.disabled=true;
+ try{const r=await fetch(BUFFER_API+'/insights');const data=await r.json();if(!r.ok)throw new Error(data.error||'Could not load Buffer insights');renderBufferInsights(data);try{localStorage.setItem(INSIGHTS_CACHE_KEY,JSON.stringify({savedAt:Date.now(),data}))}catch{}}
+ catch(e){status.textContent=e.message.includes('insightsRead')?'Buffer insights permission is unavailable. Check that the Worker uses a personal API key with insightsRead access.':e.message+' · Check the Buffer API key and insightsRead permission.'}
+ finally{if(button)button.disabled=false}
+}
+$('refreshInsights').onclick=()=>loadBufferInsights(true);
+
 let bufferChannels=[];
 const caption=$('socialCaption'),captionCount=$('captionCount'),bufferStatus=$('bufferStatus');
 function updateCaptionCount(){const n=[...caption.value].length;captionCount.textContent=`${n} / 280`;captionCount.classList.toggle('over',n>280)}
@@ -257,5 +293,6 @@ document.querySelectorAll('[data-close-modal]').forEach(b=>b.onclick=()=>b.close
 document.querySelectorAll('.modal-backdrop').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.add('hidden')}));
 openEditor('Breaking With Text');
 loadBufferChannels(false);
+loadBufferInsights(false);
 </script>
 </body></html>
