@@ -27,6 +27,35 @@ body{background:var(--bg);color:var(--text);font-family:Inter,Arial,sans-serif;o
 @media(max-width:900px){.board{grid-template-columns:repeat(2,minmax(0,1fr));padding:10px 14px 24px}.top{padding:0 14px}.bar{padding:10px 14px}}
 @media(max-width:700px){.top{background:#fff;min-height:unset;padding:10px 12px 8px;grid-template-columns:1fr auto;gap:9px}.brand{font-size:15px}.workspaces{grid-column:1/-1;grid-row:2;width:100%;overflow-x:auto}.ws{padding:8px 12px}.topright .btn{padding:8px 11px}.bar{height:auto;min-height:58px;padding:9px 12px;display:flex;flex-wrap:wrap;gap:8px}.bar strong{font-size:18px}.bar input{width:auto;min-width:0;flex:1;padding:9px 12px}.board{height:calc(100dvh - 145px);display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;padding:8px 10px 20px;gap:12px}.column{width:100%;min-width:0;max-width:none;max-height:none;min-height:180px;flex:0 0 auto;border-radius:10px}.colhead{height:49px;flex-basis:49px}.story{padding:14px}.story h3{font-size:14px}.drawer{top:0;width:100%;border:0}.source-dialog{background:#fff}.api{display:none}}
 
+
+/* Mobile reading flow + story modal */
+@media(max-width:700px){
+  html,body{height:auto;min-height:100%;overflow-x:hidden;overflow-y:auto}
+  body{min-height:100dvh;overflow-y:auto}
+  .top{position:sticky;top:0;z-index:12}
+  .bar{position:sticky;top:92px;z-index:11}
+  .board{height:auto;min-height:calc(100dvh - 145px);max-height:none;display:flex;flex-direction:column;overflow:visible;overflow-x:hidden;overflow-y:visible;touch-action:pan-y;padding-bottom:40px}
+  .column{height:auto;max-height:none;min-height:0;overflow:visible;flex:0 0 auto}
+  .cards{height:auto;max-height:none;overflow:visible;flex:0 0 auto}
+  .story{touch-action:pan-y}
+}
+.drawer{inset:0;top:0;bottom:0;right:0;width:100%;max-width:none;height:100dvh;background:#0009;backdrop-filter:blur(3px);border:0;box-shadow:none;z-index:40;transform:none;opacity:0;visibility:hidden;pointer-events:none;display:flex;align-items:center;justify-content:center;padding:24px;transition:opacity .18s,visibility .18s}
+.drawer.open{opacity:1;visibility:visible;pointer-events:auto;transform:none}
+.drawer .dhead,.drawer .dcontent{width:min(720px,100%);background:#fff}
+.drawer .dhead{flex:0 0 auto;border:0;border-radius:14px 14px 0 0;padding:18px 22px 10px}
+.drawer .dcontent{max-height:min(78dvh,760px);overflow-y:auto;border-radius:0 0 14px 14px;padding:12px 22px 24px}
+.drawer .dhead strong{color:#202124;font-size:12px;letter-spacing:.08em}
+.drawer .dcontent h2{font-size:24px;line-height:1.3;margin:8px 0 16px}
+.drawer .dcontent .article-body{font-size:14px;line-height:1.75;color:#3c4043;white-space:normal;margin:16px 0}
+.drawer .dcontent .article-body p{font-size:14px;line-height:1.75;color:#3c4043;margin:0 0 12px}
+.drawer .dcontent .sourcebox{margin-top:16px}
+@media(max-width:700px){
+ .drawer{padding:12px;align-items:center}
+ .drawer .dhead{border-radius:14px 14px 0 0;padding:15px 16px 8px}
+ .drawer .dcontent{max-height:78dvh;padding:10px 16px 20px;border-radius:0 0 14px 14px}
+ .drawer .dcontent h2{font-size:20px}
+}
+
 </style></head><body>
 <header class="top"><a class="brand" href="/" style="text-decoration:none;color:inherit">THE SPORTZINE <em>NEWSROOM</em></a><nav class="workspaces" id="workspaces"><button class="ws active" data-ws="All Sports">All Sports</button><button class="ws" data-ws="Football">Football</button><button class="ws" data-ws="Formula 1">Formula 1</button><button class="ws" data-ws="Breaking">Breaking</button></nav><div class="topright"><span class="status" id="status">Preview mode</span><input class="api" id="apiBase" value="https://newsroom-api.falsewinger.com" aria-label="Newsroom API URL"><button class="btn" id="connect">Connect</button><button class="btn" id="sourcesButton">Sources</button><button class="btn" id="addColumn">＋ Column</button><a class="btn" href="/post/" style="text-decoration:none">Graphics ↗</a></div></header>
 <div class="bar"><span class="hint">WORKSPACE</span><strong id="workspaceLabel">All Sports</strong><span class="hint">·</span><span class="hint">Independent feeds · scroll each column</span><span class="spacer"></span><input id="globalSearch" placeholder="Search stories, clubs, drivers…"><button class="btn" id="refresh">↻ Refresh</button></div>
@@ -50,11 +79,49 @@ function persist(){localStorage.setItem('tsz_columns',JSON.stringify(columns));}
 function setStatus(t,kind=''){const el=$('#status');el.textContent=t;el.className='status '+kind}
 function filtered(col){let list=[...stories];if(col.type==='football')list=list.filter(x=>x.sport==='football');if(col.type==='f1')list=list.filter(x=>x.sport==='f1');if(col.type==='breaking')list=list.filter(x=>x.breaking);if(col.type==='priority')list=list.filter(x=>x.priority);if(col.type==='search')list=list.filter(x=>(x.title+' '+x.summary).toLowerCase().includes((col.keyword||col.name).toLowerCase()));if(col.type==='saved')list=list.filter(x=>saved.has(x.id));if(activeWorkspace==='Football')list=list.filter(x=>x.sport==='football');if(activeWorkspace==='Formula 1')list=list.filter(x=>x.sport==='f1');if(activeWorkspace==='Breaking')list=list.filter(x=>x.breaking);const q=$('#globalSearch').value.trim().toLowerCase();if(q)list=list.filter(x=>(x.title+' '+x.summary+' '+x.source).toLowerCase().includes(q));return list}
 function render(){const board=$('#board');board.innerHTML='';columns.forEach((col,i)=>{const list=filtered(col);const el=document.createElement('section');el.className='column';el.dataset.id=col.id;el.innerHTML='<div class="colhead"><span class="coltitle">'+esc(col.name)+'</span><span class="count">'+list.length+'</span><div class="coltools"><button class="tiny" data-act="left" title="Move left">‹</button><button class="tiny" data-act="right" title="Move right">›</button><button class="tiny" data-act="remove" title="Remove">×</button></div></div><div class="colfilter"><input data-filter placeholder="Filter this column…" value="'+esc(col.localFilter||'')+'"><select data-order><option value="new">Newest</option><option value="priority">Priority</option></select></div><div class="cards">'+(list.length?list.map(storyCard).join(''):'<div class="empty"><b>No stories in this column yet</b>Connect the feed API and refresh. This column will populate from configured RSS sources.</div>')+'</div>';board.appendChild(el);el.querySelector('[data-filter]').addEventListener('input',e=>{col.localFilter=e.target.value;const q=e.target.value.toLowerCase();el.querySelectorAll('.story').forEach(card=>card.classList.toggle('hidden',!card.textContent.toLowerCase().includes(q)))});el.querySelector('[data-order]').addEventListener('change',e=>{col.order=e.target.value;render()});el.querySelectorAll('[data-act]').forEach(b=>b.onclick=()=>{const n=columns.indexOf(col),a=b.dataset.act;if(a==='remove')columns=columns.filter(x=>x!==col);if(a==='left'&&n>0)[columns[n-1],columns[n]]=[columns[n],columns[n-1]];if(a==='right'&&n<columns.length-1)[columns[n+1],columns[n]]=[columns[n],columns[n+1]];persist();render()});el.querySelectorAll('.story').forEach(card=>card.onclick=()=>openStory(card.dataset.id));});}
-function storyCard(s){return '<article class="story '+(selected===s.id?'selected':'')+'" data-id="'+esc(s.id)+'"><div class="meta"><span class="source">'+esc(s.source)+'</span><span>·</span><span>'+esc(s.timeLabel||'Recent')+'</span>'+(s.priority?'<span class="priority">★ PRIORITY</span>':'')+'</div><h3>'+esc(s.title)+'</h3><div class="storyfoot">'+(s.breaking?'<span class="pill breaking">BREAKING</span>':'')+'<span class="pill">'+(s.sport==='f1'?'FORMULA 1':'FOOTBALL')+'</span>'+(s.duplicateCount>1?'<span class="pill duplicate">'+s.duplicateCount+' SOURCES</span>':'')+'</div></article>'}
-function openStory(id){selected=id;const s=stories.find(x=>x.id===id);if(!s)return;$('#detail').innerHTML='<div class="meta">'+esc(s.source)+' · '+esc(s.sport==='f1'?'FORMULA 1':'FOOTBALL')+'</div><h2>'+esc(s.title)+'</h2><div class="sourcebox"><b>Source</b><br>'+esc(s.source)+'<br><span style="color:#9da2af">'+esc(s.published||'Publication time unavailable')+'</span></div><div class="dactions"><a class="btn primary" href="'+esc(s.link)+'" target="_blank" rel="noopener">Open original ↗</a><button class="btn" id="saveStory">'+(saved.has(s.id)?'Unsave':'Save story')+'</button><button class="btn" id="copyTitle">Copy headline</button></div><p class="footnote">Editorial aid only. Verify the original report and details before publication. Read the original report before publication.</p>';$('#drawer').classList.add('open');$('#saveStory').onclick=()=>{saved.has(id)?saved.delete(id):saved.add(id);localStorage.setItem('tsz_saved',JSON.stringify([...saved]));render();openStory(id)};$('#copyTitle').onclick=()=>navigator.clipboard?.writeText(s.title);render()}
+
+function relativeAge(s){
+ const raw=s.publishedAt||s.published||s.pubDate||s.isoDate||s.date||s.timestamp;
+ if(!raw)return 'Recently';
+ const date=typeof raw==='number'?(raw<1e12?new Date(raw*1000):new Date(raw)):new Date(raw);
+ if(Number.isNaN(date.getTime()))return 'Recently';
+ const mins=Math.max(0,Math.floor((Date.now()-date.getTime())/60000));
+ if(mins<1)return 'Just now';
+ if(mins<60)return mins+' min ago';
+ const hrs=Math.floor(mins/60);
+ if(hrs<24)return hrs+' hr ago';
+ const days=Math.floor(hrs/24);
+ if(days<7)return days+' day'+(days===1?'':'s')+' ago';
+ const weeks=Math.floor(days/7);
+ if(weeks<5)return weeks+' wk'+(weeks===1?'':'s')+' ago';
+ return Math.floor(days/30)+' mo ago';
+}
+function plainArticleText(value){
+ if(!value)return '';
+ const node=document.createElement('div');node.innerHTML=String(value);
+ node.querySelectorAll('script,style,iframe,form,svg').forEach(x=>x.remove());
+ return (node.textContent||node.innerText||'').replace(/\s+/g,' ').trim();
+}
+
+function storyCard(s){return '<article class="story '+(selected===s.id?'selected':'')+'" data-id="'+esc(s.id)+'"><div class="meta"><span class="source">'+esc(s.source)+'</span><span>·</span><span>'+esc(relativeAge(s))+'</span>'+(s.priority?'<span class="priority">★ PRIORITY</span>':'')+'</div><h3>'+esc(s.title)+'</h3><div class="storyfoot">'+(s.breaking?'<span class="pill breaking">BREAKING</span>':'')+'<span class="pill">'+(s.sport==='f1'?'FORMULA 1':'FOOTBALL')+'</span>'+(s.duplicateCount>1?'<span class="pill duplicate">'+s.duplicateCount+' SOURCES</span>':'')+'</div></article>'}
+
+function openStory(id){
+ selected=id;
+ const s=stories.find(x=>x.id===id);if(!s)return;
+ const body=plainArticleText(s.content||s.contentEncoded||s.summary||s.description||s.contentSnippet||'');
+ const label=(s.content||s.contentEncoded)?'Article text':(body?'Summary':'No article text available in this feed');
+ $('#detail').innerHTML='<div class="meta">'+esc(s.source)+' · '+esc(s.sport==='f1'?'FORMULA 1':'FOOTBALL')+' · '+esc(relativeAge(s))+'</div><h2>'+esc(s.title)+'</h2><div class="dactions"><a class="btn primary" href="'+esc(s.link||'#')+'" target="_blank" rel="noopener">Open original ↗</a><button class="btn" id="saveStory">'+(saved.has(s.id)?'Unsave':'Save story')+'</button><button class="btn" id="copyTitle">Copy headline</button></div><div class="sourcebox"><b>'+label+'</b></div><div class="article-body">'+(body?esc(body):'<p>The RSS feed provides a headline only. Open the original publication to read the full article.</p>')+'</div>';
+ $('#drawer').classList.add('open');
+ $('#saveStory').onclick=()=>{saved.has(id)?saved.delete(id):saved.add(id);localStorage.setItem('tsz_saved',JSON.stringify([...saved]));render();openStory(id)};
+ $('#copyTitle').onclick=()=>navigator.clipboard?.writeText(s.title);
+ render();
+}
+
 async function refresh(){const base=$('#apiBase').value.trim().replace(/\/$/,'');if(!base){setStatus('API not configured');return}localStorage.setItem(API_KEY,base);setStatus('Fetching feeds…');try{const r=await fetch(base+'/api/feed');if(!r.ok)throw new Error('API returned '+r.status);const data=await r.json();stories=(data.stories||[]).map((x,i)=>({...x,id:x.id||x.link||String(i),sport:x.sport||'football',timeLabel:x.timeLabel||'RSS'}));const failed=(data.feeds||[]).filter(x=>x.error);setStatus(stories.length+' stories · '+failed.length+' feed errors',failed.length?'bad':'ok');$('#status').title=(data.feeds||[]).map(x=>x.name+': '+(x.error||x.count+' items')).join(' | ');render()}catch(e){setStatus('Feed connection failed','bad');console.error(e)}}
 $('#apiBase').value=localStorage.getItem(API_KEY)||'https://newsroom-api.falsewinger.com';
 $('#connect').onclick=refresh;$('#refresh').onclick=refresh;$('#globalSearch').oninput=render;$('#closeDrawer').onclick=()=>$('#drawer').classList.remove('open');
+$('#drawer').addEventListener('click',e=>{if(e.target===$('#drawer'))$('#drawer').classList.remove('open')});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')$('#drawer').classList.remove('open')});
 $('#workspaces').onclick=e=>{const b=e.target.closest('[data-ws]');if(!b)return;activeWorkspace=b.dataset.ws;document.querySelectorAll('.ws').forEach(x=>x.classList.toggle('active',x===b));$('#workspaceLabel').textContent=activeWorkspace;render()};
 $('#addColumn').onclick=()=>$('#modal').classList.add('open');$('#cancelModal').onclick=()=>$('#modal').classList.remove('open');$('#saveColumn').onclick=()=>{const type=$('#colType').value,name=$('#colName').value.trim()||({football:'Football Latest',f1:'F1 Latest',breaking:'Breaking',priority:'Priority Desk',search:'Keyword Search',saved:'Saved Stories'}[type]);columns.push({id:crypto.randomUUID(),type,name,keyword:$('#colKeyword').value.trim()});persist();$('#modal').classList.remove('open');$('#colName').value='';$('#colKeyword').value='';render()};
 
