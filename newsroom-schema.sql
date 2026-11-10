@@ -1,5 +1,12 @@
-CREATE TABLE IF NOT EXISTS newsroom_sources (id TEXT PRIMARY KEY, name TEXT NOT NULL, sport TEXT NOT NULL, feed_url TEXT NOT NULL, enabled INTEGER NOT NULL DEFAULT 1, terms_status TEXT NOT NULL DEFAULT 'review', last_fetched_at TEXT, last_error TEXT);
-CREATE TABLE IF NOT EXISTS newsroom_stories (id TEXT PRIMARY KEY, source_id TEXT NOT NULL, sport TEXT NOT NULL, title TEXT NOT NULL, url TEXT NOT NULL UNIQUE, excerpt TEXT, published_at TEXT, image_url TEXT, first_seen_at TEXT NOT NULL, FOREIGN KEY(source_id) REFERENCES newsroom_sources(id));
-CREATE INDEX IF NOT EXISTS idx_newsroom_stories_published ON newsroom_stories(published_at DESC);
-CREATE TABLE IF NOT EXISTS newsroom_decisions (story_id TEXT PRIMARY KEY, decision TEXT NOT NULL, notes TEXT, updated_at TEXT NOT NULL);
-CREATE TABLE IF NOT EXISTS newsroom_saved (story_id TEXT PRIMARY KEY, saved_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS newsroom_sources (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  feed_url TEXT NOT NULL UNIQUE,
+  sport TEXT NOT NULL DEFAULT 'General sports',
+  priority INTEGER NOT NULL DEFAULT 2 CHECK (priority BETWEEN 1 AND 3),
+  enabled INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  last_fetched_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_newsroom_sources_enabled_priority ON newsroom_sources(enabled, priority);
