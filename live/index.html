@@ -168,7 +168,8 @@ async function createPostFromStory(id){
    if(!title||words.length>9)throw new Error('The generated title did not meet the nine-word limit.');
    item={title,words:words.length};generatedTitles.set(id,item);
   }
-  const params=new URLSearchParams({headline:item.title,subtitle:'Source: '+s.source});
+  const caption=plainArticleText(s.summary||s.description||s.contentSnippet||'').slice(0,280);
+  const params=new URLSearchParams({headline:item.title,subtitle:'Source: '+s.source,caption});
   window.location.href='/post/?'+params.toString();
  }catch(e){
   if(error)error.textContent=e.message||'Could not prepare the post.';
