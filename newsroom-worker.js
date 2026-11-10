@@ -277,7 +277,7 @@ export default {
         }
         return json({ source: (await env.DB.prepare("SELECT * FROM newsroom_sources WHERE id = ?").bind(id).first()) }, 201, origin);
       }
-      const match = url.pathname.match(/^\/api\/sources\/([a-f0-9-]{36})$/i);
+      const match = url.pathname.match(/^\/api\/sources\/([a-z0-9-]{1,80})$/i);
       if (match && request.method === "PATCH") {
         const current = await env.DB.prepare("SELECT * FROM newsroom_sources WHERE id = ?").bind(match[1]).first();
         if (!current) return json({ error: "Source not found." }, 404, origin);
