@@ -27,6 +27,13 @@ const DEFAULT_FEEDS = [
   {name:"Motorsport.com F1",sport:"f1",url:"https://www.motorsport.com/rss/f1/news/"},
   {name:"Formula1.com",sport:"f1",url:"https://www.formula1.com/content/fom-website/en/latest/all.xml"}
 ];
+function sportCode(value) {
+  const sport=String(value||"general").trim().toLowerCase();
+  if(sport==="football")return "football";
+  if(sport==="f1"||sport==="formula 1"||sport==="formula one")return "f1";
+  if(sport==="general sports"||sport==="general")return "general";
+  return sport.replace(/[^a-z0-9]+/g,"-");
+}
 function decodeXml(value) {
   return String(value || "").replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g,"$1").replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,'"').replace(/&#39;|&apos;/g,"'").replace(/&#(\d+);/g,(_,n)=>String.fromCodePoint(Number(n))).replace(/<[^>]*>/g," ").replace(/\s+/g," ").trim();
 }
@@ -42,7 +49,7 @@ function parseFeed(xml,feed) {
     const published=tag(block,"pubDate")||tag(block,"published")||tag(block,"updated");
     if(!title||!/^https?:\/\//i.test(link))return null;
     const date=published?new Date(published):null,hot=/breaking|confirmed|sacked|resigns|signs|announces|injury|ruled out|crash|penalty|suspended/i.test(title);
-    return {id:link,title,summary:summary.slice(0,420),link,source:feed.name,sport:feed.sport,published:published||"",timestamp:date&&!Number.isNaN(date.getTime())?date.getTime():0,timeLabel:date&&!Number.isNaN(date.getTime())?date.toLocaleString("en-GB",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit",timeZone:"UTC"})+" UTC":"Time unavailable",breaking:hot,priority:hot};
+    return {id:link,title,summary:summary.slice(0,420),link,source:feed.name,sport:sportCode(feed.sport),published:published||"",timestamp:date&&!Number.isNaN(date.getTime())?date.getTime():0,timeLabel:date&&!Number.isNaN(date.getTime())?date.toLocaleString("en-GB",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit",timeZone:"UTC"})+" UTC":"Time unavailable",breaking:hot,priority:hot};
   }).filter(Boolean);
 }
 async function getFeed(feed) {
@@ -93,7 +100,7 @@ async function getConfiguredFeeds(env) {
       env.DB.prepare("SELECT name, feed_url, sport FROM newsroom_sources WHERE enabled = 1 ORDER BY priority ASC, name COLLATE NOCASE ASC").all(),
       env.DB.prepare("SELECT feed_url FROM newsroom_source_overrides WHERE deleted = 1").all()
     ]);
-    custom = (customRows.results || []).map(row => ({name:row.name,url:row.feed_url,sport:row.sport||"football"}));
+    custom = (customRows.results || []).map(row => ({name:row.name,url:row.feed_url,sport:sportCode(row.sport||"football")}));
     deleted = (overrideRows.results || []).map(row => row.feed_url);
   }
   return [...DEFAULT_FEEDS, ...custom].filter(feed => !deleted.includes(feed.url))
@@ -107,7 +114,7 @@ async function getRedditStories(env) {
     try {
       const response=await fetch("https://www.reddit.com/r/"+encodeURIComponent(row.subreddit)+"/new.json?limit=30",{headers:{"User-Agent":"TheSportzineNewsroom/1.0"},signal:AbortSignal.timeout(8000)});
       if(!response.ok) return []; const data=await response.json();
-      return (data.data?.children||[]).map(({data:p})=>({id:"reddit:"+p.id,title:p.title,summary:p.selftext||"",link:"https://www.reddit.com"+p.permalink,source:"r/"+row.subreddit,sport:row.sport,published:new Date(p.created_utc*1000).toISOString(),timestamp:p.created_utc*1000,timeLabel:new Date(p.created_utc*1000).toLocaleString("en-GB"),breaking:false,priority:false,isReddit:true,score:p.score,comments:p.num_comments}));
+      return (data.data?.children||[]).map(({data:p})=>({id:"reddit:"+p.id,title:p.title,summary:p.selftext||"",link:"https://www.reddit.com"+p.permalink,source:"r/"+row.subreddit,sport:sportCode(row.sport),published:new Date(p.created_utc*1000).toISOString(),timestamp:p.created_utc*1000,timeLabel:new Date(p.created_utc*1000).toLocaleString("en-GB"),breaking:false,priority:false,isReddit:true,score:p.score,comments:p.num_comments}));
     } catch { return []; }
   }));
   return results.flat();
