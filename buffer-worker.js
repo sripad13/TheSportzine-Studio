@@ -69,6 +69,7 @@ export default {
     if (!env.BUFFER_API_KEY) return json({ error: "Buffer API key is not configured on the Worker." }, 503, origin);
     const url = new URL(request.url);
     try {
+      // Aggregated read-only analytics for the Newsroom and Posting Studio dashboards.
       if (request.method === "GET" && url.pathname === "/insights") {
         const organizations = (await bufferGraphQL(env, `
           query StudioInsightsOrganizations { account { organizations { id name } } }
