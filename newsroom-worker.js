@@ -92,6 +92,43 @@ export default {
         return json({ ok: true, service: "thesportzine-newsroom", database: env.DB ? "connected" : "not_configured", feeds: "available" }, 200, origin);
       }
       if (!env.DB) return json({ error: "D1 binding DB is not configured; RSS feed endpoint remains available." }, 503, origin);
+      // Generate one short headline on demand (maximum nine words).
+      if (request.method === "POST" && url.pathname === "/api/short-title") {
+        if (!env.AI) return json({ error: "Workers AI binding AI is not configured." }, 503, origin);
+        const body = await request.json();
+        const title = typeof body.title === "string" ? body.title.trim() : "";
+        const summary = typeof body.summary === "string" ? body.summary.trim().slice(0, 700) : "";
+        if (!title || title.length > 300) return json({ error: "A valid article headline is required." }, 400, origin);
+
+        const result = await env.AI.run("@cf/meta/llama-3.1-8b-instruct", {
+          messages: [
+            {
+              role: "system",
+              content: "You are a sports newsroom headline editor. Rewrite the supplied article headline as one concise, accurate headline of no more than nine words. Preserve the key subject and factual meaning. Do not add facts, speculation, quotation marks, labels, explanations or alternatives. Output only the headline."
+            },
+            {
+              role: "user",
+              content: "Original headline: " + title + (summary ? "\nContext: " + summary : "")
+            }
+          ],
+          temperature: 0.2,
+          max_tokens: 40
+        });
+
+        let shortTitle = String(result?.response || "").trim()
+          .replace(/^["'“”]+|["'“”]+$/g, "")
+          .replace(/^(short title|headline):\s*/i, "")
+          .replace(/^[-*•]\s*/, "")
+          .replace(/\s+/g, " ");
+        let wordCount = shortTitle.split(/\s+/).filter(Boolean).length;
+
+        if (!shortTitle || wordCount > 9) {
+          return json({ error: "The AI did not return a headline within the nine-word limit. Please try again." }, 502, origin);
+        }
+
+        return json({ title: shortTitle, words: wordCount }, 200, origin);
+      }
+
       if (request.method === "GET" && url.pathname === "/api/sources") {
         return json({ sources: await listSources(env.DB) }, 200, origin);
       }
