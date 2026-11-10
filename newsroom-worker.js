@@ -124,7 +124,7 @@ async function getRedditStories(env, sort="new") {
         const response=await fetch(candidate,{headers,signal:AbortSignal.timeout(10000),redirect:"follow"});
         if(!response.ok){lastError="Reddit returned HTTP "+response.status;continue;}
         const body=await response.text();let items=[];
-        if(/<(feed|rss|rdf:RDF)\\b/i.test(body))items=parseFeed(body,{name:"r/"+row.subreddit,sport:sportCode(row.sport)});
+        if(/<(feed|rss|rdf:RDF)\b/i.test(body))items=parseFeed(body,{name:"r/"+row.subreddit,sport:sportCode(row.sport)});
         else{
           const data=JSON.parse(body),children=data?.data?.children||[];
           items=children.map(({data:p})=>({id:"reddit:"+p.id,title:p.title||"",summary:String(p.selftext||"").slice(0,420),link:"https://www.reddit.com"+(p.permalink||""),source:"r/"+row.subreddit,sport:sportCode(row.sport),published:p.created_utc?new Date(p.created_utc*1000).toISOString():"",timestamp:p.created_utc?Math.round(p.created_utc*1000):0,timeLabel:p.created_utc?new Date(p.created_utc*1000).toLocaleString("en-GB",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit",timeZone:"UTC"})+" UTC":"Time unavailable",breaking:false,priority:false,isReddit:true,redditSort:safeSort}));
