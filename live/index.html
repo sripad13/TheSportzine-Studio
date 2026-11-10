@@ -249,7 +249,7 @@ $('#apiBase').value=localStorage.getItem(API_KEY)||'https://newsroom-api.falsewi
 $('#savedStoriesButton').onclick=()=>{let col=columns.find(x=>x.type==='saved');if(!col){col={id:crypto.randomUUID(),type:'saved',name:'Saved Stories'};columns.push(col);persist()}col.collapsed=false;render();const el=document.querySelector('[data-id="'+CSS.escape(col.id)+'"]');if(el)el.scrollIntoView({behavior:'smooth',block:'start'})};$('#connect').onclick=refresh;$('#refresh').onclick=refresh;$('#globalSearch').oninput=render;$('#closeDrawer').onclick=()=>$('#drawer').classList.remove('open');
 $('#drawer').addEventListener('click',e=>{if(e.target===$('#drawer'))$('#drawer').classList.remove('open')});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')$('#drawer').classList.remove('open')});
-$('#workspaces').onclick=e=>{const b=e.target.closest('[data-ws]');if(!b)return;activeWorkspace=b.dataset.ws;document.querySelectorAll('.ws').forEach(x=>x.classList.toggle('active',x===b));const workspaceLabel=$('#workspaceLabel');if(workspaceLabel)workspaceLabel.textContent=activeWorkspace;render()};
+
 $('#addColumn').onclick=()=>$('#modal').classList.add('open');$('#cancelModal').onclick=()=>$('#modal').classList.remove('open');$('#saveColumn').onclick=()=>{const type=$('#colType').value,name=$('#colName').value.trim()||({football:'Football Latest',f1:'F1 Latest',breaking:'Breaking',priority:'Priority Desk',search:'Keyword Search',saved:'Saved Stories'}[type]);columns.push({id:crypto.randomUUID(),type,name,keyword:$('#colKeyword').value.trim()});persist();$('#modal').classList.remove('open');$('#colName').value='';$('#colKeyword').value='';render()};
 
 
