@@ -149,27 +149,53 @@ export default {
           messages: [
             {
               role: "system",
-              content: "You are a sports newsroom headline editor. Rewrite the supplied article headline as one concise, accurate headline of no more than nine words. Preserve the key subject and factual meaning. Do not add facts, speculation, quotation marks, labels, explanations or alternatives. Output only the headline."
+              content: "You are a sports newsroom headline editor. Rewrite the supplied article headline as one concise, accurate headline of 9 words or fewer. Preserve the key subject and factual meaning. Do not add facts, speculation, quotation marks, labels, explanations or alternatives. Output only the headline."
             },
             {
               role: "user",
-              content: "Original headline: " + title + (summary ? "\nContext: " + summary : "")
+              content: "Rewrite this headline in 9 words or fewer. Return only the headline.\n\nOriginal headline: " + title + (summary ? "\nContext: " + summary : "")
             }
           ],
           temperature: 0.2,
-          max_tokens: 40
+          max_completion_tokens: 80,
+          chat_template_kwargs: { enable_thinking: false }
         });
 
-        let shortTitle = String(result?.response || "").trim()
-          .replace(/^["'“”]+|["'“”]+$/g, "")
-          .replace(/^(short title|headline):\s*/i, "")
-          .replace(/^[-*•]\s*/, "")
-          .replace(/\s+/g, " ");
-        let wordCount = shortTitle.split(/\s+/).filter(Boolean).length;
+        // Workers AI chat models can return OpenAI-compatible choices or a
+        // model-specific response field. Accept either response shape.
+        const rawOutput =
+          result?.response ??
+          result?.choices?.[0]?.message?.content ??
+          result?.choices?.[0]?.text ??
+          result?.output_text ??
+          result?.content ??
+          "";
+        let shortTitle = (typeof rawOutput === "string" ? rawOutput :
+          Array.isArray(rawOutput) ? rawOutput.map(part => part?.text || "").join(" ") :
+          String(rawOutput || "")).trim();
 
-        if (!shortTitle || wordCount > 9) {
-          return json({ error: "The AI did not return a headline within the nine-word limit. Please try again." }, 502, origin);
+        shortTitle = shortTitle
+          .replace(/<think>[\\s\\S]*?<\\/think>/gi, "")
+          .replace(/^["'“”]+|["'“”]+$/g, "")
+          .replace(/^(short title|headline):\\s*/i, "")
+          .replace(/^[-*•]\\s*/, "")
+          .replace(/\\s+/g, " ")
+          .trim();
+
+        // Enforce the UI's nine-word headline limit if the model slightly
+        // exceeds it, rather than failing the entire Create Post workflow.
+        const words = shortTitle.split(/\\s+/).filter(Boolean);
+        if (!shortTitle) {
+          return json({
+            error: "The AI model returned an empty headline.",
+            diagnostic: {
+              responseKeys: result && typeof result === "object" ? Object.keys(result) : [],
+              finishReason: result?.choices?.[0]?.finish_reason || null
+            }
+          }, 502, origin);
         }
+        if (words.length > 9) shortTitle = words.slice(0, 9).join(" ");
+        const wordCount = shortTitle.split(/\\s+/).filter(Boolean).length;
 
         return json({ title: shortTitle, words: wordCount }, 200, origin);
       }
