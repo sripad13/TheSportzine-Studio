@@ -274,7 +274,7 @@ function renderBufferInsights(data){
  $('kpiEngagement').textContent=formatKpi(engagement,'percentage');
  renderKpiChange('kpiReactionsChange',reactions,prevReactions);renderKpiChange('kpiCommentsChange',comments,prevComments);renderKpiChange('kpiEngagementChange',engagement,prevEngagement);
  $('kpiFollowersNote').textContent=data.followerCountNote||'Not available through Buffer API';
- $('insightsStatus').textContent='Compared with the previous 30 days · Buffer metrics may be up to 24 hours behind'+(c.metricsUpdatedAt?' · Updated '+new Date(c.metricsUpdatedAt).toLocaleString():'');
+ $('insightsStatus').textContent='Free-plan view: last 30 days · Previous-period comparison unavailable · Buffer metrics may be up to 24 hours behind'+(c.metricsUpdatedAt?' · Updated '+new Date(c.metricsUpdatedAt).toLocaleString():'');
 }
 async function loadBufferInsights(force=false){
  const status=$('insightsStatus'),button=$('refreshInsights');
