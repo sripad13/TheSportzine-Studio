@@ -112,6 +112,15 @@ populate();
 function show(view){['homeView','templatesView','projectsView','editorView'].forEach(id=>$(id).classList.toggle('hidden',id!==view));$('editorView').classList.toggle('open',view==='editorView');$('pageTitle').textContent=({homeView:'Dashboard',templatesView:'Templates',projectsView:'My Projects',editorView:'Graphic Editor'})[view];document.querySelectorAll('[data-nav]').forEach(b=>b.classList.toggle('active',b.dataset.nav===(view==='homeView'?'home':view==='templatesView'?'templates':view==='projectsView'?'projects':'')))}
 document.querySelectorAll('[data-nav]').forEach(b=>b.onclick=()=>show(({home:'homeView',templates:'templatesView',projects:'projectsView'})[b.dataset.nav]));
 $('createBtn').onclick=()=>openEditor('Breaking With Text');
+const postParams=new URLSearchParams(window.location.search);
+const incomingHeadline=postParams.get('headline');
+const incomingSource=postParams.get('subtitle');
+if(incomingHeadline){
+ $('headline').value=incomingHeadline;
+ $('highlight').value='';
+ $('subtitle').value=incomingSource||'';
+ draw();
+}
 function openEditor(t){template=t;setCanvasSize(t);$('template').value=t;$('editorName').textContent=t;$('headline').value=t==='Player Feature'?'PLAYER NAME':t==='Player Comparison'?'PLAYER A VS PLAYER B':'';$('highlight').value='';$('subtitle').value=t==='Player Feature'?'PLAYER FEATURE':t==='Player Comparison'?'HEAD-TO-HEAD COMPARISON':'';scale=1;offsetX=0;offsetY=0;$('zoom').value=100;$('posX').value=0;$('posY').value=0;show('editorView');draw()}
 $('template').onchange=e=>{template=e.target.value;$('editorName').textContent=template;draw()};
 function loadImage(file){if(!file||!file.type.startsWith('image/'))return;const url=URL.createObjectURL(file),im=new Image();im.onload=()=>{if(imgUrl)URL.revokeObjectURL(imgUrl);img=im;imgUrl=url;scale=1;offsetX=offsetY=0;facePoint=null;subjectMask=null;subjectMaskImage=null;$('behindText').value='';$('subjectStatus').textContent='Enter text to place it behind the person in the upper centre of the image.';$('zoom').value=100;$('posX').value=0;$('posY').value=0;draw()};im.src=url}
