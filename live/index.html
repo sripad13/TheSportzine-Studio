@@ -109,7 +109,7 @@ body{background:#0b0d12;color:#edf1f7}
 <header class="top"><a class="brand" href="/" style="text-decoration:none;color:inherit">THE SPORTZINE <em>NEWSROOM</em></a><nav class="workspaces" id="workspaces"><button class="ws active" data-ws="All Sports">All Sports</button><button class="ws" data-ws="Football">Football</button><button class="ws" data-ws="Formula 1">Formula 1</button><button class="ws" data-ws="Breaking">Breaking</button></nav><div class="topright"><span class="status" id="status">Preview mode</span><a class="btn primary" href="/post/" style="text-decoration:none">Create Post</a><details class="settings-menu" id="settingsMenu"><summary class="btn">Settings ▾</summary><div class="settings-panel"><label for="apiBase">Newsroom API URL</label><input class="api" id="apiBase" value="https://newsroom-api.falsewinger.com" aria-label="Newsroom API URL"><button class="btn" id="connect">Connect</button><button class="btn" id="sourcesButton">Sources</button><button class="btn" id="addColumn">＋ Column</button></div></details></div></header>
 <div class="bar"><input id="globalSearch" placeholder="Search stories, clubs, drivers…"><button class="btn" id="refresh">↻ Refresh</button></div>
 <main class="board" id="board" aria-label="Newsroom columns"></main>
-<aside class="drawer" id="drawer"><div class="dhead"><strong>STORY WORKSPACE</strong><button class="tiny" id="closeDrawer">✕</button></div><div class="dcontent" id="detail"><div class="empty">Select a story to inspect it.</div></div></aside>
+<aside class="drawer" id="drawer"><div class="dhead"><strong></strong><button class="tiny" id="closeDrawer">✕</button></div><div class="dcontent" id="detail"><div class="empty">Select a story to inspect it.</div></div></aside>
 <div class="source-manager" id="sourceManager"><section class="source-dialog"><div class="dhead" style="padding:0 0 13px"><strong>MANAGE SOURCES</strong><button class="tiny" id="closeSources">✕</button></div><p class="source-note">Manage the publications that feed Newsroom Live. Changes are saved centrally through the Newsroom API.</p><div id="sourceMessage" class="source-note">Loading configured sources…</div><div class="source-list" id="sourceList"></div><div class="divider" style="border-top:1px solid #343844;margin:16px 0"></div><h2>Add a source</h2><div class="source-form"><div class="field"><label>Publication name</label><input id="sourceName" placeholder="e.g. The Athletic"></div><div class="field"><label>Category</label><select id="sourceCategory"><option value="football">Football</option><option value="f1">Formula 1</option><option value="both">Both</option></select></div><div class="field wide"><label>RSS / Atom feed URL</label><input id="sourceUrl" placeholder="https://example.com/rss"></div></div><div class="dactions"><button class="btn" id="testSource">Test feed</button><button class="btn primary" id="saveSource">Add source</button></div><p class="footnote">Only valid RSS or Atom feed URLs can be saved. Disabled sources remain in your list but are excluded from refreshes.</p></section></div><div class="modal" id="modal"><div class="dialog"><h2 id="modalTitle">Add column</h2><div class="field"><label>Column type</label><select id="colType"><option value="football">Football latest</option><option value="f1">Formula 1 latest</option><option value="breaking">Breaking queue</option><option value="priority">Priority stories</option><option value="search">Keyword search</option><option value="saved">Saved stories</option></select></div><div class="field"><label>Column name</label><input id="colName" placeholder="e.g. Chelsea"></div><div class="field"><label>Keyword (for search columns)</label><input id="colKeyword" placeholder="e.g. Chelsea, transfer"></div><div class="dactions"><button class="btn" id="cancelModal">Cancel</button><button class="btn primary" id="saveColumn">Add column</button></div><p class="footnote">Columns are saved in this browser. Drag the board horizontally; resize columns on desktop using the lower-right edge.</p></div></div>
 <script>
 const API_KEY='tsz_newsroom_api';const defaultColumns=[{id:'c1',type:'football',name:'Football Latest'},{id:'c2',type:'breaking',name:'Breaking'},{id:'c3',type:'priority',name:'Priority Desk'},{id:'c4',type:'f1',name:'F1 Latest'},{id:'c5',type:'search',name:'Chelsea',keyword:'Chelsea'},{id:'c6',type:'saved',name:'Saved Stories'}];
@@ -154,33 +154,33 @@ function plainArticleText(value){
 
 function storyCard(s){return '<article class="story '+(selected===s.id?'selected':'')+'" data-id="'+esc(s.id)+'"><div class="meta"><span class="source">'+esc(s.source)+'</span><span>·</span><span>'+esc(relativeAge(s))+'</span>'+(s.priority?'<span class="priority">★ PRIORITY</span>':'')+'</div><h3>'+esc(s.title)+'</h3><div class="storyfoot">'+(s.breaking?'<span class="pill breaking">BREAKING</span>':'')+'<span class="pill">'+(s.sport==='f1'?'FORMULA 1':'FOOTBALL')+'</span>'+(s.duplicateCount>1?'<span class="pill duplicate">'+s.duplicateCount+' SOURCES</span>':'')+'</div></article>'}
 
-function shortTitleMarkup(id){
- const item=generatedTitles.get(id);
- if(!item)return '<div class="short-title-box" id="shortTitleBox"><div class="short-title-label">AI short headline</div><button class="btn" id="generateShortTitle">✦ Generate short title</button><div class="short-title-error" id="shortTitleError"></div></div>';
- return '<div class="short-title-box" id="shortTitleBox"><div class="short-title-label">AI short headline</div><div class="short-title-text">'+esc(item.title)+'</div><div class="short-title-meta">'+item.words+' words · original headline preserved</div><div class="dactions" style="margin:10px 0 0"><button class="btn" id="copyShortTitle">Copy short title</button><button class="btn" id="generateShortTitle">Regenerate</button></div><div class="short-title-error" id="shortTitleError"></div></div>';
-}
-async function generateShortTitle(id){
+async function createPostFromStory(id){
  const s=stories.find(x=>x.id===id);if(!s)return;
- const button=$('#generateShortTitle');if(button){button.disabled=true;button.textContent='Generating…'}
- const error=$('#shortTitleError');if(error)error.textContent='';
+ const button=$('#createPostFromStory');if(button){button.disabled=true;button.textContent='Preparing…'}
+ const error=$('#createPostError');if(error)error.textContent='';
  try{
-  const base=$('#apiBase').value.trim().replace(/\/$/,'');
-  const response=await fetch(base+'/api/short-title',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:s.title,summary:s.summary||''})});
-  const data=await response.json();
-  if(!response.ok)throw new Error(data.error||'Title generation failed.');
-  const title=String(data.title||'').trim();const words=title.split(/\s+/).filter(Boolean);
-  if(!title||words.length>9)throw new Error('The generated title did not meet the 9-word limit. Please try again.');
-  generatedTitles.set(id,{title,words:words.length});openStory(id);
+  let item=generatedTitles.get(id);
+  if(!item){
+   const base=$('#apiBase').value.trim().replace(/\/$/,'');
+   const response=await fetch(base+'/api/short-title',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:s.title,summary:s.summary||''})});
+   const data=await response.json();if(!response.ok)throw new Error(data.error||'Title generation failed.');
+   const title=String(data.title||'').trim(),words=title.split(/\s+/).filter(Boolean);
+   if(!title||words.length>9)throw new Error('The generated title did not meet the nine-word limit.');
+   item={title,words:words.length};generatedTitles.set(id,item);
+  }
+  const params=new URLSearchParams({headline:item.title,subtitle:'Source: '+s.source});
+  window.location.href='/post/?'+params.toString();
  }catch(e){
-  const el=$('#shortTitleError');if(el)el.textContent=e.message||'Could not generate a short title.';
-  const btn=$('#generateShortTitle');if(btn){btn.disabled=false;btn.textContent=generatedTitles.has(id)?'Regenerate':'✦ Generate short title'}
+  if(error)error.textContent=e.message||'Could not prepare the post.';
+  if(button){button.disabled=false;button.textContent='Create Post'}
  }
 }
+
 function openStory(id){
  selected=id;const s=stories.find(x=>x.id===id);if(!s)return;
  const body=plainArticleText(s.content||s.contentEncoded||s.summary||s.description||s.contentSnippet||'');
  const label=(s.content||s.contentEncoded)?'Article text':(body?'Summary':'No article text available in this feed');
- $('#detail').innerHTML='<div class="meta">'+esc(s.source)+' · '+esc(s.sport==='f1'?'FORMULA 1':'FOOTBALL')+' · '+esc(relativeAge(s))+'</div><h2>'+esc(s.title)+'</h2>'+shortTitleMarkup(id)+'<div class="dactions"><a class="btn primary" href="'+esc(s.link||'#')+'" target="_blank" rel="noopener">Open original ↗</a><button class="btn" id="saveStory">'+(saved.has(s.id)?'Unsave':'Save story')+'</button><button class="btn" id="copyTitle">Copy headline</button></div><div class="sourcebox"><b>'+label+'</b></div><div class="article-body">'+(body?esc(body):'<p>The RSS feed provides a headline only. Open the original publication to read the full article.</p>')+'</div>';
+ $('#detail').innerHTML='<div class="meta">'+esc(s.source)+' · '+esc(s.sport==='f1'?'FORMULA 1':'FOOTBALL')+' · '+esc(relativeAge(s))+'</div><h2>'+esc(s.title)+'</h2><div class="dactions"><a class="btn primary" href="'+esc(s.link||'#')+'" target="_blank" rel="noopener">Open original</a><button class="btn" id="saveStory">'+(saved.has(s.id)?'Unsave':'Save story')+'</button><button class="btn" id="createPostFromStory">Create Post</button></div><div class="article-body">'+(body?esc(body):'<p>The RSS feed provides a headline only. Open the original publication to read the full article.</p>')+'</div><div class="short-title-error" id="createPostError"></div>';
  $('#drawer').classList.add('open');
  $('#saveStory').onclick=()=>{saved.has(id)?saved.delete(id):saved.add(id);localStorage.setItem('tsz_saved',JSON.stringify([...saved]));render();openStory(id)};
  $('#copyTitle').onclick=()=>navigator.clipboard?.writeText(s.title);
