@@ -110,36 +110,46 @@ async function getConfiguredFeeds(env) {
   const builtins=DEFAULT_FEEDS.map(feed=>{const edit=editMap.get(feed.url)||{};return {name:edit.name||feed.name,url:edit.override_feed_url||feed.url,sport:sportCode(edit.sport||feed.sport)}}).filter(feed=>!deleted.includes(feed.url));
   return [...builtins, ...custom].filter((feed,index,all)=>all.findIndex(item=>item.url===feed.url)===index);
 }
-async function getRedditStories(env, sort="new") {
-  if (!env.DB) return {stories:[],errors:["D1 database is not configured."]};
-  const safeSort=["new","hot"].includes(sort)?sort:"new";
-  await env.DB.prepare("CREATE TABLE IF NOT EXISTS newsroom_subreddits (id TEXT PRIMARY KEY, subreddit TEXT NOT NULL UNIQUE, sport TEXT NOT NULL DEFAULT 'general', created_at TEXT NOT NULL)").run();
-  const rows=await env.DB.prepare("SELECT subreddit,sport FROM newsroom_subreddits ORDER BY subreddit COLLATE NOCASE").all();
-  const outcomes=await Promise.all((rows.results||[]).map(async row=>{
-    const timeFilter=safeSort==="new"?" when:7d":"";
-    const query="site:reddit.com/r/"+row.subreddit+timeFilter;
-    const url="https://news.google.com/rss/search?q="+encodeURIComponent(query)+"&hl=en-IN&gl=IN&ceid=IN:en";
-    try{
-      const response=await fetch(url,{headers:{"Accept":"application/rss+xml, application/xml, text/xml","User-Agent":"TheSportzineNewsroom/1.0 (+https://newsroom.falsewinger.com)"},signal:AbortSignal.timeout(12000)});
-      if(!response.ok)throw new Error("Google News RSS returned HTTP "+response.status);
-      const xml=await response.text();
-      if(!/<(rss|feed|rdf:RDF)\b/i.test(xml))throw new Error("Search provider did not return an RSS feed");
-      const items=parseFeed(xml,{name:"r/"+row.subreddit,sport:sportCode(row.sport)}).map(item=>({...item,id:"reddit-search:"+row.subreddit+":"+item.id,source:"r/"+row.subreddit,isReddit:true,redditSort:safeSort,summary:item.summary||"Indexed Reddit result"}));
-      return {items,error:items.length?null:"No indexed Reddit posts found for r/"+row.subreddit};
-    }catch(error){return {items:[],error:"r/"+row.subreddit+": "+(error.message||"Search feed unavailable")};}
-  }));
-  const stories=outcomes.flatMap(x=>x.items);
-  if(safeSort==="new")stories.sort((a,b)=>(b.timestamp||0)-(a.timestamp||0));
-  return {stories,errors:outcomes.map(x=>x.error).filter(Boolean)};
+
+const GOOGLE_TRENDS_RPC_ID="i0OFE";
+const GOOGLE_TRENDS_BATCH_URL="https://trends.google.com/_/TrendsUi/data/batchexecute";
+const FOOTBALL_TREND_TERMS=/\b(football|soccer|premier league|champions league|europa league|conference league|fa cup|carabao cup|efl cup|la liga|serie a|bundesliga|ligue 1|fifa|uefa|world cup|euros|copa america|afcon|afc|isl|indian super league|mls|wsl|ballon d'or|transfer|striker|goalkeeper|manager|head coach|match|fixture|derby|goal|penalty|red card|yellow card|offside|hat.trick|manchester united|manchester city|real madrid|barcelona|atletico madrid|liverpool|arsenal|chelsea|tottenham|spurs|newcastle|aston villa|everton|west ham|brighton|nottingham forest|bayern|borussia dortmund|psg|paris saint.germain|inter milan|ac milan|juventus|napoli|roma|benfica|porto|sporting|ajax|celtic|rangers|al hilal|al nassr|inter miami|argentina|brazil|france|england|spain|germany|portugal|messi|ronaldo|mbappe|haaland|salah|vinicius|bellingham|kane|neymar|lewandowski|palmer|saka|odegaard|rashford|bruno fernandes|de bruyne|yamal|pedri|rodri|van dijk|gyokeres|osimhen|son heung.min)\b/i;
+function parseGoogleTrendsPayload(text){
+ const body=String(text||"").trim().replace(/^\)\]\}'/,"");const arrays=[];
+ for(let i=0;i<body.length;i++){if(body[i]!=="[")continue;let depth=0,inString=false,escaped=false;const start=i;for(;i<body.length;i++){const ch=body[i];if(inString){if(escaped)escaped=false;else if(ch==="\\")escaped=true;else if(ch==='"')inString=false;continue;}if(ch==='"')inString=true;else if(ch==="[")depth++;else if(ch==="]"&&--depth===0){arrays.push(body.slice(start,i+1));break;}}}
+ for(const chunk of arrays){let parsed;try{parsed=JSON.parse(chunk)}catch{continue}if(!Array.isArray(parsed))continue;const entry=parsed.find(x=>Array.isArray(x)&&x[0]==="wrb.fr"&&x[1]===GOOGLE_TRENDS_RPC_ID);if(entry){try{return JSON.parse(entry[2])}catch{}}}
+ throw new Error("Google Trends response could not be parsed.");
 }
+async function fetchGoogleTrends(windowName){
+ const hours=windowName==="rising"?1:windowName==="hot"?12:24;
+ const inner=[null,null,"IN",17,"en-IN",hours,2];
+ const requestPayload=[[[GOOGLE_TRENDS_RPC_ID,JSON.stringify(inner),null,"generic"]]];
+ const query=new URLSearchParams({rpcids:GOOGLE_TRENDS_RPC_ID,"source-path":"/trending",hl:"en-IN"});
+ const body=new URLSearchParams({"f.req":JSON.stringify(requestPayload)});
+ const response=await fetch(GOOGLE_TRENDS_BATCH_URL+"?"+query.toString(),{method:"POST",headers:{"accept":"*/*","content-type":"application/x-www-form-urlencoded;charset=UTF-8","origin":"https://trends.google.com","referer":"https://trends.google.com/trending"},body:body.toString(),signal:AbortSignal.timeout(18000)});
+ if(!response.ok)throw new Error("Google Trends returned HTTP "+response.status);
+ const payload=parseGoogleTrendsPayload(await response.text());
+ const rows=Array.isArray(payload)&&Array.isArray(payload[1])?payload[1]:[];
+ return rows.map((row,index)=>{
+  const query=typeof row?.[0]==="string"?row[0]:"";const volume=row?.[6]??null;const growth=row?.[8]??null;
+  const breakdown=Array.isArray(row?.[9])?row[9].filter(x=>typeof x==="string"):[];
+  const categories=Array.isArray(row?.[10])?row[10]:[];
+  const start=Array.isArray(row?.[3])?Number(row[3][0]):Number(row?.[3]);
+  const geo=typeof row?.[2]==="string"?row[2]:"IN";
+  const sportsCategory=categories.some(category=>Number(typeof category==="object"?(category.id??category.category_id):category)===17);
+  if(!query||!sportsCategory||!FOOTBALL_TREND_TERMS.test([query,...breakdown].join(" ")))return null;
+  const volumeLabel=volume==null?null:(Number.isFinite(Number(volume))?Math.trunc(Number(volume))+"+":String(volume));
+  const explore=new URLSearchParams({date:hours===1?"now 1-H":hours===12?"now 12-H":"now 1-d",geo,q:query});
+  return {query,search_volume:volume,search_volume_label:volumeLabel,increase_percentage:growth,start_timestamp:Number.isFinite(start)?start:null,started_at:Number.isFinite(start)?new Date(start*1000).toISOString():null,position:index+1,explore_url:"https://trends.google.com/trends/explore?"+explore.toString()};
+ }).filter(Boolean).sort((a,b)=>(Number(b.search_volume)||0)-(Number(a.search_volume)||0)).slice(0,30);
+}
+
 async function fetchStories(env) {
   const configured = await getConfiguredFeeds(env);
   const results=await Promise.all(configured.map(async feed=>({feed,...await getFeed(feed)})));
-  const redditResult=await getRedditStories(env,"new");
-  const redditStories=redditResult.stories;
   const seen=new Map();
-  for(const story of [...results.flatMap(result=>result.items),...redditStories]){const key=story.title.toLowerCase().replace(/[^a-z0-9]+/g," ").trim().split(" ").filter(Boolean).slice(0,10).join(" ");const existing=seen.get(key);if(existing){existing.duplicateCount=(existing.duplicateCount||1)+1;existing.sources=[...(existing.sources||[existing.source]),story.source];}else seen.set(key,story);}
-  return{stories:[...seen.values()].sort((a,b)=>b.timestamp-a.timestamp),feeds:results.map(({feed,items,error,diagnostic})=>({name:feed.name,sport:feed.sport,count:items.length,error,diagnostic})).concat([{name:"Reddit",sport:"reddit",count:redditStories.length,error:redditResult.errors.length?redditResult.errors.join("; "):null}]),fetched_at:new Date().toISOString()};
+  for(const story of results.flatMap(result=>result.items)){const key=story.title.toLowerCase().replace(/[^a-z0-9]+/g," ").trim().split(" ").filter(Boolean).slice(0,10).join(" ");const existing=seen.get(key);if(existing){existing.duplicateCount=(existing.duplicateCount||1)+1;existing.sources=[...(existing.sources||[existing.source]),story.source];}else seen.set(key,story);}
+  return{stories:[...seen.values()].sort((a,b)=>b.timestamp-a.timestamp),feeds:results.map(({feed,items,error,diagnostic})=>({name:feed.name,sport:feed.sport,count:items.length,error,diagnostic})),fetched_at:new Date().toISOString()};
 }
 
 async function searchStories(env, keyword) {
@@ -209,11 +219,11 @@ export default {
     if (!ALLOWED_ORIGINS.has(origin) && origin !== "") return json({ error: "Origin not allowed." }, 403, origin);
     try {
 
-      if (request.method === "GET" && url.pathname === "/api/reddit") {
-        const sort=url.searchParams.get("sort")||"new";
-        if(!["new","hot"].includes(sort))return json({error:"Sort must be new or hot."},400,origin);
-        const result=await getRedditStories(env,sort);
-        return json({stories:result.stories,errors:result.errors,sort,fetched_at:new Date().toISOString()},200,origin);
+      if (request.method === "GET" && url.pathname === "/api/trends") {
+        const windowName=url.searchParams.get("window")||"rising";
+        if(!["rising","hot","trending"].includes(windowName))return json({error:"Window must be rising, hot or trending."},400,origin);
+        const trends=await fetchGoogleTrends(windowName);
+        return json({window:windowName,region:"IN",category:"Sports",trends,fetched_at:new Date().toISOString()},200,origin);
       }
       if (request.method === "GET" && url.pathname === "/api/feed") return json(await fetchStories(env),200,origin);
       if (request.method === "GET" && url.pathname === "/api/version") {
@@ -306,20 +316,6 @@ export default {
         return json({ title: shortTitle, words: wordCount }, 200, origin);
       }
 
-      if (request.method === "GET" && url.pathname === "/api/subreddits") {
-        await env.DB.prepare("CREATE TABLE IF NOT EXISTS newsroom_subreddits (id TEXT PRIMARY KEY, subreddit TEXT NOT NULL UNIQUE, sport TEXT NOT NULL DEFAULT 'general', created_at TEXT NOT NULL)").run();
-        const rows=await env.DB.prepare("SELECT id,subreddit,sport,created_at FROM newsroom_subreddits ORDER BY subreddit COLLATE NOCASE").all();
-        return json({subreddits:rows.results||[]},200,origin);
-      }
-      if (request.method === "POST" && url.pathname === "/api/subreddits") {
-        await env.DB.prepare("CREATE TABLE IF NOT EXISTS newsroom_subreddits (id TEXT PRIMARY KEY, subreddit TEXT NOT NULL UNIQUE, sport TEXT NOT NULL DEFAULT 'general', created_at TEXT NOT NULL)").run();
-        const body=await request.json();const subreddit=String(body.subreddit||"").trim().replace(/^r\//i,"");const sport=String(body.sport||"general").trim();
-        if(!/^[A-Za-z0-9_]{2,21}$/.test(subreddit))return json({error:"Enter a valid subreddit name (2–21 letters, numbers or underscores)."},400,origin);
-        const id=crypto.randomUUID();try{await env.DB.prepare("INSERT INTO newsroom_subreddits (id,subreddit,sport,created_at) VALUES (?,?,?,?)").bind(id,subreddit,sport,new Date().toISOString()).run()}catch(e){if(/unique/i.test(e.message))return json({error:"That subreddit is already being tracked."},409,origin);throw e}
-        return json({id,subreddit,sport},201,origin);
-      }
-      const subMatch=url.pathname.match(/^\/api\/subreddits\/([a-f0-9-]{36})$/i);
-      if(subMatch&&request.method==="DELETE"){const result=await env.DB.prepare("DELETE FROM newsroom_subreddits WHERE id=?").bind(subMatch[1]).run();if(!result.meta?.changes)return json({error:"Subreddit not found."},404,origin);return json({ok:true},200,origin)}
       if (request.method === "GET" && url.pathname === "/api/sources") {
         return json({ sources: await listSources(env.DB) }, 200, origin);
       }
