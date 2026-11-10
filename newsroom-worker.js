@@ -119,7 +119,7 @@ async function getRedditStories(env, sort="new") {
     const base="https://www.reddit.com/r/"+encodeURIComponent(row.subreddit)+"/";
     const headers={"Accept":"application/atom+xml, application/rss+xml, application/xml, text/xml, application/json","User-Agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36","Cache-Control":"no-cache"};
     let lastError="Reddit feed unavailable";
-    for(const candidate of [base+".rss?sort="+safeSort+"&limit=25","https://old.reddit.com/r/"+encodeURIComponent(row.subreddit)+"/.rss?sort="+safeSort+"&limit=25",base+".json?sort="+safeSort+"&limit=25&raw_json=1"]){
+    for(const candidate of [base+".rss?sort="+safeSort+"&limit=25","https://old.reddit.com/r/"+encodeURIComponent(row.subreddit)+"/.rss?sort="+safeSort+"&limit=25",base+safeSort+".json?limit=25&raw_json=1"]){
       try{
         const response=await fetch(candidate,{headers,signal:AbortSignal.timeout(10000),redirect:"follow"});
         if(!response.ok){lastError="Reddit returned HTTP "+response.status;continue;}
@@ -358,7 +358,9 @@ export default {
         if(!sport||sport.length>60)return json({error:"A valid sport tag is required."},400,origin);
         await env.DB.prepare("CREATE TABLE IF NOT EXISTS newsroom_source_edits (feed_url TEXT PRIMARY KEY, name TEXT, override_feed_url TEXT, sport TEXT, updated_at TEXT NOT NULL)").run();
         await env.DB.prepare("INSERT INTO newsroom_source_edits (feed_url,name,override_feed_url,sport,updated_at) VALUES (?,?,?,?,?) ON CONFLICT(feed_url) DO UPDATE SET name=excluded.name,override_feed_url=excluded.override_feed_url,sport=excluded.sport,updated_at=excluded.updated_at").bind(feed.url,name,feedUrl===feed.url?null:feedUrl,sport,new Date().toISOString()).run();
-        return json({ok:true,id:match[1]},200,origin);
+        const saved=await env.DB.prepare("SELECT name,override_feed_url,sport FROM newsroom_source_edits WHERE feed_url=?").bind(feed.url).first();
+        if(!saved||saved.name!==name||saved.sport!==sport||(saved.override_feed_url||feed.url)!==feedUrl)throw new Error("Source edit could not be confirmed in D1.");
+        return json({ok:true,id:match[1],source:{id:match[1],name,feed_url:feedUrl,sport,is_default:true}},200,origin);
       }
       if (match && request.method === "PATCH") {
         const current = await env.DB.prepare("SELECT * FROM newsroom_sources WHERE id = ?").bind(match[1]).first();
