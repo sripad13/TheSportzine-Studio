@@ -45,5 +45,6 @@ $('#sourcesButton').onclick=()=>{$('#sourceManager').classList.add('open');loadS
 $('#closeSources').onclick=()=>$('#sourceManager').classList.remove('open');
 $('#testSource').onclick=async()=>{const url=$('#sourceUrl').value.trim();if(!url){sourceMessage('Enter a feed URL first.','error');return}sourceMessage('Testing feed…');try{const r=await fetch(sourceApi()+'/test',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url})});const d=await r.json();if(!r.ok)throw new Error(d.error||'Feed test failed.');sourceMessage('Feed verified · '+(d.title||d.items+' items found'),'ok')}catch(e){sourceMessage(e.message,'error')}};
 $('#saveSource').onclick=async()=>{const name=$('#sourceName').value.trim(),url=$('#sourceUrl').value.trim(),category=$('#sourceCategory').value;if(!name||!url){sourceMessage('Publication name and feed URL are required.','error');return}try{const r=await fetch(sourceApi(),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,url,category,enabled:true})});const d=await r.json();if(!r.ok)throw new Error(d.error||'Could not save source.');$('#sourceName').value='';$('#sourceUrl').value='';await loadSources();sourceMessage('Source added. Refresh Newsroom to load its stories.','ok')}catch(e){sourceMessage(e.message,'error')}};
-\nrender();refresh();
+
+render();refresh();
 </script></body></html>
