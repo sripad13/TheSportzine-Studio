@@ -93,18 +93,22 @@ async function getFeed(feed) {
   }
 }
 async function getConfiguredFeeds(env) {
-  let custom = [], deleted = [];
+  let custom = [], deleted = [], edits = [];
   if (env.DB) {
     await env.DB.prepare("CREATE TABLE IF NOT EXISTS newsroom_source_overrides (feed_url TEXT PRIMARY KEY, deleted INTEGER NOT NULL DEFAULT 0, updated_at TEXT NOT NULL)").run();
-    const [customRows, overrideRows] = await Promise.all([
+    await env.DB.prepare("CREATE TABLE IF NOT EXISTS newsroom_source_edits (feed_url TEXT PRIMARY KEY, name TEXT, override_feed_url TEXT, sport TEXT, updated_at TEXT NOT NULL)").run();
+    const [customRows, overrideRows, editRows] = await Promise.all([
       env.DB.prepare("SELECT name, feed_url, sport FROM newsroom_sources WHERE enabled = 1 ORDER BY priority ASC, name COLLATE NOCASE ASC").all(),
-      env.DB.prepare("SELECT feed_url FROM newsroom_source_overrides WHERE deleted = 1").all()
+      env.DB.prepare("SELECT feed_url FROM newsroom_source_overrides WHERE deleted = 1").all(),
+      env.DB.prepare("SELECT feed_url,name,override_feed_url,sport FROM newsroom_source_edits").all()
     ]);
     custom = (customRows.results || []).map(row => ({name:row.name,url:row.feed_url,sport:sportCode(row.sport||"football")}));
     deleted = (overrideRows.results || []).map(row => row.feed_url);
+    edits = editRows.results || [];
   }
-  return [...DEFAULT_FEEDS, ...custom].filter(feed => !deleted.includes(feed.url))
-    .filter((feed,index,all)=>all.findIndex(item=>item.url===feed.url)===index);
+  const editMap=new Map(edits.map(row=>[row.feed_url,row]));
+  const builtins=DEFAULT_FEEDS.map(feed=>{const edit=editMap.get(feed.url)||{};return {name:edit.name||feed.name,url:edit.override_feed_url||feed.url,sport:sportCode(edit.sport||feed.sport)}}).filter(feed=>!deleted.includes(feed.url));
+  return [...builtins, ...custom].filter((feed,index,all)=>all.findIndex(item=>item.url===feed.url)===index);
 }
 async function getRedditStories(env, sort="new") {
   if (!env.DB) return {stories:[],errors:["D1 database is not configured."]};
@@ -115,7 +119,7 @@ async function getRedditStories(env, sort="new") {
     const base="https://www.reddit.com/r/"+encodeURIComponent(row.subreddit)+"/";
     const headers={"Accept":"application/atom+xml, application/rss+xml, application/xml, text/xml, application/json","User-Agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36","Cache-Control":"no-cache"};
     let lastError="Reddit feed unavailable";
-    for(const candidate of [base+".rss?sort="+safeSort+"&limit=25","https://old.reddit.com/r/"+encodeURIComponent(row.subreddit)+"/.rss?sort="+safeSort+"&limit=25",base+safeSort+".json?limit=25&raw_json=1"]){
+    for(const candidate of [base+".rss?sort="+safeSort+"&limit=25","https://old.reddit.com/r/"+encodeURIComponent(row.subreddit)+"/.rss?sort="+safeSort+"&limit=25",base+".json?sort="+safeSort+"&limit=25&raw_json=1"]){
       try{
         const response=await fetch(candidate,{headers,signal:AbortSignal.timeout(10000),redirect:"follow"});
         if(!response.ok){lastError="Reddit returned HTTP "+response.status;continue;}
@@ -196,7 +200,7 @@ async function listSources(db) {
   const builtins = DEFAULT_FEEDS.map((feed,index)=>{
     const edit=editMap.get(feed.url)||{};
     return {id:"builtin-"+index,name:edit.name||feed.name,feed_url:edit.override_feed_url||feed.url,sport:edit.sport||feed.sport,priority:1,enabled:true,is_default:true};
-  }).filter(feed=>!deleted.has(feed.url));
+  }).filter((feed,index)=>!deleted.has(DEFAULT_FEEDS[index].url));
   return [...builtins,...(result.results||[]).map(row=>({...cleanSource(row),is_default:false}))];
 }
 export default {
