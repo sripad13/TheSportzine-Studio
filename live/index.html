@@ -49,6 +49,7 @@ body{background:var(--bg);color:var(--text);font-family:Inter,Arial,sans-serif;o
 .drawer .dcontent .article-body{font-size:14px;line-height:1.75;color:#3c4043;white-space:normal;margin:16px 0}
 .drawer .dcontent .article-body p{font-size:14px;line-height:1.75;color:#3c4043;margin:0 0 12px}
 .drawer .dcontent .sourcebox{margin-top:16px}
+.short-title-box{margin:14px 0;padding:13px 14px;border:1px solid #cfe0fb;background:#f4f8ff;border-radius:9px}.short-title-label{font-size:10px;font-weight:800;letter-spacing:.07em;color:#52657f;text-transform:uppercase}.short-title-text{font-size:18px;line-height:1.35;font-weight:750;color:#174ea6;margin:7px 0}.short-title-meta{font-size:10px;color:#687080}.short-title-error{font-size:11px;color:#b3261e;margin-top:8px}
 @media(max-width:700px){
  .drawer{padding:12px;align-items:center}
  .drawer .dhead{border-radius:14px 14px 0 0;padding:15px 16px 8px}
@@ -73,7 +74,7 @@ const feeds=[
 {name:'Motorsport.com F1',sport:'f1',url:'https://www.motorsport.com/rss/f1/news/',enabled:true},
 {name:'Formula1.com',sport:'f1',url:'https://www.formula1.com/content/fom-website/en/latest/all.xml',enabled:true}
 ];
-let columns=JSON.parse(localStorage.getItem('tsz_columns')||'null')||defaultColumns;let stories=[];let saved=new Set(JSON.parse(localStorage.getItem('tsz_saved')||'[]'));let activeWorkspace='All Sports';let selected=null;
+let columns=JSON.parse(localStorage.getItem('tsz_columns')||'null')||defaultColumns;let stories=[];let saved=new Set(JSON.parse(localStorage.getItem('tsz_saved')||'[]'));let activeWorkspace='All Sports';let selected=null;let generatedTitles=new Map();let refreshing=false;let lastRefreshAt=0;
 const $=s=>document.querySelector(s);const esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function persist(){localStorage.setItem('tsz_columns',JSON.stringify(columns));}
 function setStatus(t,kind=''){const el=$('#status');el.textContent=t;el.className='status '+kind}
@@ -105,19 +106,54 @@ function plainArticleText(value){
 
 function storyCard(s){return '<article class="story '+(selected===s.id?'selected':'')+'" data-id="'+esc(s.id)+'"><div class="meta"><span class="source">'+esc(s.source)+'</span><span>·</span><span>'+esc(relativeAge(s))+'</span>'+(s.priority?'<span class="priority">★ PRIORITY</span>':'')+'</div><h3>'+esc(s.title)+'</h3><div class="storyfoot">'+(s.breaking?'<span class="pill breaking">BREAKING</span>':'')+'<span class="pill">'+(s.sport==='f1'?'FORMULA 1':'FOOTBALL')+'</span>'+(s.duplicateCount>1?'<span class="pill duplicate">'+s.duplicateCount+' SOURCES</span>':'')+'</div></article>'}
 
-function openStory(id){
- selected=id;
+function shortTitleMarkup(id){
+ const item=generatedTitles.get(id);
+ if(!item)return '<div class="short-title-box" id="shortTitleBox"><div class="short-title-label">AI short headline</div><button class="btn" id="generateShortTitle">✦ Generate short title</button><div class="short-title-error" id="shortTitleError"></div></div>';
+ return '<div class="short-title-box" id="shortTitleBox"><div class="short-title-label">AI short headline</div><div class="short-title-text">'+esc(item.title)+'</div><div class="short-title-meta">'+item.words+' words · original headline preserved</div><div class="dactions" style="margin:10px 0 0"><button class="btn" id="copyShortTitle">Copy short title</button><button class="btn" id="generateShortTitle">Regenerate</button></div><div class="short-title-error" id="shortTitleError"></div></div>';
+}
+async function generateShortTitle(id){
  const s=stories.find(x=>x.id===id);if(!s)return;
+ const button=$('#generateShortTitle');if(button){button.disabled=true;button.textContent='Generating…'}
+ const error=$('#shortTitleError');if(error)error.textContent='';
+ try{
+  const base=$('#apiBase').value.trim().replace(/\/$/,'');
+  const response=await fetch(base+'/api/short-title',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:s.title,summary:s.summary||''})});
+  const data=await response.json();
+  if(!response.ok)throw new Error(data.error||'Title generation failed.');
+  const title=String(data.title||'').trim();const words=title.split(/\s+/).filter(Boolean);
+  if(!title||words.length>9)throw new Error('The generated title did not meet the 9-word limit. Please try again.');
+  generatedTitles.set(id,{title,words:words.length});openStory(id);
+ }catch(e){
+  const el=$('#shortTitleError');if(el)el.textContent=e.message||'Could not generate a short title.';
+  const btn=$('#generateShortTitle');if(btn){btn.disabled=false;btn.textContent=generatedTitles.has(id)?'Regenerate':'✦ Generate short title'}
+ }
+}
+function openStory(id){
+ selected=id;const s=stories.find(x=>x.id===id);if(!s)return;
  const body=plainArticleText(s.content||s.contentEncoded||s.summary||s.description||s.contentSnippet||'');
  const label=(s.content||s.contentEncoded)?'Article text':(body?'Summary':'No article text available in this feed');
- $('#detail').innerHTML='<div class="meta">'+esc(s.source)+' · '+esc(s.sport==='f1'?'FORMULA 1':'FOOTBALL')+' · '+esc(relativeAge(s))+'</div><h2>'+esc(s.title)+'</h2><div class="dactions"><a class="btn primary" href="'+esc(s.link||'#')+'" target="_blank" rel="noopener">Open original ↗</a><button class="btn" id="saveStory">'+(saved.has(s.id)?'Unsave':'Save story')+'</button><button class="btn" id="copyTitle">Copy headline</button></div><div class="sourcebox"><b>'+label+'</b></div><div class="article-body">'+(body?esc(body):'<p>The RSS feed provides a headline only. Open the original publication to read the full article.</p>')+'</div>';
+ $('#detail').innerHTML='<div class="meta">'+esc(s.source)+' · '+esc(s.sport==='f1'?'FORMULA 1':'FOOTBALL')+' · '+esc(relativeAge(s))+'</div><h2>'+esc(s.title)+'</h2>'+shortTitleMarkup(id)+'<div class="dactions"><a class="btn primary" href="'+esc(s.link||'#')+'" target="_blank" rel="noopener">Open original ↗</a><button class="btn" id="saveStory">'+(saved.has(s.id)?'Unsave':'Save story')+'</button><button class="btn" id="copyTitle">Copy headline</button></div><div class="sourcebox"><b>'+label+'</b></div><div class="article-body">'+(body?esc(body):'<p>The RSS feed provides a headline only. Open the original publication to read the full article.</p>')+'</div>';
  $('#drawer').classList.add('open');
  $('#saveStory').onclick=()=>{saved.has(id)?saved.delete(id):saved.add(id);localStorage.setItem('tsz_saved',JSON.stringify([...saved]));render();openStory(id)};
  $('#copyTitle').onclick=()=>navigator.clipboard?.writeText(s.title);
+ const generateButton=$('#generateShortTitle');if(generateButton)generateButton.onclick=()=>generateShortTitle(id);
+ const copyShortButton=$('#copyShortTitle');if(copyShortButton)copyShortButton.onclick=()=>navigator.clipboard?.writeText(generatedTitles.get(id)?.title||'');
  render();
 }
 
-async function refresh(){const base=$('#apiBase').value.trim().replace(/\/$/,'');if(!base){setStatus('API not configured');return}localStorage.setItem(API_KEY,base);setStatus('Fetching feeds…');try{const r=await fetch(base+'/api/feed');if(!r.ok)throw new Error('API returned '+r.status);const data=await r.json();stories=(data.stories||[]).map((x,i)=>({...x,id:x.id||x.link||String(i),sport:x.sport||'football',timeLabel:x.timeLabel||'RSS'}));const failed=(data.feeds||[]).filter(x=>x.error);setStatus(stories.length+' stories · '+failed.length+' feed errors',failed.length?'bad':'ok');$('#status').title=(data.feeds||[]).map(x=>x.name+': '+(x.error||x.count+' items')).join(' | ');render()}catch(e){setStatus('Feed connection failed','bad');console.error(e)}}
+async function refresh(){
+ if(refreshing)return;
+ const base=$('#apiBase').value.trim().replace(/\/$/,'');if(!base){setStatus('API not configured');return}
+ refreshing=true;localStorage.setItem(API_KEY,base);setStatus('Fetching feeds…');
+ try{
+  const r=await fetch(base+'/api/feed');if(!r.ok)throw new Error('API returned '+r.status);
+  const data=await r.json();stories=(data.stories||[]).map((x,i)=>({...x,id:x.id||x.link||String(i),sport:x.sport||'football',timeLabel:x.timeLabel||'RSS'}));
+  lastRefreshAt=Date.now();const failed=(data.feeds||[]).filter(x=>x.error);
+  setStatus(stories.length+' stories · '+failed.length+' feed errors',failed.length?'bad':'ok');
+  $('#status').title=(data.feeds||[]).map(x=>x.name+': '+(x.error||x.count+' items')).join(' | ');render();
+ }catch(e){setStatus('Feed connection failed','bad');console.error(e)}
+ finally{refreshing=false}
+}
 $('#apiBase').value=localStorage.getItem(API_KEY)||'https://newsroom-api.falsewinger.com';
 $('#connect').onclick=refresh;$('#refresh').onclick=refresh;$('#globalSearch').oninput=render;$('#closeDrawer').onclick=()=>$('#drawer').classList.remove('open');
 $('#drawer').addEventListener('click',e=>{if(e.target===$('#drawer'))$('#drawer').classList.remove('open')});
@@ -138,4 +174,8 @@ $('#testSource').onclick=async()=>{const url=$('#sourceUrl').value.trim();if(!ur
 $('#saveSource').onclick=async()=>{const name=$('#sourceName').value.trim(),url=$('#sourceUrl').value.trim(),category=$('#sourceCategory').value;if(!name||!url){sourceMessage('Publication name and feed URL are required.','error');return}try{const r=await fetch(sourceApi(),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,url,category,enabled:true})});const d=await r.json();if(!r.ok)throw new Error(d.error||'Could not save source.');$('#sourceName').value='';$('#sourceUrl').value='';await loadSources();sourceMessage('Source added. Refresh Newsroom to load its stories.','ok')}catch(e){sourceMessage(e.message,'error')}};
 
 render();refresh();
+// Refresh feeds every 30 minutes while this Newsroom tab remains open.
+setInterval(()=>{if(!document.hidden)refresh()},30*60*1000);
+// Refresh immediately on return if the tab was hidden beyond the 30-minute window.
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&Date.now()-lastRefreshAt>=30*60*1000)refresh()});
 </script></body></html>
