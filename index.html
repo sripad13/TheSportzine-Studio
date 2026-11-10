@@ -72,7 +72,7 @@
      <div class="field"><div class="row" style="align-items:center;gap:10px"><label for="behindColor" style="margin:0">Text colour</label><input id="behindColor" type="color" value="#ffeb00" title="Choose text colour" style="width:38px;height:38px;padding:3px;border:2px solid #555;border-radius:50%;background:transparent;cursor:pointer"><input id="behindColorHex" value="#FFEB00" aria-label="Text colour HEX" maxlength="7" style="width:110px"></div></div>
      <div class="status" id="subjectStatus">Enter text to place it behind the person in the upper centre of the image.</div>
     <div class="field"><label>Gradient strength <output id="gradientOut">78%</output></label><input id="gradient" type="range" min="0" max="100" value="78"></div>
-    <div class="field"><label>Watermark</label><select id="watermark"><option value="none">None</option><option value="wordmark" selected>Wordmark</option><option value="square">Square</option><option value="both">Wordmark + square</option></select></div>
+    <div class="field"><label>Watermark</label><select id="watermark"><option value="none">None</option><option value="wordmark">Wordmark</option><option value="square">Square</option><option value="both" selected>Wordmark + square</option></select></div>
     <div class="field"><label>Oversized background word (optional)</label><input id="ghost" placeholder="BREAKING"></div>
     <span id="behindSubject" hidden></span>
     <div class="field"><label>League Gothic font file (.woff2/.woff/.ttf)</label><input type="file" id="fontFile" accept=".woff2,.woff,.ttf,.otf"></div>
@@ -136,7 +136,7 @@ if(behindText&&subjectMaskImage&&geo){
  fctx.globalCompositeOperation='destination-in';fctx.drawImage(subjectMaskImage,geo.x,geo.y,geo.w,geo.h);fctx.globalCompositeOperation='source-over';
  ctx.drawImage(foreground,0,0);
 }
-const placement=$('placement').value,alpha=+$('gradient').value/100,grad=ctx.createLinearGradient(0,placement==='bottom'?H*.5:0,0,placement==='bottom'?H:H*.47);if(placement==='bottom'){grad.addColorStop(0,'rgba(12,10,17,0)');grad.addColorStop(1,'rgba(12,10,17,1)')}else{grad.addColorStop(0,`rgba(12,10,17,${alpha})`);grad.addColorStop(1,'rgba(12,10,17,0)')}ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);
+const placement=$('placement').value,alpha=+$('gradient').value/100,grad=ctx.createLinearGradient(0,placement==='bottom'?H-150:0,0,placement==='bottom'?H:H*.47);if(placement==='bottom'){grad.addColorStop(0,'rgba(12,10,17,0)');grad.addColorStop(1,'rgba(12,10,17,1)')}else{grad.addColorStop(0,`rgba(12,10,17,${alpha})`);grad.addColorStop(1,'rgba(12,10,17,0)')}ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);
 const wordmarkEl=$('wordmarkBrand'),shieldEl=$('squareBrand');const watermarkMode=$('watermark').value;wordmarkEl.style.display=(watermarkMode==='wordmark'||watermarkMode==='both')?'block':'none';shieldEl.style.display='block';wordmarkEl.style.top=(placement==='bottom'?'69.5%':'13%');
 const headline=$('headline').value.trim().toUpperCase(),highlight=$('highlight').value.trim().toUpperCase(),align=$('alignment').value,anchor=align==='left'?5:align==='right'?W-5:W/2,maxWidth=W-10;
 // Headline and oversized background word are independent layers.
@@ -256,6 +256,6 @@ $('confirmCustomTime').onclick=()=>{const v=$('bufferDueAt').value;$('scheduleMo
 document.querySelectorAll('[data-close-modal]').forEach(b=>b.onclick=()=>b.closest('.modal-backdrop').classList.add('hidden'));
 document.querySelectorAll('.modal-backdrop').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.add('hidden')}));
 openEditor('Breaking With Text');
-loadBufferChannels(true);
+loadBufferChannels(false);
 </script>
 </body></html>
