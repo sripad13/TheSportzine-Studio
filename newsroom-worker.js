@@ -297,16 +297,6 @@ export default {
         for(const candidate of candidates){try{const res=await fetch(candidate,{headers:{"Accept":"application/rss+xml, application/atom+xml, application/xml, text/xml, text/html","User-Agent":"TheSportzine-Newsroom/1.0"},signal:AbortSignal.timeout(6000)});if(!res.ok)continue;const bodyText=await res.text();if(/<(rss|feed|rdf:RDF)\b/i.test(bodyText)){found.push({url:candidate,title:base.hostname});break;}if(candidate===homepage){const tags=bodyText.match(/<link\b[^>]*>/gi)||[];for(const tagText of tags){if(!/alternate/i.test(tagText)||!/(rss|atom)\+xml/i.test(tagText))continue;const href=tagText.match(/href=["']([^"']+)["']/i);if(href){found.push({url:new URL(href[1],homepage).href,title:base.hostname});}}}}catch{}}
         return json({feeds:found},200,origin);
       }
-      if (!env.DB) return json({ error: "D1 binding DB is not configured; RSS feed endpoint remains available." }, 503, origin);
-      if (request.method === "GET" && url.pathname === "/api/search") {
-        const keyword = (url.searchParams.get("keyword") || "").trim();
-        if (!keyword || keyword.length > 120) {
-          return json({ error: "Enter a keyword or phrase (maximum 120 characters)." }, 400, origin);
-        }
-        return json(await searchStories(env, keyword), 200, origin);
-      }
-
-      // Generate one short headline on demand (maximum nine words).
       if (request.method === "POST" && url.pathname === "/api/ideas") {
         if (!env.AI) return json({error:"Workers AI binding AI is not configured."},503,origin);
         const body=await request.json();
@@ -340,6 +330,16 @@ export default {
         return json({account,ideas,generated_at:new Date().toISOString(),note:boxed?null:"Factodile facts should be checked against a reliable source before publishing."},200,origin);
       }
 
+      if (!env.DB) return json({ error: "D1 binding DB is not configured; RSS feed endpoint remains available." }, 503, origin);
+      if (request.method === "GET" && url.pathname === "/api/search") {
+        const keyword = (url.searchParams.get("keyword") || "").trim();
+        if (!keyword || keyword.length > 120) {
+          return json({ error: "Enter a keyword or phrase (maximum 120 characters)." }, 400, origin);
+        }
+        return json(await searchStories(env, keyword), 200, origin);
+      }
+
+      // Generate one short headline on demand (maximum nine words).
       if (request.method === "POST" && url.pathname === "/api/short-title") {
         if (!env.AI) return json({ error: "Workers AI binding AI is not configured." }, 503, origin);
         const body = await request.json();
