@@ -31,7 +31,7 @@
 .insights-block{margin:0 0 22px}.insights-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px}.insights-head h2{margin:0;font-size:17px}.insights-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.insight-card{background:#202322;border:1px solid #303633;border-radius:13px;padding:17px 18px;min-height:112px;min-width:0}.insight-label{color:#aeb4b1;font-size:13px;margin-bottom:15px}.insight-value-row{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}.insight-value{font-size:clamp(22px,2.2vw,30px);font-weight:750;letter-spacing:-.7px}.insight-change{font-size:14px;color:#8ecb91}.insight-change.down{color:#e99a91}.insight-change.neutral{color:#9ca39f}.insight-foot{font-size:10px;color:#89918d;margin-top:7px}.insight-refresh{font-size:11px;padding:6px 9px}@media(max-width:900px){.insights-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:480px){.insight-card{padding:13px;min-height:98px}.insight-label{font-size:12px;margin-bottom:11px}.insight-value{font-size:23px}.insight-change{font-size:12px}}
 .top.newsroom-top{height:58px;display:flex;align-items:center;gap:18px;padding:0 18px;margin:0;border-bottom:1px solid var(--line);background:#101116}.newsroom-top .brand{font-weight:850;font-size:17px;letter-spacing:-.6px;text-decoration:none;color:inherit;white-space:nowrap}.newsroom-top .brand em{font-style:normal;color:var(--yellow)}.newsroom-top .nav{display:flex;gap:8px;align-items:center}.newsroom-top .nav .btn{border:1px solid #3a3d48;background:#20232c;border-radius:7px;padding:9px 12px;color:inherit;text-decoration:none;font-size:12px}.newsroom-top .nav .btn.active{background:var(--yellow);color:#101010;border-color:var(--yellow);font-weight:800}@media(max-width:560px){.top.newsroom-top{padding:0 12px;gap:10px}.newsroom-top .brand{font-size:15px}.newsroom-top .nav{gap:5px}.newsroom-top .nav .btn{padding:8px 9px}}\n</style>
 </head>
-<body><div style="position:sticky;top:0;z-index:50;background:#101116;border-bottom:1px solid #2b2e38;padding:9px 18px;display:flex;gap:10px;align-items:center;font:12px Inter,Arial,sans-serif"><a href="/" style="color:#ffeb00;text-decoration:none;font-weight:800">← STUDIO HOME</a><a href="/live/" style="color:#f3f4f7;text-decoration:none">Live</a><a href="/post/" style="color:#f3f4f7;text-decoration:none">Post</a><a href="/seo/" style="color:#f3f4f7;text-decoration:none">SEO</a><strong style="margin-left:auto">TheSportzine Newsroom</strong></div>
+<body>
 <div class="app">
 <main class="main">
  <header class="top newsroom-top"><button type="button" id="createBtn" style="display:none" aria-hidden="true" tabindex="-1">New graphic</button><a class="brand" href="/">The <em>Newsroom</em></a><nav class="nav"><a class="btn" href="/live/">Live</a><a class="btn active" href="/post/">Post</a><a class="btn" href="/seo/">SEO</a></nav></header>
@@ -44,14 +44,14 @@
   </div>
   <div class="insight-foot" id="insightsStatus" aria-live="polite">Loading Buffer insights…</div>
  </section>
- <section class="dashboard" id="homeView">
+ <section class="dashboard hidden" id="homeView">
   <h2 style="margin-top:0">Templates</h2><div class="grid" id="categoryTiles"></div>
   <h2>Specialised formats</h2><div class="grid special" id="specialTiles"></div>
   <h2>Recent projects</h2><div class="saved" id="recent"><p class="muted">Your saved designs will appear here.</p></div>
  </section>
  <section class="dashboard hidden" id="templatesView"><h2 style="margin-top:0">All templates</h2><div class="grid special" id="allTiles"></div></section>
  <section class="dashboard hidden" id="projectsView"><h2 style="margin-top:0">Saved projects</h2><div class="saved" id="projectTiles"><p class="muted">No saved projects yet.</p></div></section>
- <section class="editor" id="editorView">
+ <section class="editor open" id="editorView">
   <div class="editorhead" style="display:none" aria-hidden="true"><b id="editorName">Breaking With Text</b><span id="canvasDimensions">1080 × 1440 px · drag image to reposition</span><button class="btn" id="saveBtn">Save project</button><button class="btn primary" id="exportBtn">↓ Download PNG</button></div>
   <div class="editgrid">
    <div class="panel canvaspanel">
