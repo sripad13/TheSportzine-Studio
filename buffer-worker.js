@@ -69,6 +69,52 @@ export default {
     if (!env.BUFFER_API_KEY) return json({ error: "Buffer API key is not configured on the Worker." }, 503, origin);
     const url = new URL(request.url);
     try {
+      if (request.method === "GET" && url.pathname === "/insights") {
+        const organizations = (await bufferGraphQL(env, `
+          query StudioInsightsOrganizations { account { organizations { id name } } }
+        `)).account?.organizations || [];
+        const now = new Date();
+        const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+        const currentStart = new Date(end.getTime() - 29 * 86400000);
+        const previousEnd = new Date(currentStart.getTime() - 86400000);
+        const previousStart = new Date(previousEnd.getTime() - 29 * 86400000);
+        const query = `
+          query StudioAggregatedInsights($input: AggregatedPostMetricsInput!) {
+            aggregatedPostMetrics(input: $input) {
+              metrics { type name value unit }
+              metricsUpdatedAt
+            }
+          }
+        `;
+        async function aggregate(start, finish) {
+          const totals = {};
+          let updatedAt = null;
+          for (const org of organizations) {
+            const data = await bufferGraphQL(env, query, { input: {
+              organizationId: org.id,
+              startDateTime: start.toISOString(),
+              endDateTime: finish.toISOString()
+            }});
+            const result = data.aggregatedPostMetrics;
+            updatedAt = result.metricsUpdatedAt && (!updatedAt || result.metricsUpdatedAt > updatedAt) ? result.metricsUpdatedAt : updatedAt;
+            for (const metric of result.metrics || []) {
+              if (!totals[metric.type]) totals[metric.type] = { type: metric.type, name: metric.name, value: 0, unit: metric.unit };
+              totals[metric.type].value += metric.value;
+            }
+          }
+          return { metrics: Object.values(totals), metricsUpdatedAt: updatedAt };
+        }
+        const [current, previous] = await Promise.all([
+          aggregate(currentStart, end), aggregate(previousStart, previousEnd)
+        ]);
+        return json({
+          period: "last 30 days",
+          current,
+          previous,
+          followerCountAvailable: false,
+          followerCountNote: "Buffer's public API does not expose channel-level total follower counts. Its experimental post metrics can report post-attributed follows, not total followers."
+        }, 200, origin);
+      }
       if (request.method === "GET" && url.pathname === "/channels") {
         return json({ channels: await getChannels(env) }, 200, origin);
       }
