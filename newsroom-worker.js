@@ -17,6 +17,45 @@ function json(data, status, origin) {
     headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", ...cors(origin) }
   });
 }
+
+const DEFAULT_FEEDS = [
+  {name:"BBC Sport Football",sport:"football",url:"https://feeds.bbci.co.uk/sport/football/rss.xml"},
+  {name:"Sky Sports Football",sport:"football",url:"https://www.skysports.com/rss/11095"},
+  {name:"BBC Sport Formula 1",sport:"f1",url:"https://feeds.bbci.co.uk/sport/formula1/rss.xml"},
+  {name:"Sky Sports Formula 1",sport:"f1",url:"https://www.skysports.com/rss/12433"},
+  {name:"Autosport F1",sport:"f1",url:"https://www.autosport.com/rss/feed/f1"},
+  {name:"Motorsport.com F1",sport:"f1",url:"https://www.motorsport.com/rss/f1/news/"},
+  {name:"Formula1.com",sport:"f1",url:"https://www.formula1.com/content/fom-website/en/latest/all.xml"}
+];
+function decodeXml(value) {
+  return String(value || "").replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g,"$1").replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,'"').replace(/&#39;|&apos;/g,"'").replace(/&#(\d+);/g,(_,n)=>String.fromCodePoint(Number(n))).replace(/<[^>]*>/g," ").replace(/\s+/g," ").trim();
+}
+function tag(block,name) {
+  const re=new RegExp("<(?:[\\w.-]+:)?" + name + "(?:\\s[^>]*)?>([\\s\\S]*?)<\\/(?:[\\w.-]+:)?" + name + "\\s*>","i");
+  const m=block.match(re);return m?decodeXml(m[1]):"";
+}
+function parseFeed(xml,feed) {
+  return [...xml.matchAll(/<(item|entry)(?:\s[^>]*)?>([\s\S]*?)<\/\1>/gi)].map((match)=>{
+    const block=match[2],title=tag(block,"title");let link=tag(block,"link");
+    if(!link){const lm=block.match(/<link[^>]+href=["']([^"']+)["']/i);if(lm)link=lm[1];}
+    const summary=tag(block,"description")||tag(block,"summary")||tag(block,"content");
+    const published=tag(block,"pubDate")||tag(block,"published")||tag(block,"updated");
+    if(!title||!/^https?:\/\//i.test(link))return null;
+    const date=published?new Date(published):null,hot=/breaking|confirmed|sacked|resigns|signs|announces|injury|ruled out|crash|penalty|suspended/i.test(title);
+    return {id:link,title,summary:summary.slice(0,420),link,source:feed.name,sport:feed.sport,published:published||"",timestamp:date&&!Number.isNaN(date.getTime())?date.getTime():0,timeLabel:date&&!Number.isNaN(date.getTime())?date.toLocaleString("en-GB",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit",timeZone:"UTC"})+" UTC":"Time unavailable",breaking:hot,priority:hot};
+  }).filter(Boolean);
+}
+async function getFeed(feed) {
+  try{const response=await fetch(feed.url,{headers:{"Accept":"application/rss+xml, application/atom+xml, application/xml, text/xml","User-Agent":"TheSportzine-Newsroom/1.0"},signal:AbortSignal.timeout(9000)});if(!response.ok)throw new Error("HTTP "+response.status);const xml=await response.text();if(!/<(rss|feed|rdf:RDF)/i.test(xml))throw new Error("Response is not RSS/Atom");return{items:parseFeed(xml,feed),error:null};}
+  catch(error){return{items:[],error:error.message};}
+}
+async function fetchStories() {
+  const results=await Promise.all(DEFAULT_FEEDS.map(async feed=>({feed,...await getFeed(feed)})));
+  const seen=new Map();
+  for(const story of results.flatMap(result=>result.items)){const key=story.title.toLowerCase().replace(/[^a-z0-9]+/g," ").trim().split(" ").filter(Boolean).slice(0,10).join(" ");const existing=seen.get(key);if(existing){existing.duplicateCount=(existing.duplicateCount||1)+1;existing.sources=[...(existing.sources||[existing.source]),story.source];}else seen.set(key,story);}
+  return{stories:[...seen.values()].sort((a,b)=>b.timestamp-a.timestamp),feeds:results.map(({feed,items,error})=>({name:feed.name,sport:feed.sport,count:items.length,error})),fetched_at:new Date().toISOString()};
+}
+
 function cleanSource(row) {
   return {
     id: row.id, name: row.name, feed_url: row.feed_url, sport: row.sport,
@@ -46,12 +85,13 @@ export default {
       return new Response(null, { status: 204, headers: cors(origin) });
     }
     if (!ALLOWED_ORIGINS.has(origin) && origin !== "") return json({ error: "Origin not allowed." }, 403, origin);
-    if (!env.DB) return json({ error: "D1 binding DB is not configured." }, 503, origin);
     try {
+      if (request.method === "GET" && url.pathname === "/api/feed") return json(await fetchStories(),200,origin);
       if (request.method === "GET" && url.pathname === "/api/health") {
-        await env.DB.prepare("SELECT 1 AS ok").first();
+        if (env.DB) await env.DB.prepare("SELECT 1 AS ok").first();
         return json({ ok: true, service: "thesportzine-newsroom", database: "connected" }, 200, origin);
       }
+      if (!env.DB) return json({ error: "D1 binding DB is not configured; RSS feed endpoint remains available." }, 503, origin);
       if (request.method === "GET" && url.pathname === "/api/sources") {
         return json({ sources: await listSources(env.DB) }, 200, origin);
       }
