@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b0c10"><title>Ideas — TheSportzine Studio</title><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:dark;--bg:#0b0c10;--panel:#15171e;--panel2:#1b1e26;--line:#2b2e38;--muted:#969ba8;--text:#f4f5f7;--yellow:#ffcf42;--green:#8ecb91}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px Inter,Arial,sans-serif;min-height:100vh}button{font:inherit;cursor:pointer;color:inherit}
+.top{height:58px;display:flex;align-items:center;gap:18px;padding:0 18px;border-bottom:1px solid var(--line);background:#101116}.brand{font-weight:850;font-size:17px;letter-spacing:-.6px;white-space:nowrap;text-decoration:none;color:inherit}.brand em{font-style:normal;color:var(--yellow)}.nav{display:flex;align-items:center;gap:8px}.btn{border:1px solid #3a3d48;background:#20232c;border-radius:9px;padding:9px 12px;color:inherit;text-decoration:none;font-size:12px;font-weight:650}.btn:hover{border-color:var(--yellow)}.btn.active,.btn.primary{background:var(--yellow);border-color:var(--yellow);color:#111;font-weight:800}
+.wrap{max-width:1180px;margin:0 auto;padding:28px 22px 60px}.intro{margin-bottom:22px}.eyebrow{font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:var(--yellow);font-weight:800}.intro h1{font-size:34px;letter-spacing:-1.4px;margin:8px 0}.intro p{color:var(--muted);margin:0;line-height:1.6}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.card{background:var(--panel);border:1px solid var(--line);border-radius:15px;overflow:hidden;min-width:0}.cardhead{padding:18px 18px 14px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px}.account{font-size:18px;font-weight:850;letter-spacing:-.5px}.handle{font-size:12px;color:var(--muted);margin-top:4px}.actions{display:flex;gap:7px;flex-wrap:wrap}.body{padding:14px 18px 18px}.ideas{display:grid;gap:9px}.idea{display:flex;align-items:flex-start;gap:10px;padding:12px;border:1px solid #303541;border-radius:10px;background:#11141b}.num{color:var(--yellow);font-weight:800;font-size:11px;min-width:20px;padding-top:2px}.idea-text{font-size:14px;line-height:1.45;font-weight:650;flex:1;overflow-wrap:anywhere}.copy-one{border:0;background:transparent;color:var(--muted);padding:2px 4px;font-size:11px}.copy-one:hover{color:var(--yellow)}.status{font-size:12px;color:var(--muted);min-height:18px;margin-top:12px}.note{font-size:11px;line-height:1.5;color:var(--muted);margin-top:10px}.empty{padding:28px 12px;text-align:center;color:var(--muted);border:1px dashed #343b49;border-radius:10px}.footer-note{margin-top:18px;color:var(--muted);font-size:11px;line-height:1.6}
+@media(max-width:760px){.top{padding:0 12px;gap:10px}.brand{font-size:15px}.nav{gap:5px}.nav .btn{padding:8px 9px;font-size:11px}.wrap{padding:22px 13px 40px}.intro h1{font-size:28px}.grid{grid-template-columns:1fr}.cardhead{align-items:flex-start;flex-direction:column}.actions{width:100%}.actions .btn{flex:1}}
+</style></head><body>
+<header class="top"><a class="brand" href="/live/">The <em>Newsroom</em></a><nav class="nav"><a class="btn" href="/live/">Live</a><a class="btn" href="/post/">Post</a><a class="btn" href="/seo/">SEO</a><a class="btn active" href="/ideas/">Ideas</a></nav></header>
+<main class="wrap"><section class="intro"><div class="eyebrow">Social content lab</div><h1>One line. One post. Ten ideas.</h1><p>Generate short, graphic-friendly Instagram copy for Boxed Ninja and Factodile. Text only — no images.</p></section>
+<div class="grid">
+<section class="card" id="boxed-card"><div class="cardhead"><div><div class="account">Boxed Ninja</div><div class="handle">@boxedninja · witty, relatable, snack-fuelled</div></div><div class="actions"><button class="btn primary" data-generate="boxedninja">Generate 10</button><button class="btn" data-copyall="boxedninja">Copy all</button></div></div><div class="body"><div class="ideas" id="boxed-ideas"></div><div class="status" id="boxed-status" aria-live="polite"></div></div></section>
+<section class="card" id="fact-card"><div class="cardhead"><div><div class="account">Factodile</div><div class="handle">@factodile · surprising facts, simply told</div></div><div class="actions"><button class="btn primary" data-generate="factodile">Generate 10</button><button class="btn" data-copyall="factodile">Copy all</button></div></div><div class="body"><div class="ideas" id="factodile-ideas"></div><div class="status" id="factodile-status" aria-live="polite"></div><div class="note">Factodile ideas are factual claims. Verify each one against a reliable source before publishing.</div></div></section>
+</div><p class="footer-note">Ideas are generated on demand using TheSportzine Newsroom AI service. Generated text is saved in this browser so you can return to it later.</p></main>
+<script>
+const API='https://newsroom-api.falsewinger.com/api/ideas';
+const starter={
+ boxedninja:[
+ "My heart is fragile. Handle with snacks.",
+ "I'm not ignoring you. I'm rehearsing my reply.",
+ "My battery and I have the same energy: 2%.",
+ "You never text first, but I never learn.",
+ "I'm online. But emotionally, please try later.",
+ "Today's workout: carrying all my unread messages.",
+ "I came. I saw. I overthought it.",
+ "My comfort zone has excellent snacks.",
+ "Big plans. Tiny attention span.",
+ "I need a vacation from my own thoughts."
+ ],
+ factodile:[
+ "Octopuses have three hearts — and two stop beating when they swim.",
+ "A day on Venus is longer than its year.",
+ "Wombats produce cube-shaped poop.",
+ "Sharks existed before trees appeared on Earth.",
+ "A group of flamingos is called a flamboyance.",
+ "Bananas are berries, but strawberries aren't botanical berries.",
+ "The Eiffel Tower can grow taller in hot weather.",
+ "An adult human has 206 bones.",
+ "A cloud can weigh more than a million pounds.",
+ "Sea otters sometimes hold hands while resting."
+ ]
+};
+const labels={boxedninja:'Boxed Ninja',factodile:'Factodile'};
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const read=(id)=>{try{return JSON.parse(localStorage.getItem('ideas-'+id))||starter[id]}catch{return starter[id]}};
+const data={boxedninja:read('boxedninja'),factodile:read('factodile')};
+function render(id){const el=document.getElementById(id+'-ideas');const list=data[id]||[];el.innerHTML=list.length?list.map((line,i)=>'<div class="idea"><span class="num">'+String(i+1).padStart(2,'0')+'</span><div class="idea-text">'+esc(line)+'</div><button class="copy-one" data-copy="'+id+'" data-index="'+i+'" aria-label="Copy idea '+(i+1)+'">COPY</button></div>').join(''):'<div class="empty">Generate 10 ideas to get started.</div>'}
+function status(id,msg){document.getElementById(id+'-status').textContent=msg}
+async function generate(id){const button=document.querySelector('[data-generate="'+id+'"]');button.disabled=true;button.textContent='Generating…';status(id,'Asking AI for 10 fresh ideas…');try{const response=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({account:id})});const result=await response.json();if(!response.ok)throw new Error(result.error||'AI generation failed');if(!Array.isArray(result.ideas)||result.ideas.length!==10)throw new Error('The AI did not return exactly 10 ideas. Try again.');data[id]=result.ideas;localStorage.setItem('ideas-'+id,JSON.stringify(data[id]));render(id);status(id,'Generated 10 new ideas · '+new Date(result.generated_at||Date.now()).toLocaleString());}catch(error){status(id,'Could not generate: '+error.message)}finally{button.disabled=false;button.textContent='Generate 10'}}
+async function copyText(value){try{await navigator.clipboard.writeText(value);return true}catch{return false}}
+document.querySelectorAll('[data-generate]').forEach(b=>b.addEventListener('click',()=>generate(b.dataset.generate)));
+document.querySelectorAll('[data-copyall]').forEach(b=>b.addEventListener('click',async()=>{const id=b.dataset.copyall;status(id,await copyText(data[id].map((x,i)=>(i+1)+'. '+x).join('\n'))?'All 10 copied.':'Clipboard access was blocked by the browser.')}));
+document.addEventListener('click',async e=>{const b=e.target.closest('[data-copy]');if(!b)return;const id=b.dataset.copy,index=Number(b.dataset.index);status(id,await copyText(data[id][index])?'Idea copied.':'Clipboard access was blocked by the browser.')});
+render('boxedninja');render('factodile');
+</script></body></html>
