@@ -9,3 +9,4 @@ enabled = true
 [[routes]]
 pattern = "newsroom-api.falsewinger.com/*"
 zone_name = "falsewinger.com"
+\n[ai]\nbinding = "AI"\nremote = true\n
