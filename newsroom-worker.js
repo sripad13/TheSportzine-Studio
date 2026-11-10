@@ -31,7 +31,7 @@ function decodeXml(value) {
   return String(value || "").replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g,"$1").replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,'"').replace(/&#39;|&apos;/g,"'").replace(/&#(\d+);/g,(_,n)=>String.fromCodePoint(Number(n))).replace(/<[^>]*>/g," ").replace(/\s+/g," ").trim();
 }
 function tag(block,name) {
-  const re=new RegExp("<(?:[\\w.-]+:)?" + name + "(?:\\s[^>]*)?>([\\s\\S]*?)<\\/(?:[\\w.-]+:)?" + name + "\\s*>","i");
+  const re=new RegExp("<(?:[\\w.-]+:)?" + name + "(?:\s[^>]*)?>([\s\S]*?)<\/(?:[\\w.-]+:)?" + name + "\s*>","i");
   const m=block.match(re);return m?decodeXml(m[1]):"";
 }
 function parseFeed(xml,feed) {
@@ -182,16 +182,16 @@ export default {
           String(rawOutput || "")).trim();
 
         shortTitle = shortTitle
-          .replace(/<think>[\\s\\S]*?<\\/think>/gi, "")
+          .replace(/<think>[\s\S]*?<\/think>/gi, "")
           .replace(/^["'“”]+|["'“”]+$/g, "")
-          .replace(/^(short title|headline):\\s*/i, "")
-          .replace(/^[-*•]\\s*/, "")
-          .replace(/\\s+/g, " ")
+          .replace(/^(short title|headline):\s*/i, "")
+          .replace(/^[-*•]\s*/, "")
+          .replace(/\s+/g, " ")
           .trim();
 
         // Enforce the UI's nine-word headline limit if the model slightly
         // exceeds it, rather than failing the entire Create Post workflow.
-        const words = shortTitle.split(/\\s+/).filter(Boolean);
+        const words = shortTitle.split(/\s+/).filter(Boolean);
         if (!shortTitle) {
           return json({
             error: "The AI model returned an empty headline.",
@@ -202,7 +202,7 @@ export default {
           }, 502, origin);
         }
         if (words.length > 9) shortTitle = words.slice(0, 9).join(" ");
-        const wordCount = shortTitle.split(/\\s+/).filter(Boolean).length;
+        const wordCount = shortTitle.split(/\s+/).filter(Boolean).length;
 
         return json({ title: shortTitle, words: wordCount }, 200, origin);
       }
