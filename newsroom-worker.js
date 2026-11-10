@@ -46,14 +46,50 @@ function parseFeed(xml,feed) {
   }).filter(Boolean);
 }
 async function getFeed(feed) {
-  try{const response=await fetch(feed.url,{headers:{"Accept":"application/rss+xml, application/atom+xml, application/xml, text/xml","User-Agent":"TheSportzine-Newsroom/1.0"},signal:AbortSignal.timeout(9000)});if(!response.ok)throw new Error("HTTP "+response.status);const xml=await response.text();if(!/<(rss|feed|rdf:RDF)/i.test(xml))throw new Error("Response is not RSS/Atom");return{items:parseFeed(xml,feed),error:null};}
-  catch(error){return{items:[],error:error.message};}
+  try {
+    const response = await fetch(feed.url, {
+      headers: {
+        "Accept": "application/rss+xml, application/atom+xml, application/xml, text/xml",
+        "User-Agent": "TheSportzine-Newsroom/1.0"
+      },
+      signal: AbortSignal.timeout(9000)
+    });
+    if (!response.ok) throw new Error("HTTP " + response.status);
+    const xml = await response.text();
+    const rootMatch = /<(rss|feed|rdf:RDF)\\b/i.exec(xml);
+    if (!rootMatch) throw new Error("Response is not RSS/Atom");
+    const blocks = [...xml.matchAll(/<(item|entry)(?:\\s[^>]*)?>([\\s\\S]*?)<\\/\\1>/gi)];
+    const items = parseFeed(xml, feed);
+    const firstBlock = blocks[0]?.[2] || "";
+    const firstTitle = firstBlock ? tag(firstBlock, "title") : "";
+    let firstLink = firstBlock ? tag(firstBlock, "link") : "";
+    if (!firstLink && firstBlock) {
+      const linkMatch = firstBlock.match(/<link[^>]+href=["']([^"']+)["']/i);
+      if (linkMatch) firstLink = linkMatch[1];
+    }
+    return {
+      items,
+      error: null,
+      diagnostic: {
+        httpStatus: response.status,
+        contentType: response.headers.get("content-type") || "",
+        bodyLength: xml.length,
+        root: rootMatch[1],
+        entryBlocks: blocks.length,
+        firstEntryHasTitle: Boolean(firstTitle),
+        firstEntryHasHttpLink: /^https?:\\/\\//i.test(firstLink),
+        firstEntryStart: firstBlock.slice(0, 350)
+      }
+    };
+  } catch (error) {
+    return { items: [], error: error.message, diagnostic: null };
+  }
 }
 async function fetchStories() {
   const results=await Promise.all(DEFAULT_FEEDS.map(async feed=>({feed,...await getFeed(feed)})));
   const seen=new Map();
   for(const story of results.flatMap(result=>result.items)){const key=story.title.toLowerCase().replace(/[^a-z0-9]+/g," ").trim().split(" ").filter(Boolean).slice(0,10).join(" ");const existing=seen.get(key);if(existing){existing.duplicateCount=(existing.duplicateCount||1)+1;existing.sources=[...(existing.sources||[existing.source]),story.source];}else seen.set(key,story);}
-  return{stories:[...seen.values()].sort((a,b)=>b.timestamp-a.timestamp),feeds:results.map(({feed,items,error})=>({name:feed.name,sport:feed.sport,count:items.length,error})),fetched_at:new Date().toISOString()};
+  return{stories:[...seen.values()].sort((a,b)=>b.timestamp-a.timestamp),feeds:results.map(({feed,items,error,diagnostic})=>({name:feed.name,sport:feed.sport,count:items.length,error,diagnostic})),fetched_at:new Date().toISOString()};
 }
 
 async function searchStories(env, keyword) {
