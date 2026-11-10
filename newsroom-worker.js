@@ -116,24 +116,17 @@ async function getRedditStories(env, sort="new") {
   await env.DB.prepare("CREATE TABLE IF NOT EXISTS newsroom_subreddits (id TEXT PRIMARY KEY, subreddit TEXT NOT NULL UNIQUE, sport TEXT NOT NULL DEFAULT 'general', created_at TEXT NOT NULL)").run();
   const rows=await env.DB.prepare("SELECT subreddit,sport FROM newsroom_subreddits ORDER BY subreddit COLLATE NOCASE").all();
   const outcomes=await Promise.all((rows.results||[]).map(async row=>{
-    const base="https://www.reddit.com/r/"+encodeURIComponent(row.subreddit)+"/";
-    const headers={"Accept":"application/atom+xml, application/rss+xml, application/xml, text/xml, application/json","User-Agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36","Cache-Control":"no-cache"};
-    let lastError="Reddit feed unavailable";
-    for(const candidate of [base+".rss?sort="+safeSort+"&limit=25","https://old.reddit.com/r/"+encodeURIComponent(row.subreddit)+"/.rss?sort="+safeSort+"&limit=25",base+safeSort+".json?limit=25&raw_json=1"]){
-      try{
-        const response=await fetch(candidate,{headers,signal:AbortSignal.timeout(10000),redirect:"follow"});
-        if(!response.ok){lastError="Reddit returned HTTP "+response.status;continue;}
-        const body=await response.text();let items=[];
-        if(/<(feed|rss|rdf:RDF)\b/i.test(body))items=parseFeed(body,{name:"r/"+row.subreddit,sport:sportCode(row.sport)});
-        else{
-          const data=JSON.parse(body),children=data?.data?.children||[];
-          items=children.map(({data:p})=>({id:"reddit:"+p.id,title:p.title||"",summary:String(p.selftext||"").slice(0,420),link:"https://www.reddit.com"+(p.permalink||""),source:"r/"+row.subreddit,sport:sportCode(row.sport),published:p.created_utc?new Date(p.created_utc*1000).toISOString():"",timestamp:p.created_utc?Math.round(p.created_utc*1000):0,timeLabel:p.created_utc?new Date(p.created_utc*1000).toLocaleString("en-GB",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit",timeZone:"UTC"})+" UTC":"Time unavailable",breaking:false,priority:false,isReddit:true,redditSort:safeSort}));
-        }
-        if(items.length)return {items,error:null};
-        lastError="Reddit returned no parseable posts";
-      }catch(error){lastError=error.message||lastError;}
-    }
-    return {items:[],error:"r/"+row.subreddit+": "+lastError};
+    const timeFilter=safeSort==="new"?" when:7d":safeSort==="rising"?" when:1d":"";
+    const query="site:reddit.com/r/"+row.subreddit+timeFilter;
+    const url="https://news.google.com/rss/search?q="+encodeURIComponent(query)+"&hl=en-IN&gl=IN&ceid=IN:en";
+    try{
+      const response=await fetch(url,{headers:{"Accept":"application/rss+xml, application/xml, text/xml","User-Agent":"TheSportzineNewsroom/1.0 (+https://newsroom.falsewinger.com)"},signal:AbortSignal.timeout(12000)});
+      if(!response.ok)throw new Error("Google News RSS returned HTTP "+response.status);
+      const xml=await response.text();
+      if(!/<(rss|feed|rdf:RDF)\b/i.test(xml))throw new Error("Search provider did not return an RSS feed");
+      const items=parseFeed(xml,{name:"r/"+row.subreddit,sport:sportCode(row.sport)}).map(item=>({...item,id:"reddit-search:"+row.subreddit+":"+item.id,source:"r/"+row.subreddit,isReddit:true,redditSort:safeSort,summary:item.summary||"Indexed Reddit result"}));
+      return {items,error:items.length?null:"No indexed Reddit posts found for r/"+row.subreddit};
+    }catch(error){return {items:[],error:"r/"+row.subreddit+": "+(error.message||"Search feed unavailable")};}
   }));
   return {stories:outcomes.flatMap(x=>x.items),errors:outcomes.map(x=>x.error).filter(Boolean)};
 }
