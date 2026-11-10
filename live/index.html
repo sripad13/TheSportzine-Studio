@@ -57,9 +57,56 @@ body{background:var(--bg);color:var(--text);font-family:Inter,Arial,sans-serif;o
  .drawer .dcontent h2{font-size:20px}
 }
 
+
+/* Requested dark newsroom theme and compact header controls */
+:root{color-scheme:dark;--bg:#0b0d12;--panel:#141821;--panel2:#1a202b;--line:#293140;--muted:#929bad;--text:#edf1f7;--yellow:#f4c542;--green:#65cf91;--red:#ff8585}
+body{background:#0b0d12;color:#edf1f7}
+.top{background:#10141c;border-bottom:1px solid #293140;box-shadow:0 1px 2px #0005}
+.brand{color:#f4f6fa}.brand em{color:#f4c542}
+.ws{color:#aab3c2}.ws:hover{background:#202837;color:#fff}.ws.active{background:#26344a;color:#dbeafe}
+.topright .btn,.btn{background:#1a202b;border-color:#343e4e;color:#e2e8f0}
+.topright .btn:hover,.btn:hover{background:#232c3b;border-color:#53627a}
+.topright .btn.primary,.btn.primary{background:#f4c542;border-color:#f4c542;color:#111827}
+.status{color:#aab3c2}
+.bar{height:58px;background:#0b0d12;border:0;padding:10px max(22px,calc((100vw - 1440px)/2))}
+.bar input{background:#141a24;border:1px solid #303a4a;color:#edf1f7}
+.board{height:calc(100dvh - 126px)}
+.column{background:#141821;border-color:#293140;box-shadow:0 1px 3px #0003}
+.colhead{background:#171e29;border-color:#293140}.coltitle{color:#edf1f7}
+.count{background:#273142;color:#b7c1d1}.tiny{color:#aab3c2}.tiny:hover{background:#303b4d;color:#fff}
+.colfilter{background:#141821;border-color:#293140}
+.colfilter input,.colfilter select{background:#0e131b;border-color:#303a4a;color:#dce3ed}
+.cards{background:#141821}
+.story{border-color:#252e3c}.story:hover{background:#1b2431}.story.selected{background:#202c3d;box-shadow:inset 3px 0 #f4c542}
+.meta{color:#929bad}.source{color:#d9e0ea}.priority{color:#f4c542}
+.story h3{color:#edf1f7}.excerpt{color:#aab3c2}
+.pill{background:#1b2330;border-color:#354154;color:#b8c3d3}.pill.breaking{background:#351d23;border-color:#71343d;color:#ff9b9b}.pill.duplicate{background:#192a42;border-color:#35577f;color:#a8ceff}
+.empty{color:#929bad}.empty b{color:#edf1f7}
+.drawer{background:#000b}.drawer .dhead,.drawer .dcontent{background:#151b25;border-color:#303a4a}
+.drawer .dhead strong{color:#edf1f7}.drawer .dcontent h2{color:#f4f6fa}.drawer .dcontent p,.drawer .dcontent .article-body,.drawer .dcontent .article-body p{color:#c2cad6}
+.drawer .dcontent .sourcebox{background:#1d2633;border-color:#354154;color:#dce3ed}
+.short-title-box{background:#17263a;border-color:#34557e}.short-title-label{color:#9fc5f7}.short-title-text{color:#d6e8ff}.short-title-meta{color:#aabbd0}
+.modal,.source-manager{background:#000b}.dialog,.source-dialog{background:#151b25;border-color:#354154;color:#edf1f7;box-shadow:0 12px 40px #0008}
+.dialog h2,.source-dialog h2{color:#edf1f7}.field label{color:#b6c0cf}.field input,.field select{background:#0e131b;border-color:#354154;color:#edf1f7}
+.source-row{background:#1b2431;border-color:#354154}.source-name{color:#edf1f7}.source-url,.source-note,.footnote{color:#aab3c2}
+.source-manager .dhead{border-color:#354154}.source-error{color:#ff9b9b}.source-ok{color:#65cf91}
+.settings-menu{position:relative}.settings-menu summary{list-style:none;cursor:pointer;user-select:none}.settings-menu summary::-webkit-details-marker{display:none}
+.settings-panel{position:absolute;right:0;top:calc(100% + 9px);z-index:50;width:250px;padding:12px;display:grid;gap:8px;background:#151b25;border:1px solid #354154;border-radius:10px;box-shadow:0 12px 35px #0008}
+.settings-panel label{font-size:10px;color:#aab3c2}.settings-panel .api{display:block;width:100%;background:#0e131b;border:1px solid #354154;color:#edf1f7;border-radius:7px;padding:9px}
+.settings-panel .btn{width:100%;text-align:left;border-radius:7px}
+@media(max-width:700px){
+ .top{background:#10141c;padding:10px 12px 8px}
+ .topright{grid-column:2;grid-row:1;gap:6px}.topright .btn{padding:8px 10px}
+ .bar{height:auto;min-height:52px;padding:8px 12px;background:#0b0d12}
+ .bar input{width:auto;min-width:0;flex:1}
+ .board{height:auto;min-height:calc(100dvh - 135px);background:#0b0d12}
+ .column{background:#141821;border-color:#293140}
+ .settings-panel{right:0;width:min(270px,calc(100vw - 24px))}
+}
+
 </style></head><body>
-<header class="top"><a class="brand" href="/" style="text-decoration:none;color:inherit">THE SPORTZINE <em>NEWSROOM</em></a><nav class="workspaces" id="workspaces"><button class="ws active" data-ws="All Sports">All Sports</button><button class="ws" data-ws="Football">Football</button><button class="ws" data-ws="Formula 1">Formula 1</button><button class="ws" data-ws="Breaking">Breaking</button></nav><div class="topright"><span class="status" id="status">Preview mode</span><input class="api" id="apiBase" value="https://newsroom-api.falsewinger.com" aria-label="Newsroom API URL"><button class="btn" id="connect">Connect</button><button class="btn" id="sourcesButton">Sources</button><button class="btn" id="addColumn">＋ Column</button><a class="btn" href="/post/" style="text-decoration:none">Graphics ↗</a></div></header>
-<div class="bar"><span class="hint">WORKSPACE</span><strong id="workspaceLabel">All Sports</strong><span class="hint">·</span><span class="hint">Independent feeds · scroll each column</span><span class="spacer"></span><input id="globalSearch" placeholder="Search stories, clubs, drivers…"><button class="btn" id="refresh">↻ Refresh</button></div>
+<header class="top"><a class="brand" href="/" style="text-decoration:none;color:inherit">THE SPORTZINE <em>NEWSROOM</em></a><nav class="workspaces" id="workspaces"><button class="ws active" data-ws="All Sports">All Sports</button><button class="ws" data-ws="Football">Football</button><button class="ws" data-ws="Formula 1">Formula 1</button><button class="ws" data-ws="Breaking">Breaking</button></nav><div class="topright"><span class="status" id="status">Preview mode</span><a class="btn primary" href="/post/" style="text-decoration:none">Create Post</a><details class="settings-menu" id="settingsMenu"><summary class="btn">Settings ▾</summary><div class="settings-panel"><label for="apiBase">Newsroom API URL</label><input class="api" id="apiBase" value="https://newsroom-api.falsewinger.com" aria-label="Newsroom API URL"><button class="btn" id="connect">Connect</button><button class="btn" id="sourcesButton">Sources</button><button class="btn" id="addColumn">＋ Column</button></div></details></div></header>
+<div class="bar"><input id="globalSearch" placeholder="Search stories, clubs, drivers…"><button class="btn" id="refresh">↻ Refresh</button></div>
 <main class="board" id="board" aria-label="Newsroom columns"></main>
 <aside class="drawer" id="drawer"><div class="dhead"><strong>STORY WORKSPACE</strong><button class="tiny" id="closeDrawer">✕</button></div><div class="dcontent" id="detail"><div class="empty">Select a story to inspect it.</div></div></aside>
 <div class="source-manager" id="sourceManager"><section class="source-dialog"><div class="dhead" style="padding:0 0 13px"><strong>MANAGE SOURCES</strong><button class="tiny" id="closeSources">✕</button></div><p class="source-note">Manage the publications that feed Newsroom Live. Changes are saved centrally through the Newsroom API.</p><div id="sourceMessage" class="source-note">Loading configured sources…</div><div class="source-list" id="sourceList"></div><div class="divider" style="border-top:1px solid #343844;margin:16px 0"></div><h2>Add a source</h2><div class="source-form"><div class="field"><label>Publication name</label><input id="sourceName" placeholder="e.g. The Athletic"></div><div class="field"><label>Category</label><select id="sourceCategory"><option value="football">Football</option><option value="f1">Formula 1</option><option value="both">Both</option></select></div><div class="field wide"><label>RSS / Atom feed URL</label><input id="sourceUrl" placeholder="https://example.com/rss"></div></div><div class="dactions"><button class="btn" id="testSource">Test feed</button><button class="btn primary" id="saveSource">Add source</button></div><p class="footnote">Only valid RSS or Atom feed URLs can be saved. Disabled sources remain in your list but are excluded from refreshes.</p></section></div><div class="modal" id="modal"><div class="dialog"><h2 id="modalTitle">Add column</h2><div class="field"><label>Column type</label><select id="colType"><option value="football">Football latest</option><option value="f1">Formula 1 latest</option><option value="breaking">Breaking queue</option><option value="priority">Priority stories</option><option value="search">Keyword search</option><option value="saved">Saved stories</option></select></div><div class="field"><label>Column name</label><input id="colName" placeholder="e.g. Chelsea"></div><div class="field"><label>Keyword (for search columns)</label><input id="colKeyword" placeholder="e.g. Chelsea, transfer"></div><div class="dactions"><button class="btn" id="cancelModal">Cancel</button><button class="btn primary" id="saveColumn">Add column</button></div><p class="footnote">Columns are saved in this browser. Drag the board horizontally; resize columns on desktop using the lower-right edge.</p></div></div>
@@ -158,7 +205,7 @@ $('#apiBase').value=localStorage.getItem(API_KEY)||'https://newsroom-api.falsewi
 $('#connect').onclick=refresh;$('#refresh').onclick=refresh;$('#globalSearch').oninput=render;$('#closeDrawer').onclick=()=>$('#drawer').classList.remove('open');
 $('#drawer').addEventListener('click',e=>{if(e.target===$('#drawer'))$('#drawer').classList.remove('open')});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')$('#drawer').classList.remove('open')});
-$('#workspaces').onclick=e=>{const b=e.target.closest('[data-ws]');if(!b)return;activeWorkspace=b.dataset.ws;document.querySelectorAll('.ws').forEach(x=>x.classList.toggle('active',x===b));$('#workspaceLabel').textContent=activeWorkspace;render()};
+$('#workspaces').onclick=e=>{const b=e.target.closest('[data-ws]');if(!b)return;activeWorkspace=b.dataset.ws;document.querySelectorAll('.ws').forEach(x=>x.classList.toggle('active',x===b));const workspaceLabel=$('#workspaceLabel');if(workspaceLabel)workspaceLabel.textContent=activeWorkspace;render()};
 $('#addColumn').onclick=()=>$('#modal').classList.add('open');$('#cancelModal').onclick=()=>$('#modal').classList.remove('open');$('#saveColumn').onclick=()=>{const type=$('#colType').value,name=$('#colName').value.trim()||({football:'Football Latest',f1:'F1 Latest',breaking:'Breaking',priority:'Priority Desk',search:'Keyword Search',saved:'Saved Stories'}[type]);columns.push({id:crypto.randomUUID(),type,name,keyword:$('#colKeyword').value.trim()});persist();$('#modal').classList.remove('open');$('#colName').value='';$('#colKeyword').value='';render()};
 
 const sourceApi=()=>$('#apiBase').value.trim().replace(/\/$/,'')+'/api/sources';
