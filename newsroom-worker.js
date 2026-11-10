@@ -145,7 +145,7 @@ export default {
         const summary = typeof body.summary === "string" ? body.summary.trim().slice(0, 700) : "";
         if (!title || title.length > 300) return json({ error: "A valid article headline is required." }, 400, origin);
 
-        const result = await env.AI.run("@cf/meta/llama-3.1-8b-instruct", {
+        const result = await env.AI.run("@cf/google/gemma-4-26b-a4b-it", {
           messages: [
             {
               role: "system",
