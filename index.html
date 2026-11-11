@@ -102,9 +102,9 @@ a{color:inherit}
   <div class="external-nav-wrap">
     <div class="menu-label">Explore</div>
     <nav class="external-nav" aria-label="External sites">
-      <a href="https://work.falsewinger.com" target="_blank" rel="noopener noreferrer">Portfolio ↗</a>
-      <a href="https://thesportzine.com" target="_blank" rel="noopener noreferrer">The Sportzine ↗</a>
-      <a href="https://fpl.thesportzine.com" target="_blank" rel="noopener noreferrer">FPL Tips ↗</a>
+      <a href="https://work.falsewinger.com" target="_blank" rel="noopener noreferrer">Portfolio</a>
+      <a href="https://thesportzine.com" target="_blank" rel="noopener noreferrer">The Sportzine</a>
+      <a href="https://fpl.thesportzine.com" target="_blank" rel="noopener noreferrer">FPL Tips</a>
     </nav>
   </div>
 </header>
@@ -120,26 +120,25 @@ a{color:inherit}
   <section aria-labelledby="apps-heading">
     <div class="section-head">
       <h2 id="apps-heading">Your workspace</h2>
-      <p>Swipe through your tools. Drag right to open, left to pass.</p>
+      <p>Choose a workspace and get straight to work.</p>
     </div>
-    <nav class="apps" id="swipeDeck" aria-label="Studio applications">
-      <a class="app-card live" href="/live/" data-card>
-        <div class="card-top"><span class="app-id">01 / EDITORIAL DESK</span><span class="card-arrow">↗</span></div>
+    <div class="deck-shell"><button class="deck-arrow deck-prev" type="button" id="passCard" aria-label="Pass current card">‹</button><nav class="apps" id="swipeDeck" aria-label="Studio applications">
+      <a class="app-card live" href="https://newsroom.falsewinger.com/live/" data-card>
+        <div class="card-top"><span class="app-id">01 / EDITORIAL DESK</span></div>
         <div class="preview" aria-hidden="true"><div class="preview-window"><div class="preview-bar"><i></i><i></i><i></i><span class="preview-label">LIVE FEED / FOOTBALL</span></div><div class="feed-content"><div class="feed-item"><div class="feed-thumb"></div><div class="feed-copy"><b>Transfer watch: latest stories and developments</b><span>FOOTBALL · 4 SOURCES</span></div></div><div class="feed-item"><div class="feed-thumb"></div><div class="feed-copy"><b>Race weekend: paddock updates and analysis</b><span>FORMULA 1 · BREAKING</span></div></div><div class="feed-item"><div class="feed-thumb"></div><div class="feed-copy"><b>Build your story from the news desk</b><span>STORY DESK · SAVED</span></div></div></div></div></div>
         <div class="card-info"><h3>Live</h3><p>Find the stories worth telling. Follow breaking news, track sources and build your editorial queue.</p></div><div class="card-foot"><span>EDITORIAL DESK</span><span>NEWS · TRENDS · SOURCES</span></div>
       </a>
-      <a class="app-card post" href="/post/" data-card>
-        <div class="card-top"><span class="app-id">02 / CREATIVE STUDIO</span><span class="card-arrow">↗</span></div>
+      <a class="app-card post" href="https://newsroom.falsewinger.com/post" data-card>
+        <div class="card-top"><span class="app-id">03 / CREATIVE STUDIO</span></div>
         <div class="preview" aria-hidden="true"><div class="post-canvas"><div class="tool-chip one">✦ TEMPLATE</div><div class="poster"><span class="poster-tag">THE SPORTZINE</span><div class="poster-title">THE GAME<br><span>CHANGER.</span></div></div><div class="tool-chip two">1080 × 1440</div></div></div>
         <div class="card-info"><h3>Post</h3><p>Turn ideas into finished creative. Design graphics, adapt templates and prepare content for publishing.</p></div><div class="card-foot"><span>CREATIVE STUDIO</span><span>DESIGN · EDIT · PUBLISH</span></div>
       </a>
-      <a class="app-card seo" href="/seo/" data-card>
-        <div class="card-top"><span class="app-id">03 / SEARCH PERFORMANCE</span><span class="card-arrow">↗</span></div>
-        <div class="preview" aria-hidden="true"><div class="preview-window"><div class="preview-bar"><i></i><i></i><i></i><span class="preview-label">ARTICLE AUDIT / OVERVIEW</span></div><div class="seo-content"><div class="seo-score"><div class="score-copy"><b>Content health</b><span>On-page optimisation</span></div><div class="score-ring"><b>86</b></div></div><div class="seo-stat"><span>Headline & keywords</span><b>✓ Optimised</b></div><div class="seo-stat"><span>Readability</span><b>✓ Good</b></div><div class="seo-stat"><span>Internal links</span><b>↗ Improve</b></div></div></div></div>
-        <div class="card-info"><h3>SEO</h3><p>Make every article work harder. Audit content, analyse search performance and uncover opportunities.</p></div><div class="card-foot"><span>SEARCH PERFORMANCE</span><span>AUDIT · ANALYSE · GROW</span></div>
+      <a class="app-card seo" href="https://newsroom.falsewinger.com/lseo" data-card>
+        <div class="card-top"><span class="app-id">02 / SEARCH PERFORMANCE</span></div>
+        <div class="preview" aria-hidden="true"><div class="preview-window"><div class="preview-bar"><i></i><i></i><i></i><span class="preview-label">ARTICLE AUDIT / OVERVIEW</span></div><div class="seo-content"><div class="seo-score"><div class="score-copy"><b>Content health</b><span>On-page optimisation</span></div><div class="score-ring"><b>86</b></div></div><div class="seo-stat"><span>Headline & keywords</span><b>✓ Optimised</b></div><div class="seo-stat"><span>Readability</span><b>✓ Good</b></div><div class="seo-stat"><span>Internal links</span><b>Needs review</b></div></div></div></div>
+        <div class="card-info"><h3>LSEO</h3><p>Make every article work harder. Audit content, analyse search performance and uncover opportunities.</p></div><div class="card-foot"><span>SEARCH PERFORMANCE</span><span>AUDIT · ANALYSE · GROW</span></div>
       </a>
-    </nav>
-    <div class="deck-controls" aria-label="Card controls"><button type="button" id="passCard">← Pass</button><span class="deck-count" id="deckCount">1 / 3</span><button type="button" class="open-card" id="openCard">Open ↗</button></div>
+    </nav><button class="deck-arrow deck-next" type="button" id="openCard" aria-label="Open current card">›</button></div>
   </section>
 
   <section class="insights" aria-label="Buffer performance insights">
@@ -152,7 +151,7 @@ a{color:inherit}
     <div class="insight-note" id="insightsStatus" aria-live="polite">Loading Buffer insights…</div>
   </section>
 </main>
-<footer class="footer"><span>THESPORTZINE STUDIO · EDITORIAL & PUBLISHING WORKSPACE</span><a href="https://thesportzine.com" target="_blank" rel="noopener noreferrer">THESPORTZINE.COM ↗</a></footer>
+<footer class="footer"><span>THESPORTZINE STUDIO · EDITORIAL & PUBLISHING WORKSPACE</span><a href="https://thesportzine.com" target="_blank" rel="noopener noreferrer">THESPORTZINE.COM</a></footer>
 </div>
 
 <script>
@@ -170,117 +169,69 @@ loadBufferInsights(false);
 
 
 
+
 const deck=document.getElementById('swipeDeck');
 const cards=[...deck.querySelectorAll('[data-card]')];
-const count=document.getElementById('deckCount');
 const passButton=document.getElementById('passCard');
 const openButton=document.getElementById('openCard');
-let active=0, startX=0, startY=0, deltaX=0, dragging=false, pointerId=null, suppressClick=false;
+let active=0,startX=0,startY=0,deltaX=0,dragging=false,pointerId=null,suppressClick=false;
 const reduceMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-const SWIPE_THRESHOLD=75;
-
+const THRESHOLD=75;
 function paintDeck(){
   cards.forEach((card,i)=>{
     const offset=i-active;
     card.style.zIndex=String(cards.length-offset);
     card.style.opacity=offset<0?'0':offset===0?'1':String(Math.max(.25,1-offset*.16));
     card.style.pointerEvents=offset===0?'auto':'none';
-    card.style.transform=offset===0
-      ?'translate(-50%,-50%) rotate(0deg) scale(1)'
-      :`translate(calc(-50% + ${offset*10}px),calc(-50% + ${offset*8}px)) rotate(${offset*1.5}deg) scale(${1-offset*.025})`;
-    card.classList.toggle('is-top',offset===0);
-    card.setAttribute('aria-hidden',offset===0?'false':'true');
+    card.style.transform=offset===0?'translate(-50%,-50%) rotate(0deg) scale(1)':`translate(calc(-50% + ${offset*10}px),calc(-50% + ${offset*8}px)) rotate(${offset*1.5}deg) scale(${1-offset*.025})`;
   });
-  const finished=active>=cards.length;
-  count.textContent=finished?'All caught up':`${active+1} / ${cards.length}`;
-  passButton.disabled=finished;
-  openButton.disabled=finished;
-  if(finished){
-    deck.innerHTML='<div style="text-align:center;color:#a5aab5;font-size:13px">You’ve viewed all three tools. Reload to start again.</div>';
-  }
+  passButton.disabled=active>=cards.length;
+  openButton.disabled=active>=cards.length;
+  if(active>=cards.length)deck.innerHTML='<div style="text-align:center;color:#a5aab5;font-size:13px">You’ve viewed all three workspaces. Reload to start again.</div>';
 }
-
-function completeSwipe(direction){
+function swipe(direction){
   if(active>=cards.length)return;
   const card=cards[active];
-  if(direction>0){
-    // A deliberate right swipe opens the current destination.
-    window.location.assign(card.href);
-    return;
-  }
-  // A left swipe dismisses this card and advances the deck.
-  card.style.transition='transform .28s ease, opacity .28s ease';
+  if(direction>0){window.location.assign(card.href);return}
+  card.style.transition='transform .28s ease,opacity .28s ease';
   card.style.transform='translate(-160%,-50%) rotate(-18deg)';
   card.style.opacity='0';
   card.style.pointerEvents='none';
   active++;
   window.setTimeout(paintDeck,reduceMotion?0:290);
 }
-
 deck.addEventListener('pointerdown',e=>{
-  if(active>=cards.length||e.target.closest('button'))return;
-  const card=cards[active];
-  if(!card||!card.contains(e.target))return;
-  dragging=true;
-  pointerId=e.pointerId;
-  startX=e.clientX;
-  startY=e.clientY;
-  deltaX=0;
-  suppressClick=false;
+  if(active>=cards.length)return;
+  const card=cards[active];if(!card||!card.contains(e.target))return;
+  dragging=true;pointerId=e.pointerId;startX=e.clientX;startY=e.clientY;deltaX=0;suppressClick=false;
   try{card.setPointerCapture(pointerId)}catch{}
   e.preventDefault();
 });
-
 deck.addEventListener('pointermove',e=>{
   if(!dragging||e.pointerId!==pointerId)return;
   deltaX=e.clientX-startX;
-  const deltaY=e.clientY-startY;
-  // Let vertical page scrolling remain native; capture horizontal gestures.
-  if(Math.abs(deltaX)<Math.abs(deltaY)*1.15)return;
+  const dy=e.clientY-startY;
+  if(Math.abs(deltaX)<Math.abs(dy)*1.15)return;
   if(Math.abs(deltaX)>8)suppressClick=true;
-  const card=cards[active];
-  if(!card)return;
-  const rotation=Math.max(-16,Math.min(16,deltaX*.045));
+  const card=cards[active];if(!card)return;
   card.style.transition='none';
-  card.style.transform=`translate(calc(-50% + ${deltaX}px),calc(-50% + ${Math.abs(deltaX)*.025}px)) rotate(${rotation}deg)`;
+  card.style.transform=`translate(calc(-50% + ${deltaX}px),calc(-50% + ${Math.abs(deltaX)*.025}px)) rotate(${Math.max(-16,Math.min(16,deltaX*.045))}deg)`;
 });
-
 function endGesture(e){
   if(!dragging||e.pointerId!==pointerId)return;
-  dragging=false;
-  pointerId=null;
-  if(Math.abs(deltaX)>=SWIPE_THRESHOLD){
-    completeSwipe(deltaX>0?1:-1);
-  }else{
-    paintDeck();
-  }
-  if(suppressClick){
-    window.setTimeout(()=>{suppressClick=false},350);
-  }
+  dragging=false;pointerId=null;
+  if(Math.abs(deltaX)>=THRESHOLD)swipe(deltaX>0?1:-1);else paintDeck();
+  if(suppressClick)window.setTimeout(()=>suppressClick=false,350);
 }
-deck.addEventListener('pointerup',endGesture);
-deck.addEventListener('pointercancel',endGesture);
-
-// Prevent the anchor's native click from overriding the swipe decision.
+deck.addEventListener('pointerup',endGesture);deck.addEventListener('pointercancel',endGesture);
 deck.addEventListener('click',e=>{
-  const card=e.target.closest('[data-card]');
-  if(!card)return;
-  if(suppressClick){
-    e.preventDefault();
-    e.stopPropagation();
-    return;
-  }
-  // A tap/click opens the top card; cards behind it are inert.
-  if(card===cards[active]){
-    e.preventDefault();
-    window.location.assign(card.href);
-  }else{
-    e.preventDefault();
-  }
+  const card=e.target.closest('[data-card]');if(!card)return;
+  e.preventDefault();e.stopPropagation();
+  if(suppressClick)return;
+  if(card===cards[active])window.location.assign(card.href);
 },true);
-
-passButton.addEventListener('click',()=>completeSwipe(-1));
-openButton.addEventListener('click',()=>completeSwipe(1));
+passButton.addEventListener('click',()=>swipe(-1));
+openButton.addEventListener('click',()=>swipe(1));
 paintDeck();
 
 </script>
