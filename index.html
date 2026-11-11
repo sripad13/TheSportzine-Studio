@@ -169,60 +169,118 @@ $('refreshInsights').addEventListener('click',()=>loadBufferInsights(true));
 loadBufferInsights(false);
 
 
+
 const deck=document.getElementById('swipeDeck');
 const cards=[...deck.querySelectorAll('[data-card]')];
 const count=document.getElementById('deckCount');
 const passButton=document.getElementById('passCard');
 const openButton=document.getElementById('openCard');
-let active=0, startX=0, startY=0, deltaX=0, dragging=false, pointerId=null;
+let active=0, startX=0, startY=0, deltaX=0, dragging=false, pointerId=null, suppressClick=false;
 const reduceMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const SWIPE_THRESHOLD=75;
+
 function paintDeck(){
   cards.forEach((card,i)=>{
     const offset=i-active;
     card.style.zIndex=String(cards.length-offset);
-    card.style.opacity=offset<0?0:offset===0?1:Math.max(.22,1-offset*.22);
+    card.style.opacity=offset<0?'0':offset===0?'1':String(Math.max(.25,1-offset*.16));
     card.style.pointerEvents=offset===0?'auto':'none';
-    card.style.transform=offset===0?'translate(-50%,-50%) rotate(0deg) scale(1)':`translate(calc(-50% + ${offset*12}px),calc(-50% + ${offset*9}px)) rotate(${offset*2}deg) scale(${1-offset*.035})`;
+    card.style.transform=offset===0
+      ?'translate(-50%,-50%) rotate(0deg) scale(1)'
+      :`translate(calc(-50% + ${offset*10}px),calc(-50% + ${offset*8}px)) rotate(${offset*1.5}deg) scale(${1-offset*.025})`;
     card.classList.toggle('is-top',offset===0);
+    card.setAttribute('aria-hidden',offset===0?'false':'true');
   });
-  count.textContent=active<cards.length?`${active+1} / ${cards.length}`:'All caught up';
-  passButton.disabled=active>=cards.length;
-  openButton.disabled=active>=cards.length;
-  if(active>=cards.length){deck.innerHTML='<div style="text-align:center;color:#a5aab5;font-size:13px">You’ve viewed all three tools. Reload to start again.</div>'}
+  const finished=active>=cards.length;
+  count.textContent=finished?'All caught up':`${active+1} / ${cards.length}`;
+  passButton.disabled=finished;
+  openButton.disabled=finished;
+  if(finished){
+    deck.innerHTML='<div style="text-align:center;color:#a5aab5;font-size:13px">You’ve viewed all three tools. Reload to start again.</div>';
+  }
 }
-function finishSwipe(direction){
+
+function completeSwipe(direction){
   if(active>=cards.length)return;
   const card=cards[active];
-  if(direction>0){window.location.href=card.href;return}
-  card.classList.add('is-exiting');
-  card.style.transform=`translate(${direction<0?'-':'+'}130%,-50%) rotate(${direction*18}deg)`;
+  if(direction>0){
+    // A deliberate right swipe opens the current destination.
+    window.location.assign(card.href);
+    return;
+  }
+  // A left swipe dismisses this card and advances the deck.
+  card.style.transition='transform .28s ease, opacity .28s ease';
+  card.style.transform='translate(-160%,-50%) rotate(-18deg)';
   card.style.opacity='0';
+  card.style.pointerEvents='none';
   active++;
-  window.setTimeout(paintDeck,reduceMotion?0:170);
+  window.setTimeout(paintDeck,reduceMotion?0:290);
 }
+
 deck.addEventListener('pointerdown',e=>{
   if(active>=cards.length||e.target.closest('button'))return;
-  const card=cards[active];if(!card)return;
-  dragging=true;pointerId=e.pointerId;startX=e.clientX;startY=e.clientY;deltaX=0;
-  card.setPointerCapture(pointerId);
+  const card=cards[active];
+  if(!card||!card.contains(e.target))return;
+  dragging=true;
+  pointerId=e.pointerId;
+  startX=e.clientX;
+  startY=e.clientY;
+  deltaX=0;
+  suppressClick=false;
+  try{card.setPointerCapture(pointerId)}catch{}
+  e.preventDefault();
 });
+
 deck.addEventListener('pointermove',e=>{
   if(!dragging||e.pointerId!==pointerId)return;
   deltaX=e.clientX-startX;
   const deltaY=e.clientY-startY;
-  if(Math.abs(deltaX)<Math.abs(deltaY)*1.1)return;
-  const card=cards[active];if(card)card.style.transform=`translate(calc(-50% + ${deltaX}px),calc(-50% + ${Math.min(18,Math.abs(deltaX)*.025)}px)) rotate(${deltaX*.045}deg)`;
+  // Let vertical page scrolling remain native; capture horizontal gestures.
+  if(Math.abs(deltaX)<Math.abs(deltaY)*1.15)return;
+  if(Math.abs(deltaX)>8)suppressClick=true;
+  const card=cards[active];
+  if(!card)return;
+  const rotation=Math.max(-16,Math.min(16,deltaX*.045));
+  card.style.transition='none';
+  card.style.transform=`translate(calc(-50% + ${deltaX}px),calc(-50% + ${Math.abs(deltaX)*.025}px)) rotate(${rotation}deg)`;
 });
-function endDrag(e){
+
+function endGesture(e){
   if(!dragging||e.pointerId!==pointerId)return;
-  dragging=false;pointerId=null;
-  if(Math.abs(deltaX)>95){finishSwipe(deltaX>0?1:-1)}
-  else paintDeck();
+  dragging=false;
+  pointerId=null;
+  if(Math.abs(deltaX)>=SWIPE_THRESHOLD){
+    completeSwipe(deltaX>0?1:-1);
+  }else{
+    paintDeck();
+  }
+  if(suppressClick){
+    window.setTimeout(()=>{suppressClick=false},350);
+  }
 }
-deck.addEventListener('pointerup',endDrag);
-deck.addEventListener('pointercancel',endDrag);
-passButton.addEventListener('click',()=>finishSwipe(-1));
-openButton.addEventListener('click',()=>finishSwipe(1));
+deck.addEventListener('pointerup',endGesture);
+deck.addEventListener('pointercancel',endGesture);
+
+// Prevent the anchor's native click from overriding the swipe decision.
+deck.addEventListener('click',e=>{
+  const card=e.target.closest('[data-card]');
+  if(!card)return;
+  if(suppressClick){
+    e.preventDefault();
+    e.stopPropagation();
+    return;
+  }
+  // A tap/click opens the top card; cards behind it are inert.
+  if(card===cards[active]){
+    e.preventDefault();
+    window.location.assign(card.href);
+  }else{
+    e.preventDefault();
+  }
+},true);
+
+passButton.addEventListener('click',()=>completeSwipe(-1));
+openButton.addEventListener('click',()=>completeSwipe(1));
 paintDeck();
 
 </script>
