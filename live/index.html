@@ -203,10 +203,7 @@ el.querySelectorAll('[data-act]').forEach(b=>b.onclick=()=>{const n=columns.inde
 
 function relativeAge(s){
  const date=articleDate(s);
- const raw=date?date.toISOString():null;
- if(!raw)return 'Recently';
- const date=typeof raw==='number'?(raw<1e12?new Date(raw*1000):new Date(raw)):new Date(raw);
- if(Number.isNaN(date.getTime()))return 'Recently';
+ if(!date)return 'Recently';
  const mins=Math.max(0,Math.floor((Date.now()-date.getTime())/60000));
  if(mins<1)return 'Just now';
  if(mins<60)return mins+' min ago';
