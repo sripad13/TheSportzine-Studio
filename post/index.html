@@ -256,7 +256,7 @@ function save(){const item={name:template+' · '+new Date().toLocaleString(),tem
 $('saveBtn').onclick=save;
 function renderProjects(){const markup=projects.map((p,i)=>`<div class="panel" style="padding:9px"><img src="${p.data}" style="width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:6px"><b style="display:block;margin-top:8px;font-size:12px">${p.template}</b><button class="btn" style="margin-top:8px;width:100%" data-open="${i}">Reopen</button></div>`).join('')||'<p class="muted">No saved projects yet.</p>';$('recent').innerHTML=markup;$('projectTiles').innerHTML=markup;document.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>{const p=projects[+b.dataset.open];openEditor(p.template);$('headline').value=p.headline;$('highlight').value=p.highlight;$('subtitle').value=p.subtitle;draw()})}
 $('createBtn').onclick=()=>openEditor('Breaking With Text');
-$('headerBrand').src=$('wordmarkBrand').src;
+// Shared newsroom header is text-based; no legacy brand image assignment is needed.
 
 // Buffer scheduling integration. API credentials remain on the Cloudflare Worker.
 const BUFFER_API='https://thesportzine-buffer-api.sripad48.workers.dev';
