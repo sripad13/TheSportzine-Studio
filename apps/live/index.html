@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b0c10"><title>Newsroom — TheSportzine Studio</title><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=League+Gothic&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:dark;--bg:#0b0c10;--panel:#15171d;--panel2:#1b1e26;--line:#2b2e38;--muted:#9297a5;--text:#f3f4f7;--yellow:#ffeb00;--green:#80d99b;--red:#ff8585}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:13px Inter,Arial,sans-serif;overflow:hidden;min-height:100dvh}button,input,select{font:inherit}button{cursor:pointer;color:inherit}.top{height:58px;display:flex;align-items:center;gap:18px;padding:0 17px;border-bottom:1px solid var(--line);background:#101116}.brand{font-weight:850;font-size:17px;letter-spacing:-.6px;white-space:nowrap}.brand em{font-style:normal;color:var(--yellow)}.workspaces{display:flex;gap:5px;overflow:auto}.ws{border:0;background:transparent;color:#aeb2bd;padding:9px 12px;border-radius:7px;white-space:nowrap}.ws.active{background:#292c35;color:#fff}.topright{margin-left:auto;display:flex;gap:7px;align-items:center}.btn{border:1px solid #3a3d48;background:#20232c;border-radius:7px;padding:8px 11px;font-size:12px}.btn:hover{border-color:#777}.btn.primary{background:var(--yellow);color:#101010;border-color:var(--yellow);font-weight:800}.api{width:205px;background:#0b0c10;border:1px solid var(--line);color:#d9dbe1;border-radius:6px;padding:8px;font-size:11px}.status{font-size:10px;color:var(--muted);white-space:nowrap}.status:before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:#777;margin:0 6px 1px 0}.status.ok:before{background:var(--green)}.status.bad:before{background:var(--red)}.bar{height:42px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:9px;padding:0 16px;background:#0e0f14}.bar .hint{color:var(--muted);font-size:11px}.bar input{background:#181a21;border:1px solid var(--line);border-radius:6px;color:#fff;padding:7px 10px;width:220px}.bar .spacer{flex:1}.board{height:calc(100dvh - 100px);display:flex;gap:12px;padding:12px;overflow-x:auto;overflow-y:hidden;align-items:stretch;scroll-snap-type:x proximity;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}.column{width:350px;min-width:300px;max-width:520px;flex:0 0 350px;scroll-snap-align:start;display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden;resize:horizontal}.colhead{height:49px;flex:0 0 49px;padding:0 11px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--line);background:#191b22}.coltitle{font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1}.count{font-size:10px;color:var(--muted);background:#292c35;padding:3px 6px;border-radius:10px}.coltools{display:flex;gap:3px}.tiny{border:0;background:transparent;color:#a6aab5;padding:5px 6px;border-radius:4px}.tiny:hover{background:#30333d;color:white}.colfilter{padding:7px 9px;border-bottom:1px solid var(--line);display:flex;gap:5px}.colfilter input,.colfilter select{min-width:0;width:100%;background:#101116;border:1px solid #30333d;color:#cfd2da;border-radius:5px;padding:6px;font-size:10px}.cards{overflow-y:auto;flex:1;overscroll-behavior:contain}.story{padding:15px 14px 13px;border-bottom:1px solid #282b34;cursor:pointer;transition:background .12s}.story:hover{background:#1d2028}.story.selected{background:#252832;box-shadow:inset 3px 0 var(--yellow)}.meta{display:flex;align-items:center;gap:6px;color:#9297a5;font-size:9px;text-transform:uppercase;letter-spacing:.5px}.source{color:#d1d3da;font-weight:700}.priority{color:var(--yellow);font-weight:800}.story h3{font-size:13px;line-height:1.5;margin:7px 0 6px;font-weight:650}.excerpt{font-size:11px;color:#a7abb6;line-height:1.5;margin:0}.storyfoot{display:flex;gap:5px;flex-wrap:wrap;margin-top:9px}.pill{border:1px solid #383c47;color:#aeb2bc;border-radius:4px;padding:3px 5px;font-size:9px}.pill.breaking{color:#ff9b9b;border-color:#704242}.pill.duplicate{color:#9fc4ff;border-color:#3c5578}.empty{padding:28px 15px;color:#9297a5;text-align:center;font-size:11px;line-height:1.6}.empty b{display:block;color:#e8e9ee;margin-bottom:5px}.drawer{position:fixed;right:0;top:58px;bottom:0;width:min(420px,94vw);background:#15171e;border-left:1px solid #393c46;z-index:5;transform:translateX(102%);transition:transform .2s;display:flex;flex-direction:column;box-shadow:-20px 0 60px #0008}.drawer.open{transform:translateX(0)}.dhead{padding:13px 15px;border-bottom:1px solid var(--line);display:flex;align-items:center}.dhead strong{flex:1}.dcontent{padding:18px;overflow:auto}.dcontent h2{font-size:19px;line-height:1.4;margin:12px 0}.dcontent p{font-size:12px;color:#b2b6c1;line-height:1.7}.dcontent .sourcebox{background:#20232b;border:1px solid #353945;border-radius:7px;padding:10px;margin:12px 0;font-size:11px}.dactions{display:flex;gap:7px;flex-wrap:wrap;margin:16px 0}.modal{position:fixed;inset:0;background:#000b;display:none;align-items:center;justify-content:center;z-index:10;padding:15px}.modal.open{display:flex}.dialog{background:#191c24;border:1px solid #40434e;border-radius:10px;padding:18px;width:min(420px,100%)}.dialog h2{font-size:16px;margin:0 0 15px}.field{margin:11px 0}.field label{display:block;color:#aeb2bd;font-size:10px;margin-bottom:5px}.field input,.field select{width:100%;background:#0e1015;border:1px solid #383c47;border-radius:6px;color:white;padding:9px}.footnote{color:#8e93a0;font-size:10px;line-height:1.6;margin-top:12px}.hidden{display:none!important}.mobilehint{display:none}.source-manager{position:fixed;inset:0;background:#000b;display:none;align-items:center;justify-content:center;z-index:30;padding:14px}.source-manager.open{display:flex}.source-dialog{width:min(680px,100%);max-height:min(88dvh,850px);overflow:auto;background:#171a21;border:1px solid #3a3e49;border-radius:12px;padding:18px}.source-dialog h2{font-size:17px;margin:0}.source-list{display:grid;gap:7px;margin:14px 0}.source-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;align-items:center;padding:10px;background:#20232b;border:1px solid #343844;border-radius:7px}.source-name{font-size:12px;font-weight:700}.source-url{font-size:10px;color:#9297a5;overflow-wrap:anywhere;margin-top:3px}.source-actions{display:flex;gap:5px}.source-form{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:14px}.source-form .field{margin:0}.source-form .wide{grid-column:1/-1}.source-note{font-size:11px;color:#a4a9b5;line-height:1.5}.source-error{color:#ff9b9b;font-size:11px;line-height:1.5}.source-ok{color:#80d99b;font-size:11px}@media(max-width:700px){.source-manager{padding:0;align-items:stretch}.source-dialog{width:100%;max-height:100dvh;border:0;border-radius:0;padding:18px 14px}.source-form{grid-template-columns:1fr}.source-form .wide{grid-column:auto}.source-row{grid-template-columns:minmax(0,1fr) auto}.source-row .source-category{display:none}}
+@media(max-width:700px){body{overflow:hidden}.top{height:auto;min-height:unset;padding:10px 12px 8px;display:grid;grid-template-columns:1fr auto;gap:9px}.brand{font-size:15px;grid-column:1}.workspaces{grid-column:1/-1;grid-row:2;width:100%;padding:2px 0 3px;gap:4px;overflow-x:auto;scrollbar-width:none}.workspaces::-webkit-scrollbar{display:none}.ws{padding:8px 11px;font-size:11px;flex:0 0 auto}.topright{grid-column:2;grid-row:1;margin:0;gap:5px}.api{display:none}.status{font-size:9px;max-width:90px;overflow:hidden;text-overflow:ellipsis}.topright .btn{padding:8px 9px;font-size:10px;white-space:nowrap}#addColumn{display:none}.bar{height:auto;min-height:48px;padding:8px 10px;gap:7px;display:flex;flex-wrap:wrap}.bar .hint{display:none}#workspaceLabel{font-size:11px}.bar .spacer{display:none}.bar input{width:auto;min-width:0;flex:1;padding:9px 10px;font-size:12px}#refresh{padding:9px 11px}.board{height:calc(100dvh - 140px);padding:9px;gap:9px;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;touch-action:pan-x;align-items:stretch}.column{width:88vw;min-width:88vw;max-width:88vw;flex-basis:88vw;resize:none;scroll-snap-align:center}.colhead{height:48px;flex-basis:48px}.coltitle{font-size:13px}.colfilter{padding:8px;gap:7px}.colfilter input,.colfilter select{font-size:11px;padding:8px}.cards{overscroll-behavior:contain;-webkit-overflow-scrolling:touch}.story{padding:15px 13px}.story h3{font-size:14px;line-height:1.45}.excerpt{font-size:11px;line-height:1.55}.meta{font-size:9px;flex-wrap:wrap}.drawer{top:0;bottom:0;width:100%;max-width:none;border-left:0;z-index:20}.dhead{padding:16px}.dcontent{padding:18px 16px}.dcontent h2{font-size:20px}.dcontent p{font-size:13px}.dactions .btn{padding:10px 12px}.modal{align-items:flex-end;padding:0}.dialog{width:100%;border-radius:16px 16px 0 0;padding:20px 18px max(20px,env(safe-area-inset-bottom))}}@media(min-width:701px) and (max-width:1050px){.top{gap:9px;padding:0 11px}.brand{font-size:14px}.api{width:155px}.column{width:320px;min-width:290px;flex-basis:320px}.board{height:calc(100dvh - 100px)}}
+
+/* Newsroom editorial redesign */
+:root{color-scheme:light;--bg:#f5f6f8;--panel:#fff;--panel2:#f8f9fb;--line:#e5e7eb;--muted:#687080;--text:#202124;--yellow:#b88900;--green:#18864b;--red:#c43d3d}
+body{background:var(--bg);color:var(--text);font-family:Inter,Arial,sans-serif;overflow:hidden}
+.top{height:68px;background:#fff;border-bottom:1px solid #e8eaed;padding:0 max(22px,calc((100vw - 1440px)/2));gap:24px;box-shadow:0 1px 2px #00000008}
+.brand{font-size:18px;color:#202124}.brand em{color:#2767c7}
+.workspaces{gap:4px}.ws{color:#5f6368;padding:10px 14px;border-radius:22px}.ws:hover{background:#f1f3f4}.ws.active{background:#e8f0fe;color:#174ea6;font-weight:700}
+.topright{gap:8px}.btn{background:#fff;border:1px solid #dadce0;color:#3c4043;border-radius:20px;padding:9px 14px}.btn:hover{background:#f8f9fa;border-color:#c5c9ce}.btn.primary{background:#1a73e8;color:#fff;border-color:#1a73e8}.api{background:#f8f9fa;border:1px solid #dadce0;color:#3c4043;border-radius:18px}.status{color:#687080}
+.bar{height:62px;background:var(--bg);border:0;padding:12px max(22px,calc((100vw - 1440px)/2));gap:12px}
+.bar strong{font-size:21px;letter-spacing:-.5px;color:#202124}.bar .hint{color:#687080}.bar input{background:#fff;border:1px solid #dadce0;color:#202124;border-radius:24px;padding:10px 15px;width:min(340px,30vw)}
+.board{height:calc(100dvh - 130px);max-width:1440px;margin:0 auto;padding:10px 22px 28px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;overflow-y:auto;overflow-x:hidden;align-content:start;scroll-snap-type:none}
+.column{width:auto;min-width:0;max-width:none;min-height:250px;max-height:calc(100dvh - 165px);flex:initial;resize:none;background:#fff;border:1px solid #e5e7eb;border-radius:12px;box-shadow:0 1px 2px #2021240a}
+.colhead{height:54px;flex-basis:54px;background:#fff;padding:0 17px;border-bottom:1px solid #eef0f2}.coltitle{font-size:15px;color:#202124}.count{background:#f1f3f4;color:#5f6368}.tiny{color:#5f6368}.tiny:hover{background:#f1f3f4;color:#202124}
+.colfilter{padding:10px 14px;background:#fff;border-bottom:1px solid #f0f1f3}.colfilter input,.colfilter select{background:#f8f9fa;border:1px solid #e3e5e8;color:#3c4043;border-radius:18px;padding:8px 11px}
+.cards{background:#fff}.story{padding:15px 17px;border-bottom:1px solid #f0f1f3}.story:hover{background:#f8fafd}.story.selected{background:#eef4ff;box-shadow:inset 3px 0 #1a73e8}
+.meta{color:#70757a;font-size:10px;letter-spacing:.2px}.source{color:#5f6368;font-weight:700}.priority{color:#a56b00}
+.story h3{font-size:14px;line-height:1.48;margin:7px 0 0;color:#202124;font-weight:650}.storyfoot{margin-top:9px}.pill{border:1px solid #e1e4e8;color:#5f6368;border-radius:14px;padding:4px 8px;background:#fafbfc}.pill.breaking{color:#b3261e;border-color:#f2c9c6;background:#fceeed}.pill.duplicate{color:#174ea6;border-color:#d2e3fc;background:#e8f0fe}
+.empty{color:#6b7280}.empty b{color:#202124}
+.drawer{background:#fff;border-left:1px solid #e5e7eb;box-shadow:-12px 0 36px #20212414}.dhead{border-color:#e8eaed}.dcontent h2{color:#202124}.dcontent p{color:#5f6368}.dcontent .sourcebox{background:#f8f9fa;border-color:#e5e7eb;color:#3c4043}
+.modal,.source-manager{background:#20212466;backdrop-filter:blur(3px)}.dialog,.source-dialog{background:#fff;border:1px solid #e5e7eb;box-shadow:0 12px 40px #20212420;color:#202124}.dialog h2,.source-dialog h2{color:#202124}.field label{color:#5f6368}.field input,.field select{background:#fff;border:1px solid #dadce0;color:#202124}.source-row{background:#f8f9fa;border-color:#e8eaed}.source-url{color:#687080}.source-note{color:#687080}.footnote{color:#687080}
+@media(min-width:1200px){.board{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:900px){.board{grid-template-columns:repeat(2,minmax(0,1fr));padding:10px 14px 24px}.top{padding:0 14px}.bar{padding:10px 14px}}
+@media(max-width:700px){.top{background:#fff;min-height:unset;padding:10px 12px 8px;grid-template-columns:1fr auto;gap:9px}.brand{font-size:15px}.workspaces{grid-column:1/-1;grid-row:2;width:100%;overflow-x:auto}.ws{padding:8px 12px}.topright .btn{padding:8px 11px}.bar{height:auto;min-height:58px;padding:9px 12px;display:flex;flex-wrap:wrap;gap:8px}.bar strong{font-size:18px}.bar input{width:auto;min-width:0;flex:1;padding:9px 12px}.board{height:calc(100dvh - 145px);display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;padding:8px 10px 20px;gap:12px}.column{width:100%;min-width:0;max-width:none;max-height:none;min-height:180px;flex:0 0 auto;border-radius:10px}.colhead{height:49px;flex-basis:49px}.story{padding:14px}.story h3{font-size:14px}.drawer{top:0;width:100%;border:0}.source-dialog{background:#fff}.api{display:none}}
+
+
+/* Responsive newsroom header, independent collapsible sections, and story limits */
+@media(max-width:700px){
+ .top{grid-template-columns:minmax(0,1fr) auto;align-items:center}
+ .brand{min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+ .topright{min-width:0;max-width:56vw;overflow-x:auto;overflow-y:visible;white-space:nowrap;scrollbar-width:none}
+ .topright::-webkit-scrollbar{display:none}
+ .status{max-width:74px;text-overflow:ellipsis;overflow:hidden}
+}
+@media(max-width:420px){
+ .status{display:none}
+ .topright{max-width:52vw}
+ .topright .btn{padding:7px 9px;font-size:10px}
+}
+@media(max-width:700px){
+ .topright{overflow:visible!important;overflow-x:visible!important;overflow-y:visible!important;max-width:none}
+ .settings-menu{position:static}
+ .settings-panel{position:fixed!important;top:calc(env(safe-area-inset-top) + 58px)!important;right:12px!important;left:auto!important;width:min(280px,calc(100vw - 24px))!important;max-height:calc(100dvh - 76px);overflow-y:auto;z-index:1000}
+ .settings-menu[open] .settings-panel{display:grid}
+}
+.coltitle{border:0;background:transparent;color:inherit;font:inherit;font-weight:750;text-align:left;padding:0;min-width:0;cursor:pointer}
+.coltitle:focus-visible{outline:2px solid #f4c542;outline-offset:3px;border-radius:3px}
+.coltitle:after{content:'⌄';display:inline-block;margin-left:8px;color:#929bad;font-size:12px;transition:transform .15s}
+.column.collapsed .coltitle:after{transform:rotate(-90deg)}
+.trends-controls{align-items:center;justify-content:space-between;gap:8px}.trends-toggle{display:flex;gap:5px;flex-wrap:wrap}.trends-toggle .btn{padding:7px 11px;font-size:10px}.trends-period{font-size:10px;color:var(--muted);white-space:nowrap}.column.collapsed{min-height:0;height:auto;max-height:none}
+.column.collapsed .colfilter,.column.collapsed .cards,.column.collapsed .load-more-wrap{display:none}
+.load-more-wrap{padding:12px;text-align:center;border-top:1px solid #293140}
+.load-more{min-width:130px}
+.column.collapsed{height:54px!important;min-height:54px!important;max-height:54px!important;align-self:start;overflow:hidden}
+.column.collapsed .colhead{border-bottom:0}
+.column.collapsed .coltitle{cursor:pointer}
+.column.collapsed .coltitle:after{content:'＋';font-size:11px}
+.coltitle:after{content:'−';font-size:11px}
+/* Mobile reading flow + story modal */
+@media(max-width:700px){
+  html,body{height:auto;min-height:100%;overflow-x:hidden;overflow-y:auto}
+  body{min-height:100dvh;overflow-y:auto}
+  .top{position:sticky;top:0;z-index:12}
+  .bar{position:sticky;top:92px;z-index:11}
+  .board{height:auto;min-height:calc(100dvh - 145px);max-height:none;display:flex;flex-direction:column;overflow:visible;overflow-x:hidden;overflow-y:visible;touch-action:pan-y;padding-bottom:40px}
+  .column{height:auto;max-height:none;min-height:0;overflow:visible;flex:0 0 auto}
+  .cards{height:auto;max-height:none;overflow:visible;flex:0 0 auto}
+  .story{touch-action:pan-y}
+}
+.drawer{inset:0;top:0;bottom:0;right:0;width:100%;max-width:none;height:100dvh;background:#0009;backdrop-filter:blur(3px);border:0;box-shadow:none;z-index:40;transform:none;opacity:0;visibility:hidden;pointer-events:none;display:flex;align-items:center;justify-content:center;padding:24px;transition:opacity .18s,visibility .18s}
+.drawer.open{opacity:1;visibility:visible;pointer-events:auto;transform:none}
+.drawer .dhead,.drawer .dcontent{width:min(720px,100%);background:#fff}
+.drawer .dhead{flex:0 0 auto;border:0;border-radius:14px 14px 0 0;padding:18px 22px 10px}
+.drawer .dcontent{max-height:min(78dvh,760px);overflow-y:auto;border-radius:0 0 14px 14px;padding:12px 22px 24px}
+.drawer .dhead strong{color:#202124;font-size:12px;letter-spacing:.08em}
+.drawer .dcontent h2{font-size:24px;line-height:1.3;margin:8px 0 16px}
+.drawer .dcontent .article-body{font-size:14px;line-height:1.75;color:#3c4043;white-space:normal;margin:16px 0}
+.drawer .dcontent .article-body p{font-size:14px;line-height:1.75;color:#3c4043;margin:0 0 12px}
+.drawer .dcontent .sourcebox{margin-top:16px}
+.short-title-box{margin:14px 0;padding:13px 14px;border:1px solid #cfe0fb;background:#f4f8ff;border-radius:9px}.short-title-label{font-size:10px;font-weight:800;letter-spacing:.07em;color:#52657f;text-transform:uppercase}.short-title-text{font-size:18px;line-height:1.35;font-weight:750;color:#174ea6;margin:7px 0}.short-title-meta{font-size:10px;color:#687080}.short-title-error{font-size:11px;color:#b3261e;margin-top:8px}
+@media(max-width:700px){
+ .drawer{padding:12px;align-items:center}
+ .drawer .dhead{border-radius:14px 14px 0 0;padding:15px 16px 8px}
+ .drawer .dcontent{max-height:78dvh;padding:10px 16px 20px;border-radius:0 0 14px 14px}
+ .drawer .dcontent h2{font-size:20px}
+}
+
+
+/* Requested dark newsroom theme and compact header controls */
+:root{color-scheme:dark;--bg:#0b0d12;--panel:#141821;--panel2:#1a202b;--line:#293140;--muted:#929bad;--text:#edf1f7;--yellow:#f4c542;--green:#65cf91;--red:#ff8585}
+body{background:#0b0d12;color:#edf1f7}
+.top{background:#10141c;border-bottom:1px solid #293140;box-shadow:0 1px 2px #0005}
+.brand{color:#f4f6fa}.brand em{color:#f4c542}
+.ws{color:#aab3c2}.ws:hover{background:#202837;color:#fff}.ws.active{background:#26344a;color:#dbeafe}
+.topright .btn,.btn{background:#1a202b;border-color:#343e4e;color:#e2e8f0}
+.topright .btn:hover,.btn:hover{background:#232c3b;border-color:#53627a}
+.topright .btn.primary,.btn.primary{background:#f4c542;border-color:#f4c542;color:#111827}
+.status{color:#aab3c2}
+.bar{height:58px;background:#0b0d12;border:0;padding:10px max(22px,calc((100vw - 1440px)/2))}
+.bar input{background:#141a24;border:1px solid #303a4a;color:#edf1f7}
+.board{height:calc(100dvh - 126px)}
+.column{background:#141821;border-color:#293140;box-shadow:0 1px 3px #0003}
+.colhead{background:#171e29;border-color:#293140}.coltitle{color:#edf1f7}
+.count{background:#273142;color:#b7c1d1}.tiny{color:#aab3c2}.tiny:hover{background:#303b4d;color:#fff}
+.colfilter{background:#141821;border-color:#293140}
+.colfilter input,.colfilter select{background:#0e131b;border-color:#303a4a;color:#dce3ed}
+.cards{background:#141821}
+.story{border-color:#252e3c}.story:hover{background:#1b2431}.story.selected{background:#202c3d;box-shadow:inset 3px 0 #f4c542}
+.meta{color:#929bad}.source{color:#d9e0ea}.priority{color:#f4c542}
+.story h3{color:#edf1f7}.excerpt{color:#aab3c2}
+.pill{background:#1b2330;border-color:#354154;color:#b8c3d3}.pill.breaking{background:#351d23;border-color:#71343d;color:#ff9b9b}.pill.duplicate{background:#192a42;border-color:#35577f;color:#a8ceff}
+.empty{color:#929bad}.empty b{color:#edf1f7}
+.drawer{background:#000b}.drawer .dhead,.drawer .dcontent{background:#151b25;border-color:#303a4a}
+.drawer .dhead strong{color:#edf1f7}.drawer .dcontent h2{color:#f4f6fa}.drawer .dcontent p,.drawer .dcontent .article-body,.drawer .dcontent .article-body p{color:#c2cad6}
+.drawer .dcontent .sourcebox{background:#1d2633;border-color:#354154;color:#dce3ed}
+.short-title-box{background:#17263a;border-color:#34557e}.short-title-label{color:#9fc5f7}.short-title-text{color:#d6e8ff}.short-title-meta{color:#aabbd0}
+.modal,.source-manager{background:#000b}.dialog,.source-dialog{background:#151b25;border-color:#354154;color:#edf1f7;box-shadow:0 12px 40px #0008}
+.dialog h2,.source-dialog h2{color:#edf1f7}.field label{color:#b6c0cf}.field input,.field select{background:#0e131b;border-color:#354154;color:#edf1f7}
+.source-row{background:#1b2431;border-color:#354154}.source-name{color:#edf1f7}.source-url,.source-note,.footnote{color:#aab3c2}
+.source-manager .dhead{border-color:#354154}.source-error{color:#ff9b9b}.source-ok{color:#65cf91}
+.settings-menu{position:relative}.settings-menu summary{list-style:none;cursor:pointer;user-select:none}.settings-menu summary::-webkit-details-marker{display:none}
+.settings-panel{position:absolute;right:0;top:calc(100% + 9px);z-index:50;width:250px;padding:12px;display:grid;gap:8px;background:#151b25;border:1px solid #354154;border-radius:10px;box-shadow:0 12px 35px #0008}
+.settings-panel label{font-size:10px;color:#aab3c2}.settings-panel .api{display:block;width:100%;background:#0e131b;border:1px solid #354154;color:#edf1f7;border-radius:7px;padding:9px}
+.settings-panel .btn{width:100%;text-align:left;border-radius:7px}
+@media(max-width:700px){
+ .top{background:#10141c;padding:10px 12px 8px}
+ .topright{grid-column:2;grid-row:1;gap:6px}.topright .btn{padding:8px 10px}
+ .bar{height:auto;min-height:52px;padding:8px 12px;background:#0b0d12}
+ .bar input{width:auto;min-width:0;flex:1}
+ .board{height:auto;min-height:calc(100dvh - 135px);background:#0b0d12}
+ .column{background:#141821;border-color:#293140}
+ .settings-panel{right:0;width:min(270px,calc(100vw - 24px))}
+}
+
+ .priority-search{display:flex;gap:7px}.priority-search input{flex:1;min-width:0}.priority-search .btn{white-space:nowrap;padding:7px 13px}
+.loader-wrapper{position:relative;display:flex;align-items:center;justify-content:center;color:white;user-select:none;gap:10px;min-height:72px}.loader{width:20px;height:20px;aspect-ratio:1/1;border-radius:50%;background-color:transparent;animation:loader-rotate 1.5s linear infinite;z-index:0;flex:0 0 20px}@keyframes loader-rotate{0%{transform:rotate(90deg);box-shadow:0 1px 1px 0 #fff inset,0 3px 5px 0 #ff5f9f inset,0 4px 4px 0 #0693ff inset}50%{transform:rotate(270deg);background:#7c0911;box-shadow:0 1px 1px 0 #fff inset,0 3px 5px 0 #d60a47 inset,0 4px 4px 0 #fbef19 inset}100%{transform:rotate(450deg);box-shadow:0 1px 1px 0 #fff inset,0 3px 5px 0 #ff5f9f inset,0 4px 4px 0 #28a9ff inset}}.letter-wrapper{display:flex;gap:1px}.loader-letter{display:inline-block;opacity:.4;transform:translateY(0);animation:loader-letter-anim 2s infinite;z-index:1;border-radius:50ch;border:0}.loader-letter:nth-child(1){animation-delay:0s}.loader-letter:nth-child(2){animation-delay:.1s}.loader-letter:nth-child(3){animation-delay:.2s}.loader-letter:nth-child(4){animation-delay:.3s}.loader-letter:nth-child(5){animation-delay:.4s}.loader-letter:nth-child(6){animation-delay:.5s}.loader-letter:nth-child(7){animation-delay:.6s}.loader-letter:nth-child(8){animation-delay:.7s}.loader-letter:nth-child(9){animation-delay:.8s}.loader-letter:nth-child(10){animation-delay:.9s}@keyframes loader-letter-anim{0%,100%{opacity:.4;transform:translateY(0)}20%{opacity:1;transform:scale(1.15)}40%{opacity:.7;transform:translateY(0)}}.top{gap:20px}.brand{font-size:20px;letter-spacing:-.7px;text-transform:none}.brand em{font-style:normal;color:var(--yellow)}.header-search{flex:1;max-width:520px;min-width:120px}.bar-search{max-width:520px;margin-left:auto;margin-right:10px}.bar-search input{width:100%;background:#141a24;border:1px solid #303a4a;color:#edf1f7;border-radius:7px;padding:9px 12px;font-size:12px}.header-search input{width:100%;background:#141a24;border:1px solid #303a4a;color:#edf1f7;border-radius:7px;padding:9px 12px;font-size:12px}.feature-nav{display:flex;align-items:center;gap:5px}.feature-nav a{padding:8px 11px;border-radius:7px;text-decoration:none;color:#aeb2bd;font-size:12px}.feature-nav a.feature-active{background:#292c35;color:#fff}.topright{margin-left:auto}.icon-only{width:38px;height:38px;padding:0!important;display:grid;place-items:center;font-size:18px}.feed-footer{height:28px;display:flex;align-items:center;padding:0 18px;border-top:1px solid #293140;background:#10141c}.feed-footer .status{font-size:10px}.board{height:calc(100dvh - 144px)}.bar{height:58px;display:flex;align-items:center;gap:10px}.bar-search{flex:1}.brand em{color:#f4c542}@media(max-width:700px){.top{height:58px;gap:9px;padding:8px 10px}.brand{font-size:17px}.header-search{min-width:70px;flex:1}.bar-search{min-width:0;margin-left:0;margin-right:0}.bar-search input{padding:8px 9px;font-size:11px}.header-search input{padding:8px 7px;font-size:11px}.feature-nav{gap:1px}.feature-nav a{padding:8px 7px;font-size:11px}.topright{gap:5px}.topright .btn{padding:8px 9px}.topright .icon-only{width:34px;height:34px;padding:0!important}.bar{height:42px;min-height:42px;padding:6px 10px}.board{height:calc(100dvh - 128px);min-height:0}.feed-footer{height:28px;padding:0 12px}}.top .nav{display:flex;gap:8px;align-items:center}.top .nav .btn{border:1px solid #3a3d48;background:#20232c;border-radius:7px;padding:9px 12px;color:inherit;text-decoration:none;font-size:12px}.top .nav .btn.active{background:var(--yellow);color:#101010;border-color:var(--yellow);font-weight:800}@media(max-width:560px){.top{gap:7px;padding:0 10px}.top .brand{font-size:15px}.top .nav{gap:4px}.top .nav .btn{padding:8px 8px;font-size:11px}}\n
+/* Keep the Live header on the same single-row layout as SEO. */
+.top{height:58px!important;min-height:58px!important;display:flex!important;flex-flow:row nowrap!important;align-items:center!important;gap:18px!important;padding:0 18px!important}
+.top>.brand{display:block!important;flex:0 0 auto!important;grid-column:auto!important;grid-row:auto!important;min-width:0;white-space:nowrap;font-size:17px!important}
+.top>.nav{display:flex!important;flex:0 0 auto!important;flex-flow:row nowrap!important;align-items:center!important;gap:8px!important;grid-column:auto!important;grid-row:auto!important;width:auto!important;overflow:visible!important}
+.top>.nav .btn{white-space:nowrap;padding:9px 12px!important}
+.top>.topright{display:flex!important;flex:0 0 auto!important;margin-left:auto!important;grid-column:auto!important;grid-row:auto!important;max-width:none!important;overflow:visible!important}
+@media(max-width:700px){
+ .top{height:58px!important;min-height:58px!important;display:flex!important;flex-flow:row nowrap!important;gap:8px!important;padding:0 10px!important}
+ .top>.brand{font-size:15px!important;letter-spacing:-.6px;flex:0 0 auto!important}
+ .top>.nav{display:flex!important;flex:0 0 auto!important;gap:4px!important;overflow:visible!important}
+ .top>.nav .btn{font-size:11px!important;padding:8px 8px!important}
+ .top>.topright{margin-left:auto!important;flex:0 0 auto!important;max-width:none!important}
+ .top>.topright .icon-only{width:34px;height:34px;padding:0!important}
+ .bar{position:sticky;top:58px!important;z-index:11;height:52px!important;min-height:52px!important;display:flex!important;flex-flow:row nowrap!important;align-items:center!important;gap:8px!important;padding:7px 10px!important}
+ .bar-search{flex:1 1 auto!important;min-width:0!important;max-width:none!important;margin:0!important}
+ .bar-search input{width:100%!important;min-width:0!important;padding:8px 9px!important;font-size:11px!important}
+ #refresh{flex:0 0 auto!important;white-space:nowrap;padding:8px 10px!important}
+ .board{scroll-margin-top:110px}
+}
+
+/* Shared Studio header — intentionally duplicated per app to keep deployments isolated. */
+.studio-header{height:64px;min-height:64px;display:flex;align-items:center;gap:22px;padding:0 22px;border-bottom:1px solid #2b2e38;background:#101116;position:relative;z-index:20;width:100%;box-sizing:border-box}.studio-brand{font:850 18px/1 Inter,Arial,sans-serif;letter-spacing:-.7px;white-space:nowrap;text-decoration:none;color:#f3f4f7}.studio-brand em{font-style:normal;color:#ffeb00}.studio-nav{display:flex;align-items:center;gap:7px;min-width:0;overflow-x:auto}.studio-nav a{display:inline-flex;align-items:center;justify-content:center;padding:9px 14px;border:1px solid #3a3d48;border-radius:8px;background:#20232c;color:#c9cbd3;text-decoration:none;font:650 12px Inter,Arial,sans-serif;white-space:nowrap}.studio-nav a:hover{border-color:#777}.studio-nav a.active{background:#ffcf42;border-color:#ffcf42;color:#111;font-weight:800}.studio-header-actions{margin-left:auto;display:flex;align-items:center;gap:8px;flex:0 0 auto}.studio-header-actions:empty{display:none}.studio-settings{width:38px;height:38px;border:1px solid #3a3d48;border-radius:50%;display:grid;place-items:center;background:#20232c;color:#fff;cursor:pointer;list-style:none}.studio-settings::-webkit-details-marker{display:none}@media(max-width:620px){.studio-header{height:auto;min-height:0;padding:12px 14px;gap:10px;flex-wrap:wrap}.studio-brand{font-size:17px}.studio-nav{order:3;width:100%;gap:6px}.studio-nav a{padding:8px 12px}.studio-header-actions{margin-left:auto}}
+</style></head><body>
+<header class="studio-header"><a class="studio-brand" href="/" aria-label="TheSportzine Studio home">The <em>Newsroom</em></a><nav class="studio-nav" aria-label="Main navigation"><a class="active" href="/live/">Live</a><a class="" href="/post/">Post</a><a class="" href="/seo/">SEO</a><a class="" href="/ideas/">Ideas</a></nav><div class="studio-header-actions"><details class="settings-menu" id="settingsMenu"><summary class="studio-settings" aria-label="Settings" title="Settings">⚙</summary><div class="settings-panel"><label for="apiBase">Newsroom API URL</label><input class="api" id="apiBase" value="https://newsroom-api.falsewinger.com" aria-label="Newsroom API URL"><button class="btn" id="connect">Connect</button><a class="btn" id="sourcesButton" href="/live/sources/">Sources</a><button class="btn" id="savedStoriesButton">Saved Stories</button><button class="btn" id="addColumn">＋ Column</button></div></details></div></header>
+<div class="bar"><span class="hint">Live feed</span><div class="header-search bar-search"><input id="globalSearch" placeholder="Search stories, clubs, drivers…" aria-label="Search stories"></div><button class="btn" id="refresh">↻ Refresh</button></div>
+<main class="board" id="board" aria-label="Newsroom columns"></main><footer class="feed-footer"><span class="status" id="status">Preview mode</span></footer>
+<aside class="drawer" id="drawer"><div class="dhead"><strong></strong><button class="tiny" id="closeDrawer">✕</button></div><div class="dcontent" id="detail"><div class="empty">Select a story to inspect it.</div></div></aside>
+<div class="modal" id="modal"><div class="dialog"><h2 id="modalTitle">Add column</h2><div class="field"><label>Column type</label><select id="colType"><option value="football">Football latest</option><option value="f1">Formula 1 latest</option><option value="breaking">Breaking queue</option><option value="priority">Priority stories</option><option value="search">Keyword search</option><option value="trends">Google Trends</option><option value="saved">Saved stories</option></select></div><div class="field"><label>Column name</label><input id="colName" placeholder="e.g. Chelsea"></div><div class="field"><label>Keyword (for search columns)</label><input id="colKeyword" placeholder="e.g. Chelsea, transfer"></div><div class="dactions"><button class="btn" id="cancelModal">Cancel</button><button class="btn primary" id="saveColumn">Add column</button></div><p class="footnote">Columns are saved in this browser. Drag the board horizontally; resize columns on desktop using the lower-right edge.</p></div></div>
+<script>
+const API_KEY='tsz_newsroom_api';const defaultColumns=[{id:'c1',type:'football',name:'Football Latest'},{id:'c2',type:'breaking',name:'Breaking'},{id:'c3',type:'priority',name:'Priority Desk'},{id:'c4',type:'f1',name:'F1 Latest'},{id:'c5',type:'search',name:'Chelsea',keyword:'Chelsea'},{id:'c6',type:'trends',name:'Google Trends'}];
+const feeds=[
+{name:'BBC Sport Football',sport:'football',url:'https://feeds.bbci.co.uk/sport/football/rss.xml',enabled:true},
+{name:'Sky Sports Football',sport:'football',url:'https://www.skysports.com/rss/11095',enabled:true},
+{name:'BBC Sport F1',sport:'f1',url:'https://feeds.bbci.co.uk/sport/formula1/rss.xml',enabled:true},
+{name:'Sky Sports F1',sport:'f1',url:'https://www.skysports.com/rss/12433',enabled:true},
+{name:'Autosport F1',sport:'f1',url:'https://www.autosport.com/rss/feed/f1',enabled:true},
+{name:'Motorsport.com F1',sport:'f1',url:'https://www.motorsport.com/rss/f1/news/',enabled:true},
+{name:'Formula1.com',sport:'f1',url:'https://www.formula1.com/content/fom-website/en/latest/all.xml',enabled:true}
+];
+let columns=JSON.parse(localStorage.getItem('tsz_columns')||'null')||defaultColumns;columns=columns.filter(col=>col.type!=='reddit').map(col=>col.type==='saved'&&col.id==='c6'?{...col,type:'trends',name:'Google Trends'}:col);if(!columns.some(col=>col.type==='trends'))columns.push({id:'c6',type:'trends',name:'Google Trends'});let stories=[];let trendsStories=[];let trendsWindow='rising';let trendsLoading=false;let trendsErrors=[];let saved=new Set(JSON.parse(localStorage.getItem('tsz_saved')||'[]'));let activeWorkspace='All Sports';let selected=null;let generatedTitles=new Map();let refreshing=false;let lastRefreshAt=0;
+const $=s=>document.querySelector(s);const esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function persist(){localStorage.setItem('tsz_columns',JSON.stringify(columns));}
+function setStatus(t,kind=''){const el=$('#status');el.textContent=t;el.className='status '+kind}
+function filtered(col){let list=col.type==='priority'?(col.searchResults||[]):col.type==='trends'?[...trendsStories]:[...stories];if(col.type==='football')list=list.filter(x=>x.sport==='football');if(col.type==='f1')list=list.filter(x=>x.sport==='f1');if(col.type==='breaking')list=list.filter(x=>x.breaking);if(col.type==='search')list=list.filter(x=>(x.title+' '+x.summary).toLowerCase().includes((col.keyword||col.name).toLowerCase()));if(col.type==='saved')list=list.filter(x=>saved.has(x.id));if(activeWorkspace==='Football')list=list.filter(x=>x.sport==='football');if(activeWorkspace==='Formula 1')list=list.filter(x=>x.sport==='f1');if(activeWorkspace==='Breaking')list=list.filter(x=>x.breaking);const q=$('#globalSearch').value.trim().toLowerCase();if(q)list=list.filter(x=>(x.title+' '+x.summary+' '+x.source).toLowerCase().includes(q));return list}
+function storyKey(s){const link=String(s.link||s.url||'').trim();if(link){try{const u=new URL(link);return u.hostname.replace(/^www\./,'')+u.pathname.replace(/\/$/,'')}catch{}}return String(s.title||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim()}
+function uniqueForColumn(col,index){const current=filtered(col);if(col.type==='priority'||col.type==='breaking')return current;const seen=new Set();columns.slice(0,index).filter(previous=>previous.type!=='priority'&&previous.type!=='breaking').forEach(previous=>filtered(previous).forEach(s=>seen.add(storyKey(s))));const local=new Set();return current.filter(s=>{const key=storyKey(s);if(!key||seen.has(key)||local.has(key))return false;local.add(key);return true})}
+function render(){const board=$('#board');board.innerHTML='';columns.forEach((col,i)=>{const list=uniqueForColumn(col,i);const visibleCount=col.visibleCount||10;const shown=list.slice(0,visibleCount);const collapsed=!!col.collapsed;const el=document.createElement('section');el.className='column'+(collapsed?' collapsed':'');el.dataset.id=col.id;const priorityControls=col.type==='priority'?'<div class="colfilter priority-search"><input data-keyword placeholder="Enter keyword or phrase…" value="'+esc(col.keyword||'')+'"><button class="btn primary" data-search>Search</button></div>':col.type==='trends'?'<div class="colfilter trends-controls"><div class="trends-toggle"><button class="btn '+(trendsWindow==='rising'?'primary':'')+'" data-trends-window="rising">Rising</button><button class="btn '+(trendsWindow==='hot'?'primary':'')+'" data-trends-window="hot">Hot</button><button class="btn '+(trendsWindow==='trending'?'primary':'')+'" data-trends-window="trending">Trending</button></div><span class="trends-period">'+({rising:'Past hour',hot:'Past 12 hours',trending:'Past 24 hours'}[trendsWindow])+'</span></div>':'<div class="colfilter"><input data-filter placeholder="Filter this column…" value="'+esc(col.localFilter||'')+'"><select data-order><option value="new">Newest</option><option value="priority">Priority</option></select></div>';el.innerHTML='<div class="colhead"><button class="coltitle" type="button" data-collapse aria-expanded="'+(!collapsed)+'">'+esc(col.name)+'</button><span class="count">'+list.length+'</span><div class="coltools"><button class="tiny" data-act="left" title="Move left">‹</button><button class="tiny" data-act="right" title="Move right">›</button><button class="tiny" data-act="remove" title="Remove">×</button></div></div>'+priorityControls+'<div class="cards">'+(shown.length?shown.map(s=>storyCard(s,col)).join(''):'<div class="empty"><b>'+(col.type==='priority'?(col.searching?'Searching publications…':'Search a keyword to populate Priority Desk'):col.type==='trends'?(trendsLoading?'Loading Google Trends…':trendsErrors.length?'Google Trends unavailable: '+trendsErrors.join('; '):'No football searches found in this window.'):'<div class="loader-wrapper" role="status" aria-label="Loading stories"><div class="loader"></div><div class="letter-wrapper">'+"Loading...".split('').map((letter,index)=>'<span class="loader-letter" style="animation-delay:'+((index%10)*.1)+'s">'+esc(letter)+'</span>').join('')+'</div></div>')+'</b>'+(col.type==='priority'?(col.searching?'Checking the latest RSS articles across enabled publications.':'Enter a player, club, competition or topic above. Results are fetched live from your enabled publications.'):col.type==='trends'?'Google Trends · India · Sports category. Search volume and growth are Google-reported signals.':'Connect the feed API and refresh. This column will populate from configured RSS sources.')+'</div>')+'</div>'+(list.length>visibleCount?'<div class="load-more-wrap"><button class="btn load-more" data-load-more>Load more ('+Math.min(10,list.length-visibleCount)+' of '+(list.length-visibleCount)+')</button></div>':'');board.appendChild(el);
+el.querySelector('[data-collapse]').onclick=()=>{col.collapsed=!col.collapsed;persist();render()};
+const loadMore=el.querySelector('[data-load-more]');if(loadMore)loadMore.onclick=()=>{col.visibleCount=(col.visibleCount||10)+10;render()};
+if(col.type==='priority'){const input=el.querySelector('[data-keyword]');input.addEventListener('keydown',e=>{if(e.key==='Enter')searchPriority(col,input.value)});el.querySelector('[data-search]').onclick=()=>searchPriority(col,input.value)}else if(col.type==='trends'){el.querySelectorAll('[data-trends-window]').forEach(button=>button.onclick=()=>loadTrends(button.dataset.trendsWindow,true))}else{const filterInput=el.querySelector('[data-filter]');filterInput.addEventListener('input',e=>{col.localFilter=e.target.value;const q=e.target.value.toLowerCase();el.querySelectorAll('.story').forEach(card=>card.classList.toggle('hidden',!card.textContent.toLowerCase().includes(q)))});el.querySelector('[data-order]').addEventListener('change',e=>{col.order=e.target.value;render()})}
+el.querySelectorAll('[data-act]').forEach(b=>b.onclick=()=>{const n=columns.indexOf(col),a=b.dataset.act;if(a==='remove')columns=columns.filter(x=>x!==col);if(a==='left'&&n>0)[columns[n-1],columns[n]]=[columns[n],columns[n-1]];if(a==='right'&&n<columns.length-1)[columns[n+1],columns[n]]=[columns[n],columns[n+1]];persist();render()});el.querySelectorAll('.story').forEach(card=>card.onclick=()=>openStory(card.dataset.id));});}
+
+function relativeAge(s){
+ const raw=s.publishedAt||s.published||s.pubDate||s.isoDate||s.date||s.timestamp;
+ if(!raw)return 'Recently';
+ const date=typeof raw==='number'?(raw<1e12?new Date(raw*1000):new Date(raw)):new Date(raw);
+ if(Number.isNaN(date.getTime()))return 'Recently';
+ const mins=Math.max(0,Math.floor((Date.now()-date.getTime())/60000));
+ if(mins<1)return 'Just now';
+ if(mins<60)return mins+' min ago';
+ const hrs=Math.floor(mins/60);
+ if(hrs<24)return hrs+' hr ago';
+ const days=Math.floor(hrs/24);
+ if(days<7)return days+' day'+(days===1?'':'s')+' ago';
+ const weeks=Math.floor(days/7);
+ if(weeks<5)return weeks+' wk'+(weeks===1?'':'s')+' ago';
+ return Math.floor(days/30)+' mo ago';
+}
+function plainArticleText(value){
+ if(!value)return '';
+ const node=document.createElement('div');node.innerHTML=String(value);
+ node.querySelectorAll('script,style,iframe,form,svg').forEach(x=>x.remove());
+ return (node.textContent||node.innerText||'').replace(/\s+/g,' ').trim();
+}
+
+function storyCard(s,col){const keyword=String(col?.keyword||'').trim().toLowerCase();const sport=String(s.sport||'').trim().toLowerCase();const showSport=col?.type==='priority'&&keyword&&keyword===sport;const showPriority=col?.type==='priority'&&keyword==='priority'&&s.priority;const trendMeta=col?.type==='trends'?'<span class="pill">'+esc(s.searchVolumeLabel||'Volume n/a')+'</span><span class="pill">'+esc(s.increasePercentage==null?'Growth n/a':s.increasePercentage+'% growth')+'</span>':'';return '<article class="story '+(selected===s.id?'selected':'')+'" data-id="'+esc(s.id)+'"><div class="meta"><span class="source">'+esc(s.source)+'</span><span>·</span><span>'+esc(relativeAge(s))+'</span>'+(s.breaking?'<span class="pill breaking">BREAKING</span>':'')+'</div><h3>'+esc(s.title)+'</h3><div class="storyfoot">'+trendMeta+(showPriority?'<span class="pill priority">PRIORITY</span>':'')+(showSport?'<span class="pill">'+esc(s.sport.toUpperCase()==='F1'?'FORMULA 1':s.sport.toUpperCase())+'</span>':'')+(s.duplicateCount>1?'<span class="pill duplicate">'+s.duplicateCount+' SOURCES</span>':'')+'</div></article>'}
+
+async function createPostFromStory(id){
+ const s=stories.find(x=>x.id===id)||trendsStories.find(x=>x.id===id);if(!s)return;
+ const postTab=window.open('/post/','_blank');
+ const button=$('#createPostFromStory');if(button){button.disabled=true;button.textContent='Preparing…'}
+ const error=$('#createPostError');if(error)error.textContent='';
+ try{
+  let item=generatedTitles.get(id);
+  if(!item){
+   const base=$('#apiBase').value.trim().replace(/\/$/,'');
+   const response=await fetch(base+'/api/short-title',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:s.title,summary:s.summary||''})});
+   const data=await response.json();if(!response.ok)throw new Error(data.error||'Title generation failed.');
+   const title=String(data.title||'').trim(),words=title.split(/\s+/).filter(Boolean);
+   if(!title||words.length>9)throw new Error('The generated title did not meet the nine-word limit.');
+   item={title,words:words.length};generatedTitles.set(id,item);
+  }
+  const caption=plainArticleText(s.summary||s.description||s.contentSnippet||'').slice(0,280);
+  const params=new URLSearchParams({headline:item.title,subtitle:'Source: '+s.source,caption});
+  if(postTab&&!postTab.closed)postTab.location.href='/post/?'+params.toString();else throw new Error('Your browser blocked the new tab. Allow pop-ups for newsroom.falsewinger.com and try again.');
+ }catch(e){
+  if(postTab&&!postTab.closed)postTab.close();
+  if(error)error.textContent=e.message||'Could not prepare the post.';
+  if(button){button.disabled=false;button.textContent='Create Post'}
+ }
+}
+
+function openStory(id){
+ selected=id;const s=stories.find(x=>x.id===id)||trendsStories.find(x=>x.id===id);if(!s)return;
+ const body=plainArticleText(s.content||s.contentEncoded||s.summary||s.description||s.contentSnippet||'');
+ const label=(s.content||s.contentEncoded)?'Article text':(body?'Summary':'No article text available in this feed');
+ $('#detail').innerHTML='<div class="meta">'+esc(s.source)+' · '+esc(s.sport==='f1'?'FORMULA 1':'FOOTBALL')+' · '+esc(relativeAge(s))+'</div><h2>'+esc(s.title)+'</h2><div class="dactions"><a class="btn primary" href="'+esc(s.link||'#')+'" target="_blank" rel="noopener">Open original</a><button class="btn" id="saveStory">'+(saved.has(s.id)?'Unsave':'Save story')+'</button><button class="btn" id="createPostFromStory">Create Post</button></div><div class="article-body">'+(body?esc(body):'<p>The RSS feed provides a headline only. Open the original publication to read the full article.</p>')+'</div><div class="short-title-error" id="createPostError"></div>';
+ $('#drawer').classList.add('open');
+ $('#saveStory').onclick=()=>{saved.has(id)?saved.delete(id):saved.add(id);localStorage.setItem('tsz_saved',JSON.stringify([...saved]));render();openStory(id)};
+  const createPostButton=$('#createPostFromStory');if(createPostButton)createPostButton.onclick=()=>createPostFromStory(id);
+ render();
+}
+
+async function searchPriority(col,rawKeyword){const keyword=String(rawKeyword||'').trim();if(!keyword){col.searchResults=[];col.keyword='';persist();render();return}col.keyword=keyword;col.searching=true;persist();render();const base=$('#apiBase').value.trim().replace(/\/$/,'');try{const response=await fetch(base+'/api/search?keyword='+encodeURIComponent(keyword));const data=await response.json();if(!response.ok)throw new Error(data.error||'Search failed (HTTP '+response.status+').');col.searchResults=(data.stories||[]).map((s,i)=>({...s,id:s.id||s.link||String(i)}));col.searchMeta={searchedAt:data.fetched_at,feeds:data.feeds||[]};col.searching=false;render();}catch(error){col.searching=false;col.searchResults=[];render();const cards=document.querySelector('[data-id="'+CSS.escape(col.id)+'"] .cards');if(cards)cards.innerHTML='<div class="empty"><b>Keyword search failed</b>'+esc(error.message)+'</div>';}}
+
+const trendsCache=new Map();
+async function loadTrends(windowName=trendsWindow,force=false){
+ if(!['rising','hot','trending'].includes(windowName))return;
+ trendsWindow=windowName;
+ if(!force&&trendsCache.has(windowName)){trendsStories=trendsCache.get(windowName);render();return}
+ if(trendsLoading)return;
+ trendsLoading=true;trendsErrors=[];render();
+ try{
+  const base=$('#apiBase').value.trim().replace(/\/$/,'');
+  const response=await fetch(base+'/api/trends?window='+encodeURIComponent(windowName));
+  const data=await response.json();if(!response.ok)throw new Error(data.error||'Google Trends request failed (HTTP '+response.status+').');
+  trendsStories=(data.trends||[]).map((item,i)=>({id:'google-trend:'+windowName+':'+i,title:item.query,summary:'Search volume: '+(item.search_volume_label||'Not available')+' · Growth: '+(item.increase_percentage==null?'Not available':item.increase_percentage+'%')+' · Google Trends, India',source:'Google Trends',sport:'football',link:item.explore_url||'https://trends.google.com/trending?geo=IN',published:item.started_at||new Date().toISOString(),timestamp:item.start_timestamp?item.start_timestamp*1000:Date.now(),searchVolume:item.search_volume,searchVolumeLabel:item.search_volume_label,increasePercentage:item.increase_percentage,exploreUrl:item.explore_url}));
+  trendsCache.set(windowName,trendsStories);trendsErrors=data.error?[data.error]:[];
+ }catch(error){trendsStories=[];trendsErrors=[error.message||'Google Trends request failed.']}
+ finally{trendsLoading=false;render()}
+}
+
+async function refresh(){
+ if(refreshing)return;
+ const base=$('#apiBase').value.trim().replace(/\/$/,'');if(!base){setStatus('API not configured');return}
+ refreshing=true;localStorage.setItem(API_KEY,base);setStatus('Fetching feeds…');
+ try{
+  const r=await fetch(base+'/api/feed');if(!r.ok)throw new Error('API returned '+r.status);
+  const data=await r.json();stories=(data.stories||[]).map((x,i)=>({...x,id:x.id||x.link||String(i),sport:x.sport||'football',timeLabel:x.timeLabel||'RSS'}));
+  lastRefreshAt=Date.now();const failed=(data.feeds||[]).filter(x=>x.error);
+  setStatus(stories.length+' stories · '+failed.length+' feed errors',failed.length?'bad':'ok');
+  $('#status').title=(data.feeds||[]).map(x=>x.name+': '+(x.error||x.count+' items')).join(' | ');render();if(columns.some(col=>col.type==='trends'))loadTrends(trendsWindow);
+ }catch(e){setStatus('Feed connection failed','bad');console.error(e)}
+ finally{refreshing=false}
+}
+$('#apiBase').value=localStorage.getItem(API_KEY)||'https://newsroom-api.falsewinger.com';
+$('#savedStoriesButton').onclick=()=>{let col=columns.find(x=>x.type==='saved');if(!col){col={id:crypto.randomUUID(),type:'saved',name:'Saved Stories'};columns.push(col);persist()}col.collapsed=false;render();const el=document.querySelector('[data-id="'+CSS.escape(col.id)+'"]');if(el)el.scrollIntoView({behavior:'smooth',block:'start'})};$('#connect').onclick=refresh;$('#refresh').onclick=refresh;$('#globalSearch').oninput=render;$('#closeDrawer').onclick=()=>$('#drawer').classList.remove('open');
+$('#drawer').addEventListener('click',e=>{if(e.target===$('#drawer'))$('#drawer').classList.remove('open')});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')$('#drawer').classList.remove('open')});
+
+$('#addColumn').onclick=()=>$('#modal').classList.add('open');$('#cancelModal').onclick=()=>$('#modal').classList.remove('open');$('#saveColumn').onclick=()=>{const type=$('#colType').value,name=$('#colName').value.trim()||({football:'Football Latest',f1:'F1 Latest',breaking:'Breaking',priority:'Priority Desk',search:'Keyword Search',trends:'Google Trends',saved:'Saved Stories'}[type]);columns.push({id:crypto.randomUUID(),type,name,keyword:$('#colKeyword').value.trim()});persist();$('#modal').classList.remove('open');$('#colName').value='';$('#colKeyword').value='';render()};
+
+
+
+render();refresh();
+// Refresh feeds every 30 minutes while this Newsroom tab remains open.
+setInterval(()=>{if(!document.hidden)refresh()},30*60*1000);
+// Refresh immediately on return if the tab was hidden beyond the 30-minute window.
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&Date.now()-lastRefreshAt>=30*60*1000)refresh()});
+</script></body></html>
