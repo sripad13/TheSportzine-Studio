@@ -37,40 +37,39 @@ a{color:inherit}
 .section-head{display:flex;align-items:end;justify-content:space-between;gap:18px;margin:26px 0 18px}
 .section-head h2{font:600 17px 'Space Grotesk';letter-spacing:-.4px;margin:0}
 .section-head p{color:#737b89;font-size:11px;margin:0}
-.apps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;perspective:1400px;padding:0 0 24px}
-.app-card{position:relative;min-height:390px;border:1px solid #ffffff19;border-radius:18px;padding:19px;background:linear-gradient(145deg,#1b1e27,#101218 75%);text-decoration:none;display:flex;flex-direction:column;overflow:hidden;isolation:isolate;transform-style:preserve-3d;will-change:transform;transition:transform .16s ease,border-color .25s,box-shadow .25s;box-shadow:0 18px 50px #0006}
-.app-card:before{content:'';position:absolute;inset:0;z-index:-1;background:radial-gradient(circle at var(--mx,50%) var(--my,0%),#ffffff12,transparent 43%);opacity:0;transition:opacity .25s}
-.app-card:hover{border-color:#ffffff45;box-shadow:0 28px 70px #0009}
-.app-card:hover:before{opacity:1}
-.app-card.live{--tone:#f2e600;--tone-rgb:242,230,0;background:linear-gradient(145deg,#252517 0%,#151610 48%,#101218 100%)}
-.app-card.post{--tone:#b6a4ff;--tone-rgb:182,164,255;background:linear-gradient(145deg,#211d31 0%,#171522 52%,#101218 100%)}
-.app-card.seo{--tone:#8ed5a0;--tone-rgb:142,213,160;background:linear-gradient(145deg,#18291f 0%,#131c18 52%,#101218 100%)}
-.card-top{display:flex;align-items:center;justify-content:space-between;position:relative;z-index:2;transform:translateZ(32px)}
-.app-id{font-size:10px;font-weight:800;letter-spacing:1.5px;color:#aeb3bf}
-.card-arrow{width:33px;height:33px;border-radius:50%;display:grid;place-items:center;border:1px solid #ffffff27;color:var(--tone);font-size:17px;transition:transform .2s,background .2s}
-.app-card:hover .card-arrow{transform:translate(2px,-2px);background:#ffffff0d}
-.preview{height:190px;margin:19px 0 18px;position:relative;transform:translateZ(48px);transform-style:preserve-3d}
-.preview-window{position:absolute;inset:8px 7px 5px 7px;border:1px solid #ffffff20;border-radius:12px;background:#0d0f14e8;box-shadow:0 18px 30px #0007;overflow:hidden}
-.preview-bar{height:27px;border-bottom:1px solid #ffffff12;display:flex;align-items:center;gap:5px;padding:0 10px}
+
+.apps{position:relative;display:flex;align-items:center;justify-content:center;height:520px;margin:8px auto 30px;max-width:980px;touch-action:pan-y;user-select:none}
+.app-card{position:absolute;left:50%;top:50%;width:min(100%,650px);min-height:430px;padding:25px 28px 22px;border:1px solid #343434;border-radius:18px;background:#111214;color:var(--text);text-decoration:none;display:flex;flex-direction:column;overflow:hidden;will-change:transform;transform-origin:50% 90%;transition:transform .32s cubic-bezier(.2,.75,.25,1),opacity .25s,border-color .2s;box-shadow:none;cursor:grab;touch-action:pan-y}
+.app-card:active{cursor:grabbing}
+.app-card.live{--tone:#f2e600;border-top:3px solid var(--tone)}
+.app-card.post{--tone:#b6a4ff;border-top:3px solid var(--tone)}
+.app-card.seo{--tone:#8ed5a0;border-top:3px solid var(--tone)}
+.app-card.is-top{border-color:#555}
+.app-card.is-exiting{pointer-events:none;transition:transform .28s ease,opacity .28s ease}
+.card-top{display:flex;align-items:center;justify-content:space-between}
+.app-id{font-size:10px;font-weight:800;letter-spacing:1.5px;color:#9298a3}
+.card-arrow{width:32px;height:32px;display:grid;place-items:center;border:1px solid #393b40;border-radius:50%;color:var(--tone);font-size:17px}
+.preview{height:190px;margin:20px 0 17px;position:relative}
+.preview-window{position:absolute;inset:0;border:1px solid #303238;border-radius:9px;background:#0b0c0e;overflow:hidden;box-shadow:none}
+.preview-bar{height:27px;border-bottom:1px solid #24262b;display:flex;align-items:center;gap:5px;padding:0 10px}
 .preview-bar i{width:5px;height:5px;border-radius:50%;background:#555b67}
 .preview-label{margin-left:auto;color:#707887;font-size:7px;letter-spacing:1px;font-weight:800}
 .feed-content{padding:10px 12px;display:grid;gap:8px}
 .feed-item{display:grid;grid-template-columns:39px 1fr;gap:8px;align-items:center}
-.feed-thumb{height:32px;border-radius:5px;background:linear-gradient(135deg,#77702a,#282715 55%,#111)}
-.feed-item:nth-child(2) .feed-thumb{background:linear-gradient(135deg,#6a2e28,#1b1618 60%,#101)}
-.feed-item:nth-child(3) .feed-thumb{background:linear-gradient(135deg,#343b51,#171b28 60%,#101)}
+.feed-thumb{height:32px;border-radius:3px;background:#373528}
+.feed-item:nth-child(2) .feed-thumb{background:#3a2929}
+.feed-item:nth-child(3) .feed-thumb{background:#293143}
 .feed-copy b{display:block;font-size:8px;line-height:1.35;color:#e5e7eb;font-weight:700}
 .feed-copy span{display:block;margin-top:3px;font-size:6px;color:#818897;letter-spacing:.5px}
-.post-canvas{position:absolute;inset:12px 34px 2px 34px;display:flex;align-items:center;justify-content:center;transform:rotate(-5deg) translateZ(14px)}
-.poster{width:115px;height:156px;border-radius:5px;overflow:hidden;position:relative;background:linear-gradient(155deg,#e7dfe0 0%,#8e7c91 34%,#28233d 72%,#10121b 100%);box-shadow:0 14px 25px #0009;border:1px solid #ffffff55}
-.poster:before{content:'';position:absolute;width:68px;height:115px;left:25px;bottom:-14px;border-radius:40px 40px 8px 8px;background:linear-gradient(90deg,#11131c,#4d465c 48%,#171722);transform:rotate(-8deg)}
-.poster:after{content:'';position:absolute;width:52px;height:52px;left:34px;top:37px;border-radius:50%;background:linear-gradient(135deg,#d7b2a0,#584b58 75%);box-shadow:0 0 0 5px #11131c}
+.post-canvas{position:absolute;inset:8px 34px 2px;display:flex;align-items:center;justify-content:center}
+.poster{width:120px;height:170px;border-radius:3px;overflow:hidden;position:relative;background:#34303c;border:1px solid #5c5668}
+.poster:before{content:'';position:absolute;width:68px;height:115px;left:25px;bottom:-14px;border-radius:40px 40px 8px 8px;background:#171722}
+.poster:after{content:'';position:absolute;width:52px;height:52px;left:34px;top:37px;border-radius:50%;background:#8a7771}
 .poster-tag{position:absolute;z-index:2;top:9px;left:9px;font-size:6px;font-weight:900;letter-spacing:1px;color:#fff}
-.poster-title{position:absolute;z-index:3;bottom:10px;left:9px;right:7px;color:#fff;font:900 13px/.95 'Space Grotesk';letter-spacing:-.4px;text-shadow:0 2px 6px #000}
+.poster-title{position:absolute;z-index:3;bottom:10px;left:9px;right:7px;color:#fff;font:900 13px/.95 'Space Grotesk';letter-spacing:-.4px}
 .poster-title span{color:#f5e900}
-.tool-chip{position:absolute;padding:7px 9px;border-radius:7px;background:#262333;border:1px solid #ffffff26;color:#d9d1ff;font-size:7px;font-weight:800;letter-spacing:.4px;box-shadow:0 8px 18px #0008}
-.tool-chip.one{top:27px;left:4px;transform:rotate(-7deg) translateZ(35px)}
-.tool-chip.two{right:0;bottom:20px;transform:rotate(5deg) translateZ(48px)}
+.tool-chip{position:absolute;padding:7px 9px;border-radius:4px;background:#1c1d22;border:1px solid #42434a;color:#d9d1ff;font-size:7px;font-weight:800;letter-spacing:.4px}
+.tool-chip.one{top:27px;left:4px}.tool-chip.two{right:0;bottom:20px}
 .seo-content{padding:11px 13px}
 .seo-score{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
 .score-ring{width:53px;height:53px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(#8ed5a0 0 86%,#303a33 86%);position:relative}
@@ -80,30 +79,20 @@ a{color:inherit}
 .score-copy span{display:block;font-size:7px;color:#89958d;margin-top:3px}
 .seo-stat{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-top:1px solid #ffffff10;font-size:7px;color:#aeb8b0}
 .seo-stat b{color:#9ad7a8;font-size:8px}
-.card-info{position:relative;z-index:2;transform:translateZ(34px);margin-top:auto}
-.card-info h3{font:600 27px 'Space Grotesk';letter-spacing:-1px;margin:0 0 7px}
-.card-info p{font-size:11px;line-height:1.6;color:#a5aab5;margin:0;max-width:330px}
-.card-foot{display:flex;align-items:center;justify-content:space-between;margin-top:18px;padding-top:13px;border-top:1px solid #ffffff13;color:var(--tone);font-size:9px;font-weight:900;letter-spacing:1.2px}
+.card-info{margin-top:auto}
+.card-info h3{font:600 30px 'Space Grotesk';letter-spacing:-1px;margin:0 0 7px}
+.card-info p{font-size:12px;line-height:1.6;color:#a5aab5;margin:0;max-width:480px}
+.card-foot{display:flex;align-items:center;justify-content:space-between;margin-top:17px;padding-top:13px;border-top:1px solid #292b30;color:var(--tone);font-size:9px;font-weight:900;letter-spacing:1.2px}
 .card-foot span:last-child{color:#777f8d;font-size:8px;font-weight:700}
-.insights{margin:29px 0 0;border:1px solid var(--line);background:linear-gradient(145deg,#151820,#101218);border-radius:16px;padding:19px 21px}
-.insights-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:15px}
-.insights-title{font:600 15px 'Space Grotesk'}
-.period{font:500 10px 'DM Sans';color:var(--muted);margin-left:7px}
-.refresh{border:1px solid #3b3e49;background:#20232b;color:#fff;border-radius:8px;padding:8px 11px;font:700 10px 'DM Sans';cursor:pointer}
-.refresh:hover{border-color:var(--yellow)}.refresh:disabled{opacity:.5;cursor:wait}
-.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}
-.kpi{background:#1c2020;border:1px solid #303633;border-radius:10px;padding:14px 16px;min-height:92px}
-.kpi-label{color:#aeb4b1;font-size:10px;margin-bottom:10px}
-.kpi-row{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap}
-.kpi-value{font:700 26px 'Space Grotesk';letter-spacing:-.8px}
-.change{font-size:10px;color:var(--green)}.change.down{color:var(--red)}.change.neutral{color:#9ca39f}
-.insight-note{font-size:9px;color:#89918d;margin-top:11px;line-height:1.5;min-height:13px}
-.footer{display:flex;justify-content:space-between;gap:15px;padding:28px 0 24px;color:#646b78;font-size:9px;letter-spacing:1.2px;font-weight:700}
-.footer a{color:#9299a7;text-decoration:none}
-@media(max-width:1000px){.shell{padding:0 26px}.apps{gap:14px}.app-card{padding:16px;min-height:375px}.hero{padding-top:65px}}
-@media(max-width:760px){.shell{padding:0 18px}.site-header{height:auto;min-height:72px;align-items:flex-start;padding:18px 0;flex-direction:column;gap:13px}.external-nav{width:100%;justify-content:space-between;gap:4px}.external-nav a{padding:8px 10px;font-size:11px}.menu-label{display:block}.external-nav-wrap{width:100%}.hero{padding:52px 0 32px}.hero h1{letter-spacing:-2.6px}.apps{grid-template-columns:1fr;gap:15px}.app-card{min-height:345px}.preview{height:165px}.section-head{align-items:flex-start;flex-direction:column;gap:6px}}
-@media(max-width:520px){.shell{padding:0 15px}.wordmark strong{font-size:17px}.external-nav a{font-size:10px;padding:8px 7px}.hero h1{font-size:43px;letter-spacing:-2.5px}.hero p{font-size:14px}.kpis{grid-template-columns:1fr}.kpi{min-height:76px}.kpi-label{margin-bottom:6px}.insights{padding:15px}.insights-head{align-items:flex-start}.period{display:block;margin:4px 0 0}.footer{flex-direction:column}}
-@media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition:none!important}}
+.deck-controls{display:flex;align-items:center;justify-content:center;gap:14px;margin:-2px 0 28px}
+.deck-controls button{min-width:118px;padding:11px 18px;border:1px solid #3b3d43;border-radius:999px;background:transparent;color:#e9e9eb;font:600 11px 'DM Sans';cursor:pointer}
+.deck-controls button:hover{border-color:#888}
+.deck-controls .open-card{border-color:#e7e7e7;background:#e7e7e7;color:#101114}
+.deck-count{color:#777d88;font-size:10px;letter-spacing:1px}
+@media(max-width:760px){.apps{height:480px;margin-top:4px}.app-card{width:calc(100% - 4px);min-height:410px;padding:19px}.preview{height:165px}.card-info h3{font-size:27px}.deck-controls{margin-top:0}}
+@media(max-width:520px){.apps{height:455px}.app-card{min-height:390px;padding:17px;border-radius:14px}.preview{height:145px;margin:16px 0}.card-info p{font-size:11px}.card-foot span:last-child{display:none}.deck-controls button{min-width:105px}}
+@media(prefers-reduced-motion:reduce){.app-card{transition:none!important}}
+
 </style>
 </head>
 <body>
@@ -131,55 +120,26 @@ a{color:inherit}
   <section aria-labelledby="apps-heading">
     <div class="section-head">
       <h2 id="apps-heading">Your workspace</h2>
-      <p>Hover, explore, and jump straight into your next task.</p>
+      <p>Swipe through your tools. Drag right to open, left to pass.</p>
     </div>
-    <nav class="apps" aria-label="Studio applications">
-      <a class="app-card live" href="/live/" data-tilt>
+    <nav class="apps" id="swipeDeck" aria-label="Studio applications">
+      <a class="app-card live" href="/live/" data-card>
         <div class="card-top"><span class="app-id">01 / EDITORIAL DESK</span><span class="card-arrow">↗</span></div>
-        <div class="preview" aria-hidden="true">
-          <div class="preview-window">
-            <div class="preview-bar"><i></i><i></i><i></i><span class="preview-label">LIVE FEED / FOOTBALL</span></div>
-            <div class="feed-content">
-              <div class="feed-item"><div class="feed-thumb"></div><div class="feed-copy"><b>Transfer watch: latest stories and developments</b><span>FOOTBALL · 4 SOURCES</span></div></div>
-              <div class="feed-item"><div class="feed-thumb"></div><div class="feed-copy"><b>Race weekend: paddock updates and analysis</b><span>FORMULA 1 · BREAKING</span></div></div>
-              <div class="feed-item"><div class="feed-thumb"></div><div class="feed-copy"><b>Build your story from the news desk</b><span>STORY DESK · SAVED</span></div></div>
-            </div>
-          </div>
-        </div>
-        <div class="card-info"><h3>Live</h3><p>Find the stories worth telling. Follow breaking news, track sources and build your editorial queue.</p></div>
-        <div class="card-foot"><span>OPEN LIVE DESK ↗</span><span>NEWS · TRENDS · SOURCES</span></div>
+        <div class="preview" aria-hidden="true"><div class="preview-window"><div class="preview-bar"><i></i><i></i><i></i><span class="preview-label">LIVE FEED / FOOTBALL</span></div><div class="feed-content"><div class="feed-item"><div class="feed-thumb"></div><div class="feed-copy"><b>Transfer watch: latest stories and developments</b><span>FOOTBALL · 4 SOURCES</span></div></div><div class="feed-item"><div class="feed-thumb"></div><div class="feed-copy"><b>Race weekend: paddock updates and analysis</b><span>FORMULA 1 · BREAKING</span></div></div><div class="feed-item"><div class="feed-thumb"></div><div class="feed-copy"><b>Build your story from the news desk</b><span>STORY DESK · SAVED</span></div></div></div></div></div>
+        <div class="card-info"><h3>Live</h3><p>Find the stories worth telling. Follow breaking news, track sources and build your editorial queue.</p></div><div class="card-foot"><span>EDITORIAL DESK</span><span>NEWS · TRENDS · SOURCES</span></div>
       </a>
-
-      <a class="app-card post" href="/post/" data-tilt>
+      <a class="app-card post" href="/post/" data-card>
         <div class="card-top"><span class="app-id">02 / CREATIVE STUDIO</span><span class="card-arrow">↗</span></div>
-        <div class="preview" aria-hidden="true">
-          <div class="post-canvas">
-            <div class="tool-chip one">✦ TEMPLATE</div>
-            <div class="poster"><span class="poster-tag">THE SPORTZINE</span><div class="poster-title">THE GAME<br><span>CHANGER.</span></div></div>
-            <div class="tool-chip two">1080 × 1440</div>
-          </div>
-        </div>
-        <div class="card-info"><h3>Post</h3><p>Turn ideas into finished creative. Design graphics, adapt templates and prepare content for publishing.</p></div>
-        <div class="card-foot"><span>OPEN POST STUDIO ↗</span><span>DESIGN · EDIT · PUBLISH</span></div>
+        <div class="preview" aria-hidden="true"><div class="post-canvas"><div class="tool-chip one">✦ TEMPLATE</div><div class="poster"><span class="poster-tag">THE SPORTZINE</span><div class="poster-title">THE GAME<br><span>CHANGER.</span></div></div><div class="tool-chip two">1080 × 1440</div></div></div>
+        <div class="card-info"><h3>Post</h3><p>Turn ideas into finished creative. Design graphics, adapt templates and prepare content for publishing.</p></div><div class="card-foot"><span>CREATIVE STUDIO</span><span>DESIGN · EDIT · PUBLISH</span></div>
       </a>
-
-      <a class="app-card seo" href="/seo/" data-tilt>
+      <a class="app-card seo" href="/seo/" data-card>
         <div class="card-top"><span class="app-id">03 / SEARCH PERFORMANCE</span><span class="card-arrow">↗</span></div>
-        <div class="preview" aria-hidden="true">
-          <div class="preview-window">
-            <div class="preview-bar"><i></i><i></i><i></i><span class="preview-label">ARTICLE AUDIT / OVERVIEW</span></div>
-            <div class="seo-content">
-              <div class="seo-score"><div class="score-copy"><b>Content health</b><span>On-page optimisation</span></div><div class="score-ring"><b>86</b></div></div>
-              <div class="seo-stat"><span>Headline & keywords</span><b>✓ Optimised</b></div>
-              <div class="seo-stat"><span>Readability</span><b>✓ Good</b></div>
-              <div class="seo-stat"><span>Internal links</span><b>↗ Improve</b></div>
-            </div>
-          </div>
-        </div>
-        <div class="card-info"><h3>SEO</h3><p>Make every article work harder. Audit content, analyse search performance and uncover opportunities.</p></div>
-        <div class="card-foot"><span>OPEN SEO WORKSPACE ↗</span><span>AUDIT · ANALYSE · GROW</span></div>
+        <div class="preview" aria-hidden="true"><div class="preview-window"><div class="preview-bar"><i></i><i></i><i></i><span class="preview-label">ARTICLE AUDIT / OVERVIEW</span></div><div class="seo-content"><div class="seo-score"><div class="score-copy"><b>Content health</b><span>On-page optimisation</span></div><div class="score-ring"><b>86</b></div></div><div class="seo-stat"><span>Headline & keywords</span><b>✓ Optimised</b></div><div class="seo-stat"><span>Readability</span><b>✓ Good</b></div><div class="seo-stat"><span>Internal links</span><b>↗ Improve</b></div></div></div></div>
+        <div class="card-info"><h3>SEO</h3><p>Make every article work harder. Audit content, analyse search performance and uncover opportunities.</p></div><div class="card-foot"><span>SEARCH PERFORMANCE</span><span>AUDIT · ANALYSE · GROW</span></div>
       </a>
     </nav>
+    <div class="deck-controls" aria-label="Card controls"><button type="button" id="passCard">← Pass</button><span class="deck-count" id="deckCount">1 / 3</span><button type="button" class="open-card" id="openCard">Open ↗</button></div>
   </section>
 
   <section class="insights" aria-label="Buffer performance insights">
@@ -208,27 +168,63 @@ async function loadBufferInsights(force=false){const status=$('insightsStatus'),
 $('refreshInsights').addEventListener('click',()=>loadBufferInsights(true));
 loadBufferInsights(false);
 
-// Pointer-driven 3D card tilt; disable on touch and for reduced-motion preferences.
+
+const deck=document.getElementById('swipeDeck');
+const cards=[...deck.querySelectorAll('[data-card]')];
+const count=document.getElementById('deckCount');
+const passButton=document.getElementById('passCard');
+const openButton=document.getElementById('openCard');
+let active=0, startX=0, startY=0, deltaX=0, dragging=false, pointerId=null;
 const reduceMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-if(!reduceMotion && window.matchMedia('(hover:hover) and (pointer:fine)').matches){
-  document.querySelectorAll('[data-tilt]').forEach(card=>{
-    card.addEventListener('pointermove',event=>{
-      const rect=card.getBoundingClientRect();
-      const x=(event.clientX-rect.left)/rect.width;
-      const y=(event.clientY-rect.top)/rect.height;
-      const rotateY=(x-.5)*10;
-      const rotateX=(.5-y)*8;
-      card.style.setProperty('--mx',(x*100)+'%');
-      card.style.setProperty('--my',(y*100)+'%');
-      card.style.transform='rotateX('+rotateX+'deg) rotateY('+rotateY+'deg) translateY(-4px)';
-    });
-    card.addEventListener('pointerleave',()=>{
-      card.style.transform='rotateX(0deg) rotateY(0deg) translateY(0)';
-      card.style.setProperty('--mx','50%');
-      card.style.setProperty('--my','0%');
-    });
+function paintDeck(){
+  cards.forEach((card,i)=>{
+    const offset=i-active;
+    card.style.zIndex=String(cards.length-offset);
+    card.style.opacity=offset<0?0:offset===0?1:Math.max(.22,1-offset*.22);
+    card.style.pointerEvents=offset===0?'auto':'none';
+    card.style.transform=offset===0?'translate(-50%,-50%) rotate(0deg) scale(1)':`translate(calc(-50% + ${offset*12}px),calc(-50% + ${offset*9}px)) rotate(${offset*2}deg) scale(${1-offset*.035})`;
+    card.classList.toggle('is-top',offset===0);
   });
+  count.textContent=active<cards.length?`${active+1} / ${cards.length}`:'All caught up';
+  passButton.disabled=active>=cards.length;
+  openButton.disabled=active>=cards.length;
+  if(active>=cards.length){deck.innerHTML='<div style="text-align:center;color:#a5aab5;font-size:13px">You’ve viewed all three tools. Reload to start again.</div>'}
 }
+function finishSwipe(direction){
+  if(active>=cards.length)return;
+  const card=cards[active];
+  if(direction>0){window.location.href=card.href;return}
+  card.classList.add('is-exiting');
+  card.style.transform=`translate(${direction<0?'-':'+'}130%,-50%) rotate(${direction*18}deg)`;
+  card.style.opacity='0';
+  active++;
+  window.setTimeout(paintDeck,reduceMotion?0:170);
+}
+deck.addEventListener('pointerdown',e=>{
+  if(active>=cards.length||e.target.closest('button'))return;
+  const card=cards[active];if(!card)return;
+  dragging=true;pointerId=e.pointerId;startX=e.clientX;startY=e.clientY;deltaX=0;
+  card.setPointerCapture(pointerId);
+});
+deck.addEventListener('pointermove',e=>{
+  if(!dragging||e.pointerId!==pointerId)return;
+  deltaX=e.clientX-startX;
+  const deltaY=e.clientY-startY;
+  if(Math.abs(deltaX)<Math.abs(deltaY)*1.1)return;
+  const card=cards[active];if(card)card.style.transform=`translate(calc(-50% + ${deltaX}px),calc(-50% + ${Math.min(18,Math.abs(deltaX)*.025)}px)) rotate(${deltaX*.045}deg)`;
+});
+function endDrag(e){
+  if(!dragging||e.pointerId!==pointerId)return;
+  dragging=false;pointerId=null;
+  if(Math.abs(deltaX)>95){finishSwipe(deltaX>0?1:-1)}
+  else paintDeck();
+}
+deck.addEventListener('pointerup',endDrag);
+deck.addEventListener('pointercancel',endDrag);
+passButton.addEventListener('click',()=>finishSwipe(-1));
+openButton.addEventListener('click',()=>finishSwipe(1));
+paintDeck();
+
 </script>
 </body>
 </html>
