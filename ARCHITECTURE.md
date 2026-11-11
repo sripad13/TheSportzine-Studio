@@ -8,7 +8,7 @@ Deployment: existing GitHub Pages setup (preserve until a verified migration is 
 
 ```text
 /
-├── index.html                 # Common landing page
+├── index.html                 # Common landing dashboard + Buffer KPI cards
 ├── live/                      # Existing production route (preserve during migration)
 ├── post/                      # Existing production route (preserve during migration)
 ├── seo/                       # Existing production route (preserve during migration)
@@ -21,7 +21,7 @@ Deployment: existing GitHub Pages setup (preserve until a verified migration is 
 └── shared/                    # Reserved for cross-app primitives only
 ```
 
-## Application boundaries
+## Shared visual system\n\nAll four application snapshots now use the same Studio header pattern: brand at left, Live / Post / SEO / Ideas navigation, and a highlighted active section. The header CSS is intentionally local to each app for now so a styling change cannot unexpectedly break another application. The landing dashboard lists the four available sections and retains the existing Buffer Insights KPI cards (reactions, comments, engagement rate). When a new section is built, add its card to the landing page and its navigation item to each app header in the same isolated change.\n\n## Application boundaries
 
 | App | Owns | Must not depend on |
 |---|---|---|
