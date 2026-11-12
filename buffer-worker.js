@@ -172,8 +172,7 @@ export default {
             }
           }
         `;
-        const results = [];
-        for (const channelId of channelIds) {
+        const results = await Promise.all(channelIds.map(async channelId => {
           const channel = allowed.get(channelId);
           const isInstagram = String(channel.service || "").toLowerCase().includes("instagram");
           const input = {
@@ -190,14 +189,13 @@ export default {
             const data = await bufferGraphQL(env, mutation, { input });
             const result = data.createPost;
             if (result?.post) {
-              results.push({ ok: true, channelId, channelName: allowed.get(channelId).name, post: result.post });
-            } else {
-              results.push({ ok: false, channelId, channelName: allowed.get(channelId).name, error: result?.message || "Buffer did not confirm the post." });
+              return { ok: true, channelId, channelName: channel.name, post: result.post };
             }
+            return { ok: false, channelId, channelName: channel.name, error: result?.message || "Buffer did not confirm the post." };
           } catch (error) {
-            results.push({ ok: false, channelId, channelName: allowed.get(channelId).name, error: error.message });
+            return { ok: false, channelId, channelName: channel.name, error: error.message };
           }
-        }
+        }));
         const successCount = results.filter(r => r.ok).length;
         return json({ results, successCount, failedCount: results.length - successCount }, successCount ? 200 : 502, origin);
       }
