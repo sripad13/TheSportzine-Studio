@@ -24,5 +24,17 @@ The Newsroom API CORS allowlist includes `https://newsroom.falsewinger.com` and 
 ## RSS terms and editorial use
 Formula1.com is included as requested. Personal use does not by itself establish permission under a publisher's feed terms, so confirm the current terms and keep use within the permitted scope. Feed access is not permission to republish full articles or images. The interface displays headlines and short feed excerpts with links to the publisher. Review each publisher's terms before any wider distribution.
 
+## AI Crawler Audit
+The Newsroom includes an AI Visibility Audit at `/ai-visibility.html`. It accepts any public HTTP/HTTPS website hostname and runs 25 weighted checks across six categories, including 17 representative AI/search crawler User-Agent probes, source-HTML readability, JSON-LD, `robots.txt`, `sitemap.xml`, `llms.txt`, metadata and accessibility signals.
+
+The Worker exposes:
+- `POST /api/ai-audit` with JSON body `{"url":"https://example.com"}`.
+- `GET /api/seo/audit?url=...` as a backwards-compatible route.
+- `GET /api/ai-audit/history?url=...` and `POST /api/ai-audit/history` for D1-backed scan history.
+
+Audit history and hashed-IP rate limits are stored in D1 when the existing `DB` binding is configured; the Worker creates their tables on first use. Without D1, the interface keeps recent history in the current browser and the Worker applies a best-effort per-isolate rate limit. Audits are limited to five requests per IP per hour when D1 is available. Private/local hostnames, IP-literal destinations, non-standard ports and redirects are rejected to reduce SSRF risk.
+
+Crawler checks use representative User-Agent headers and respect matching `robots.txt` disallow rules (a blocked probe is skipped). Results do not prove provider indexing, citation, ranking or future crawl behaviour. The scanner inspects server-delivered HTML and does not execute JavaScript. CORS is not authentication; protect the Newsroom Worker with Cloudflare Access and configure Cloudflare edge rate limiting for production.
+
 ## Graphics module
 The original graphics editor remains preserved at `graphics.html`. Its Buffer integration continues to use `buffer-worker.js`; the Newsroom hostname has been added to that Worker's CORS allowlist.
