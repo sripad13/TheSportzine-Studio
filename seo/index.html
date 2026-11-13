@@ -97,41 +97,39 @@ $('#checkAeo').onclick=()=>runContentCheck('aeo');
 $('#checkGeo').onclick=()=>runContentCheck('geo');
 
 function renderActionPlan(id,checks){
- const failed=checks.filter(c=>!c.ok),el=$('#'+id),words=$('#body').value.trim().split(/\\s+/).filter(Boolean).length;
- const title=$('#articleTitle').value.trim(),meta=$('#meta').value.trim(),kw=$('#keyword').value.trim(),slug=$('#slug').value.trim(),secondary=$('#secondary').value.trim(),body=$('#body').value;
- const headings=(body.match(/^\\s*(?:H[2-6]:|#{2,6}\\s).+/gim)||[]).length;
- const questionLines=(body.match(/^\\s*.*\\?\\s*$/gm)||[]).length;
- const paragraphs=body.replace(/^\\s*H[2-6]:\\s*/gim,'').replace(/^\\s*#{1,6}\\s*/gm,'').split(/\\n\\s*\\n/).map(x=>x.trim()).filter(Boolean);
+ const failed=checks.filter(c=>!c.ok),el=$('#'+id),words=$('#body').value.trim().split(/\s+/).filter(Boolean).length;
+ const title=$('#articleTitle').value.trim(),meta=$('#meta').value.trim(),kw=$('#keyword').value.trim(),slug=$('#slug').value.trim(),body=$('#body').value;
+ const headings=(body.match(/^\s*(?:H[2-6]:|#{2,6}\s).+/gim)||[]).length;
+ const paragraphs=body.replace(/^\s*H[2-6]:\s*/gim,'').replace(/^\s*#{1,6}\s*/gm,'').split(/\n\s*\n/).map(x=>x.trim()).filter(Boolean);
  const tokenCount=(body.toLowerCase().match(/[a-z0-9]+/g)||[]).length;
- const keywordHits=kw?(body.toLowerCase().match(new RegExp(kw.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\function renderActionPlan(id,checks){const failed=checks.filter(c=>!c.ok);const el=$('#'+id);if(!failed.length){el.innerHTML='<div class="notice"><strong>All checks passed.</strong> Keep the article accurate and re-run the check after substantive edits.</div>';return}el.innerHTML=failed.map((c,i)=>'<div class="action-item"><span class="action-num">'+(i+1)+'</span><div><b>'+escHtml(c.name)+'</b><small>'+escHtml(c.detail)+'</small></div></div>').join('')}'),'gi'))||[]).length:0;
  const actions={
-  'SEO title length':()=>title.length<30?'Add '+(30-title.length)+' characters to reach the 30-character minimum (ideal range: 30–60).': 'Trim at least '+(title.length-60)+' characters to reach the 60-character upper guideline.',
+  'SEO title length':()=>title.length<30?'Add '+(30-title.length)+' characters to reach the 30-character minimum (ideal range: 30–60).':'Trim at least '+(title.length-60)+' characters to reach the 60-character upper guideline.',
   'Primary keyword in title':()=> 'Include the exact primary phrase “'+kw+'” once in the SEO title.',
   'Meta description length':()=>meta.length<120?'Add '+(120-meta.length)+' characters to reach 120 characters (ideal range: 120–160).':'Trim at least '+(meta.length-160)+' characters to reach the 160-character upper guideline.',
   'Keyword in meta description':()=> 'Add the exact primary phrase “'+kw+'” once in the meta description.',
   'Clean URL slug':()=>slug?'Replace spaces or special characters with lowercase words separated by hyphens.':'Add a short, lowercase, hyphen-separated slug.',
   'Article depth':()=> 'Add at least '+Math.max(0,300-words)+' more words to reach the 300-word editorial guideline. Do not pad a short news story unnecessarily.',
   'Heading structure':()=> 'Add '+Math.max(0,2-headings)+' more descriptive H2/H3 headings (currently '+headings+').',
-  'Keyword usage':()=>kw?'Use the primary keyword naturally; current approximate density is '+(tokenCount?(keywordHits/tokenCount*100).toFixed(2):'0.00')+'%. Aim for a natural 0.3–2.5% range, not repetition.':'Enter a primary keyword first.',
+  'Keyword usage':()=> 'Use the primary keyword naturally; the current keyword-density check is outside its broad guideline. Avoid repeating it unnaturally.',
   'Sufficient answer context':()=> 'Add at least '+Math.max(0,120-words)+' more words to reach the 120-word minimum for useful answer context.',
-  'Question-friendly structure':()=> 'Add '+Math.max(0,2-headings)+' more descriptive headings. Phrase at least one heading as a question readers would ask.',
+  'Question-friendly structure':()=> 'Add '+Math.max(0,2-headings)+' more descriptive headings (currently '+headings+'); phrase at least one as a real reader question.',
   'Explicit questions or FAQ section':()=> 'Add at least 1 question-led heading or an FAQ section, followed by a direct answer.',
-  'Direct, concise answer':()=> 'Add one direct answer near the beginning, ideally in a self-contained paragraph of 20–45 words.',
-  'Extractable answer paragraphs':()=> 'Add or revise at least 1 paragraph so it contains 20–90 words and answers one point without relying on surrounding text.',
+  'Direct, concise answer':()=> 'Write one direct answer near the beginning, ideally as a self-contained paragraph of 20–45 words.',
+  'Extractable answer paragraphs':()=> 'Add or revise at least 1 paragraph so it contains 20–90 words and answers one point independently.',
   'Core topic stated clearly':()=> 'Include the primary keyword “'+kw+'” naturally at least once in the article body.',
-  'Search result context':()=> 'Complete both fields: SEO title ('+(title? 'present':'missing')+') and meta description ('+(meta?'present':'missing')+').',
+  'Search result context':()=> 'Complete the missing field: '+(!title?'SEO title':'')+(!title&&!meta?' and ':'')+(!meta?'meta description':'')+'.',
   'Named entities are explicit':()=> 'Name at least 1 specific person, club, organisation, competition or place relevant to the story.',
-  'Sources and attribution':()=> 'Add at least 1 explicit source attribution, such as “according to [source]”, “said [person]” or a named publication.',
-  'Evidence and specific details':()=> 'Add at least 1 verifiable figure, score, date, statistic or other concrete detail where relevant.',
+  'Sources and attribution':()=> 'Add at least 1 explicit source attribution, naming the publication, organisation or person behind a claim or quote.',
+  'Evidence and specific details':()=> 'Add at least 1 verifiable figure, score, statistic or concrete detail where relevant.',
   'Temporal context':()=> 'Add at least 1 explicit date, year or clearly anchored time reference for the event.',
-  'Clear information hierarchy':()=> 'Add '+Math.max(0,2-headings)+' more descriptive H2/H3 headings to create a clear structure.',
-  'Context and relationships':()=> 'Add at least 1 sentence explaining why the event happened, what preceded it or what it affects next.',
+  'Clear information hierarchy':()=> 'Add '+Math.max(0,2-headings)+' more descriptive H2/H3 headings (currently '+headings+').',
+  'Context and relationships':()=> 'Add at least 1 sentence explaining what led to the event, why it matters or what it affects next.',
   'Distinctive editorial value':()=> 'Add at least 1 original analytical observation, implication or useful takeaway beyond the basic report.',
-  'Clear topic framing':()=> 'Include the primary keyword “'+kw+'” in the title and make the central subject explicit.',
+  'Clear topic framing':()=> 'Include the primary keyword “'+kw+'” in the SEO title and make the central subject explicit.',
   'Related entities and subtopics':()=> 'Add at least 1 relevant secondary keyword or related entity, then explain its connection to the main topic.'
  };
  if(!failed.length){el.innerHTML='<div class="notice"><strong>All checks passed.</strong> Keep the article accurate and re-run the check after substantive edits.</div>';return}
- el.innerHTML=failed.map((item,i)=>{const fn=actions[item.name],action=fn?fn():'Review this item and make the specific editorial change needed to pass it.';return '<div class="action-item"><span class="action-num">'+(i+1)+'</span><div><b>'+escHtml(item.name)+'</b><small>'+escHtml(action)+'</small></div></div>'}).join('');
+ el.innerHTML=failed.map((item,i)=>{const fn=actions[item.name],action=fn?fn():'Make one specific editorial change to address this failed check.';return '<div class="action-item"><span class="action-num">'+(i+1)+'</span><div><b>'+escHtml(item.name)+'</b><small>'+escHtml(action)+'</small></div></div>'}).join('');
 }
 function escHtml(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 </script></body></html>
