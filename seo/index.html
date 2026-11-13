@@ -52,26 +52,26 @@ $('#runAudit').onclick=async()=>{const input=$('#auditUrl').value.trim(),status=
 
 function runContentCheck(type){
  const title=$('#articleTitle').value.trim(),meta=$('#meta').value.trim(),kw=$('#keyword').value.trim(),secondary=$('#secondary').value.trim(),body=$('#body').value.trim();
- const text=body.toLowerCase(),plain=body.replace(/^\\s*H[2-6]:\\s*/gim,'').replace(/^\\s*#{1,6}\\s*/gm,'');
- const words=plain.split(/\\s+/).filter(Boolean),checks=[];
+ const text=body.toLowerCase(),plain=body.replace(/^\s*H[2-6]:\s*/gim,'').replace(/^\s*#{1,6}\s*/gm,'');
+ const words=plain.split(/\s+/).filter(Boolean),checks=[];
  const add=(ok,name,detail)=>checks.push({ok,name,detail});
- const paragraphs=plain.split(/\\n\\s*\\n/).map(x=>x.trim()).filter(Boolean);
- const headings=(body.match(/^\\s*(?:H[2-6]:|#{2,6}\\s).+/gim)||[]);
- const questions=(body.match(/^\\s*(?:H[2-6]:|#{2,6}\\s)?.*\\?\\s*$/gm)||[]);
- const hasFaq=/\\b(faqs?|frequently asked questions|common questions)\\b/i.test(body);
- const hasAnswer=/\\b(in short|the answer is|yes,|no,|confirmed|means that)\\b/i.test(plain);
- const hasNumbers=/\\b\\d+(?:[.,]\\d+)?\\s*(?:%|percent|million|billion|thousand|years?|days?)?\\b/i.test(body);
- const hasAttribution=/\\b(according to|said|told|reported by|confirmed by|announced by|data from|source:|via )\\b/i.test(body);
- const hasDate=/\\b(?:20\\d{2}|yesterday|today|on monday|on tuesday|on wednesday|on thursday|on friday|on saturday|on sunday)\\b/i.test(body);
- const hasEntities=/\\b[A-Z][a-z]+(?:\\s+[A-Z][a-z]+){0,3}\\b/.test(body);
- const hasContext=/\\b(after|before|since|because|following|while|during|compared with|in the context of)\\b/i.test(body);
- const hasOriginal=/\\b(analysis|our analysis|exclusive|breakdown|what this means|implications|tactical|key takeaway|explained)\\b/i.test(body);
+ const paragraphs=plain.split(/\n\s*\n/).map(x=>x.trim()).filter(Boolean);
+ const headings=(body.match(/^\s*(?:H[2-6]:|#{2,6}\s).+/gim)||[]);
+ const questions=(body.match(/^\s*(?:H[2-6]:|#{2,6}\s)?.*\?\s*$/gm)||[]);
+ const hasFaq=/\b(faqs?|frequently asked questions|common questions)\b/i.test(body);
+ const hasAnswer=/\b(in short|the answer is|yes,|no,|confirmed|means that)\b/i.test(plain);
+ const hasNumbers=/\b\d+(?:[.,]\d+)?\s*(?:%|percent|million|billion|thousand|years?|days?)?\b/i.test(body);
+ const hasAttribution=/\b(according to|said|told|reported by|confirmed by|announced by|data from|source:|via )\b/i.test(body);
+ const hasDate=/\b(?:20\d{2}|yesterday|today|on monday|on tuesday|on wednesday|on thursday|on friday|on saturday|on sunday)\b/i.test(body);
+ const hasEntities=/\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,3}\b/.test(body);
+ const hasContext=/\b(after|before|since|because|following|while|during|compared with|in the context of)\b/i.test(body);
+ const hasOriginal=/\b(analysis|our analysis|exclusive|breakdown|what this means|implications|tactical|key takeaway|explained)\b/i.test(body);
  if(type==='aeo'){
   add(words.length>=120,'Sufficient answer context',words.length+' words detected. Provide enough context to answer the topic accurately.');
   add(headings.length>=2,'Question-friendly structure',headings.length+' headings detected. Use descriptive headings that mirror real reader questions.');
   add(questions.length>=1||hasFaq,'Explicit questions or FAQ section',questions.length+' question-style lines detected'+(hasFaq?' and an FAQ section is present.':'. Consider adding reader questions and concise answers.'));
-  add(hasAnswer||paragraphs.some(p=>p.split(/\\s+/).length<=45),'Direct, concise answer',hasAnswer?'Answer-led phrasing was detected.':'Add a short, self-contained answer near the beginning.');
-  add(paragraphs.some(p=>p.split(/\\s+/).length>=20&&p.split(/\\s+/).length<=90),'Extractable answer paragraphs','Aim for focused paragraphs that answer one point without relying on surrounding context.');
+  add(hasAnswer||paragraphs.some(p=>p.split(/\s+/).length<=45),'Direct, concise answer',hasAnswer?'Answer-led phrasing was detected.':'Add a short, self-contained answer near the beginning.');
+  add(paragraphs.some(p=>p.split(/\s+/).length>=20&&p.split(/\s+/).length<=90),'Extractable answer paragraphs','Aim for focused paragraphs that answer one point without relying on surrounding context.');
   add(!!kw&&text.includes(kw.toLowerCase()),'Core topic stated clearly',kw?'The primary topic should appear naturally in the body.':'Add a primary keyword to define the article topic.');
   add(!!title&&!!meta,'Search result context','A clear title and meta description help answer engines understand the page.');
  }else{
