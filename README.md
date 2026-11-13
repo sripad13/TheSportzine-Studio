@@ -38,3 +38,17 @@ Crawler checks use representative User-Agent headers and respect matching `robot
 
 ## Graphics module
 The original graphics editor remains preserved at `graphics.html`. Its Buffer integration continues to use `buffer-worker.js`; the Newsroom hostname has been added to that Worker's CORS allowlist.
+
+
+## Expanded AI Search Visibility tools
+
+The AI Audit suite now includes two additional workflows:
+
+- `/ai-audit/site/` — sitemap-based site audit. Discovers same-origin URLs from up to five sitemap files (including sitemap indexes), respects matching robots.txt rules when selecting pages, and audits up to 30 pages per run. The root page receives the 17 crawler probes and discovery-file checks; other pages receive content, metadata, structured-data, AEO and GEO checks. Results include aggregate category scores, page-level scores, skipped URLs and JSON export. This is a bounded sitemap sample, not an unrestricted website crawler.
+- `/ai-audit/prepublish/` — article draft checker. Accepts pasted plain text, Markdown or HTML plus headline, byline, publisher, canonical URL, publication date, source URLs and key entities. It checks headline length, opening clarity, headings, paragraph length, FAQ/question structure, entity coverage, author/publisher identity and source/date signals. It returns a suggested `NewsArticle` JSON-LD object and downloadable report. The draft is processed for the request and is not persisted by this endpoint; the checker does not verify facts or whether citations support individual claims.
+
+Additional API endpoints:
+- `POST /api/ai-audit/site` with `{"url":"https://example.com","max_pages":20}`. Maximum 30 pages; five site scans per IP per hour when D1 rate limiting is configured.
+- `POST /api/ai-audit/prepublish` with JSON fields `title`, `content`, `author`, `publisher`, `url`, `published_at`, `source_urls` and `entities`. Rate limit: 20 checks per IP per hour when D1 rate limiting is configured.
+
+All scores are heuristic diagnostics. They do not represent measured AI citations, ranking, provider indexing or fact verification.
