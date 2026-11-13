@@ -148,8 +148,8 @@ async function fetchGoogleTrends(windowName){
 function extractHtmlAttribute(tag,name){const re=new RegExp("\\b"+name+"\\s*=\\s*(?:\"([^\"]*)\"|'([^']*)'|([^\\s>]+))","i");const m=tag.match(re);return m?(m[1]||m[2]||m[3]||"").trim():"";}
 function decodeHtml(value){return String(value||"").replace(/&amp;/g,"&").replace(/&quot;/g,'"').replace(/&#39;|&apos;/g,"'").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&#(\d+);/g,(_,n)=>String.fromCharCode(Number(n))).replace(/&#x([\da-f]+);/gi,(_,n)=>String.fromCharCode(parseInt(n,16)));}
 const AUDIT_RATE_LIMITS=new Map();
-async function allowAuditRequest(request,env){
- const ip=request.headers.get("CF-Connecting-IP")||"unknown",now=Date.now(),windowMs=60*60*1000,limit=5;
+async function allowAuditRequest(request,env,limit=5){
+ const ip=request.headers.get("CF-Connecting-IP")||"unknown",now=Date.now(),windowMs=60*60*1000;
  if(env.DB){
   await env.DB.prepare("CREATE TABLE IF NOT EXISTS ai_audit_rate_limits (ip_hash TEXT PRIMARY KEY, window_start INTEGER NOT NULL, request_count INTEGER NOT NULL)").run();
   const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(ip));
@@ -236,7 +236,7 @@ async function mapLimit(items,limit,fn){
  await Promise.all(Array.from({length:Math.min(limit,items.length)},async()=>{while(true){const i=cursor++;if(i>=items.length)return;try{results[i]=await fn(items[i],i)}catch(error){results[i]={error:error.message||"Request failed"};}}}));
  return results;
 }
-async function auditSiteUrl(raw){
+async function auditSiteUrl(raw,options={}){
  const safe=isSafePublicTarget(raw);if(safe.error)return {error:safe.error};
  const target=safe.url,started=Date.now(),origin=target.origin;
  const pageResponse=await publicFetch(target,{"User-Agent":"TheSportzine-AI-Visibility-Audit/1.0 (+https://thesportzine.com)","Accept":"text/html,application/xhtml+xml"},10000);
@@ -245,7 +245,7 @@ async function auditSiteUrl(raw){
  const contentType=pageResponse.headers.get("content-type")||"";
  if(!/text\/html|application\/xhtml\+xml/i.test(contentType))return {error:"The URL did not return an HTML page ("+contentType+")."};
  const html=await readResponseText(pageResponse,1500000),responseTime=Date.now()-started;
- const [robotsResponse,sitemapResponse,llmsResponse]=await Promise.all([
+ const [robotsResponse,sitemapResponse,llmsResponse]=options.skipSiteFiles?[null,null,null]:await Promise.all([
   publicFetch(new URL("/robots.txt",origin),{"User-Agent":"TheSportzine-AI-Visibility-Audit/1.0","Accept":"text/plain"}).catch(()=>null),
   publicFetch(new URL("/sitemap.xml",origin),{"User-Agent":"TheSportzine-AI-Visibility-Audit/1.0","Accept":"application/xml,text/xml"}).catch(()=>null),
   publicFetch(new URL("/llms.txt",origin),{"User-Agent":"TheSportzine-AI-Visibility-Audit/1.0","Accept":"text/plain"}).catch(()=>null)
@@ -270,7 +270,7 @@ async function auditSiteUrl(raw){
  const jsonLd=[...html.matchAll(/<script\b[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)].map(m=>m[1]);
  let validJsonLd=0,schemaTypes=[];
  for(const rawJson of jsonLd){try{const parsed=JSON.parse(rawJson);validJsonLd++;const walk=value=>{if(!value||typeof value!=="object")return;if(value["@type"])schemaTypes.push(...(Array.isArray(value["@type"])?value["@type"]:[value["@type"]]));for(const child of Object.values(value))if(child&&typeof child==="object")Array.isArray(child)?child.forEach(walk):walk(child);};walk(parsed);}catch{}}
- const crawlerResults=await mapLimit(AI_CRAWLERS,5,async crawler=>{
+ const crawlerResults=options.skipCrawlerProbes?[]:await mapLimit(AI_CRAWLERS,5,async crawler=>{
   const policy=robotsAvailable?robotsDecision(robotsGroups,crawler.ua,target.pathname+target.search):{allowed:true,rule:"robots.txt unavailable; no published restriction could be confirmed."};
   if(!policy.allowed)return {name:crawler.name,user_agent:crawler.ua,robots_allowed:false,robots_rule:policy.rule,http_status:null,reachable:false,redirected:false,content_type:"",status:"warning",detail:"Disallowed by robots.txt; live HTTP probe skipped."};
   let probe;
@@ -288,7 +288,7 @@ async function auditSiteUrl(raw){
  add("html","HTML structure and JavaScript dependency",wordCount>=120&&(!hasNoscript||wordCount>=250),"Detected "+scripts+" script tags; "+(hasNoscript?"noscript fallback exists.":"no noscript fallback detected.")+" This is a source-HTML heuristic, not a browser rendering test.",{script_count:scripts});
  add("structured","Valid JSON-LD structured data",validJsonLd>0,validJsonLd+" valid JSON-LD block(s) found.",{valid_jsonld_blocks:validJsonLd});
  add("structured","Recognised schema types",schemaTypes.length>0,"Schema types: "+(schemaTypes.length?[...new Set(schemaTypes)].join(", "):"none detected")+".",{schema_types:[...new Set(schemaTypes)]});
- add("files","AI and search discovery files",robotsAvailable&&sitemapResponse?.ok===true,"robots.txt: "+(robotsAvailable?"available":"not found")+". sitemap.xml: "+(sitemapResponse?.ok?"available":"not found")+". llms.txt: "+(llmsResponse?.ok?"available":"not found")+".",{robots_available:robotsAvailable,sitemap_available:!!sitemapResponse?.ok,llms_available:!!llmsResponse?.ok,llms_excerpt:llmsText.slice(0,1200),sitemap_excerpt:sitemapText.slice(0,500)});
+ if(!options.skipSiteFiles)add("files","AI and search discovery files",robotsAvailable&&sitemapResponse?.ok===true,"robots.txt: "+(robotsAvailable?"available":"not found")+". sitemap.xml: "+(sitemapResponse?.ok?"available":"not found")+". llms.txt: "+(llmsResponse?.ok?"available":"not found")+".",{robots_available:robotsAvailable,sitemap_available:!!sitemapResponse?.ok,llms_available:!!llmsResponse?.ok,llms_excerpt:llmsText.slice(0,1200),sitemap_excerpt:sitemapText.slice(0,500)});
  add("metadata","SEO and social metadata",!!title&&!!description&&!!canonical,"Title: "+(title?"present":"missing")+". Description: "+(description?"present":"missing")+". Canonical: "+(canonical?"present":"missing")+".",{title,meta_description:description,canonical});
  add("trust","Secure delivery and index directives",target.protocol==="https:"&&!/noindex/i.test(robotsMeta),"HTTPS: "+(target.protocol==="https:"?"yes":"no")+". Robots meta: "+(robotsMeta||"not specified")+".",{robots_meta:robotsMeta});
  add("trust","Accessible image descriptions",images.length===0||missingAlt===0,missingAlt+" of "+images.length+" images lack alt attributes.",{image_count:images.length,images_missing_alt:missingAlt});
@@ -320,6 +320,104 @@ async function auditSiteUrl(raw){
  const score=Math.round(categories.reduce((sum,c)=>sum+c.weight*c.score/100,0));
  return {url:target.href,hostname:target.hostname,status:pageResponse.status,response_time_ms:responseTime,content_type:contentType,content_bytes:new TextEncoder().encode(html).length,title,meta_description:description,canonical,word_count:wordCount,script_count:scripts,robots_meta:robotsMeta,score,max_score:100,checks_count:checks.length,passed_count:checks.filter(c=>c.status==="pass").length,warning_count:checks.filter(c=>c.status!=="pass").length,categories,checks,crawlers:crawlerResults,robots:{available:robotsAvailable,status:robotsResponse?.status||null,excerpt:robotsText.slice(0,2000)},files:{sitemap_available:!!sitemapResponse?.ok,llms_available:!!llmsResponse?.ok},audited_at:new Date().toISOString(),limitations:["Crawler checks use representative User-Agent headers and the site's published robots.txt rules; they do not prove that a provider has indexed or will cite the page.","The audit inspects source HTML returned to the Worker. It does not execute JavaScript or verify browser-rendered content.","A robots.txt allow rule is not a guarantee of crawl access, indexing or AI-search visibility."]};
 }
+
+async function discoverAuditPages(raw,maxPages){
+ const target=new URL(raw),origin=target.origin,robotsUrl=new URL("/robots.txt",origin);
+ let robotsText="";
+ try{const response=await publicFetch(robotsUrl,{"User-Agent":"TheSportzine-AI-Visibility-Audit/1.0","Accept":"text/plain"});if(response.ok)robotsText=await readResponseText(response,300000);}catch{}
+ const groups=parseRobots(robotsText);
+ const sitemapCandidates=[...robotsText.matchAll(/^\s*Sitemap:\s*(\S+)/gim)].map(m=>m[1]);
+ sitemapCandidates.push(new URL("/sitemap.xml",origin).href);
+ const sitemapQueue=[...new Set(sitemapCandidates)],visitedSitemaps=new Set(),found=new Set([target.href]),skipped=[];
+ while(sitemapQueue.length&&visitedSitemaps.size<5&&found.size<maxPages*5){
+  const sitemapUrl=sitemapQueue.shift();if(visitedSitemaps.has(sitemapUrl))continue;visitedSitemaps.add(sitemapUrl);
+  let xml="";try{const sitemapTarget=new URL(sitemapUrl);if(sitemapTarget.origin!==origin)continue;const response=await publicFetch(sitemapTarget,{"User-Agent":"TheSportzine-AI-Visibility-Audit/1.0","Accept":"application/xml,text/xml"});if(!response.ok)continue;xml=await readResponseText(response,1000000);}catch{continue;}
+  const locations=[...xml.matchAll(/<loc\b[^>]*>\s*([\s\S]*?)\s*<\/loc>/gi)].map(m=>decodeHtml(m[1].trim())).filter(Boolean);
+  const isIndex=/<sitemapindex\b/i.test(xml);
+  for(const location of locations){
+   let candidate;try{candidate=new URL(location,sitemapUrl);candidate.hash="";}catch{continue;}
+   if(candidate.origin!==origin||isSafePublicTarget(candidate.href).error)continue;
+   if(isIndex){if(sitemapQueue.length+visitedSitemaps.size<5&&!visitedSitemaps.has(candidate.href))sitemapQueue.push(candidate.href);continue;}
+   if(/\.(?:pdf|jpg|jpeg|png|gif|webp|svg|xml|zip|mp4|mp3|css|js)(?:$|\?)/i.test(candidate.pathname))continue;
+   const policy=robotsDecision(groups,"TheSportzine-AI-Visibility-Audit",candidate.pathname+candidate.search);
+   if(!policy.allowed){skipped.push({url:candidate.href,reason:"Blocked by robots.txt: "+policy.rule});continue;}
+   found.add(candidate.href);
+   if(found.size>=maxPages*5)break;
+  }
+ }
+ const urls=[...found].slice(0,maxPages);
+ return {urls,discovered:found.size,skipped,sitemaps_checked:visitedSitemaps.size,robots_available:!!robotsText};
+}
+function weightedPageScore(report){
+ const categories=report.categories.filter(c=>!["crawler","files"].includes(c.id)&&c.total>0);
+ const totalWeight=categories.reduce((n,c)=>n+c.weight,0);
+ return totalWeight?Math.round(categories.reduce((n,c)=>n+c.weight*c.score/100,0)*100/totalWeight):0;
+}
+async function auditWholeSite(raw,maxPages=20){
+ const safe=isSafePublicTarget(raw);if(safe.error)return {error:safe.error};
+ const target=safe.url;
+ const rootReport=await auditSiteUrl(target.href);
+ if(rootReport.error)return rootReport;
+ const discovery=await discoverAuditPages(target.href,maxPages);
+ const urls=discovery.urls.filter(url=>url!==rootReport.url).slice(0,Math.max(0,maxPages-1));
+ const scanned=await mapLimit(urls,3,async url=>auditSiteUrl(url,{skipCrawlerProbes:true,skipSiteFiles:true}));
+ const pageReports=[rootReport,...scanned.filter(report=>report&&!report.error)];
+ const failed=scanned.filter(report=>!report||report.error);
+ const checks=[
+  ...rootReport.checks.filter(check=>check.category==="crawler"||check.category==="files"),
+  ...pageReports.flatMap(report=>report.checks.filter(check=>check.category!=="crawler"&&check.category!=="files"))
+ ];
+ const categories=Object.entries(AUDIT_WEIGHTS).map(([id,weight])=>{
+  const rows=checks.filter(check=>check.category===id),passed=rows.filter(check=>check.status==="pass").length;
+  return {id,label:({crawler:"AI crawler access",html:"Readable HTML content",structured:"Structured data",files:"AI crawl files and sitemap",metadata:"SEO metadata",trust:"Trust and accessibility",aeo:"Answer Engine Optimisation (AEO)",geo:"Generative Engine Optimisation (GEO)"})[id],weight,passed,total:rows.length,score:rows.length?Math.round(passed/rows.length*100):0};
+ });
+ const score=Math.round(categories.reduce((sum,c)=>sum+c.weight*c.score/100,0));
+ return {url:rootReport.url,hostname:rootReport.hostname,score,max_score:100,categories,checks,checks_count:checks.length,passed_count:checks.filter(c=>c.status==="pass").length,warning_count:checks.filter(c=>c.status!=="pass").length,pages_discovered:discovery.discovered,pages_crawled:pageReports.length,pages_skipped:discovery.skipped.length+failed.length,page_limit:maxPages,pages:pageReports.map(report=>({url:report.url,title:report.title,word_count:report.word_count,status:report.status,score:weightedPageScore(report),checks_count:report.checks.filter(c=>!["crawler","files"].includes(c.category)).length,warning_count:report.checks.filter(c=>!["crawler","files"].includes(c.category)&&c.status!=="pass").length})),skipped_pages:[...discovery.skipped,...failed.map(report=>({url:report?.url||"Unknown",reason:report?.error||"Page could not be audited"}))].slice(0,50),crawler_summary:rootReport.crawlers.map(c=>({name:c.name,status:c.status,robots_allowed:c.robots_allowed,http_status:c.http_status})),audited_at:new Date().toISOString(),limitations:["Crawler access and discovery-file checks are performed once for the site origin; page-level content checks are sampled from sitemap URLs.","Only same-origin URLs discovered in up to five sitemap files are considered. The scan is capped at the requested page limit and does not crawl arbitrary internal links.","The report evaluates technical and editorial readiness signals. It does not establish AI provider indexing, citations, rankings or traffic."]};
+}
+function auditPrepublishDraft(input){
+ const title=String(input.title||"").trim().slice(0,240);
+ const raw=String(input.content||"").slice(0,60000);
+ const author=String(input.author||"").trim().slice(0,120);
+ const publisher=String(input.publisher||"The Sportzine").trim().slice(0,120);
+ const articleUrl=String(input.url||"").trim().slice(0,2048);
+ const sourceUrls=String(input.source_urls||"").split(/\r?\n|,/).map(x=>x.trim()).filter(x=>/^https?:\/\//i.test(x));
+ const entities=String(input.entities||"").split(/,|\n/).map(x=>x.trim()).filter(Boolean).slice(0,20);
+ const html=raw.replace(/<script\b[\s\S]*?<\/script>|<style\b[\s\S]*?<\/style>/gi," ");
+ const text=decodeHtml(html.replace(/<[^>]+>/g," ").replace(/\s+/g," ")).trim();
+ const words=text?text.split(/\s+/).filter(Boolean):[];
+ const headings=[...raw.matchAll(/<h[2-6]\b[^>]*>([\s\S]*?)<\/h[2-6]>/gi)].map(m=>decodeHtml(m[1].replace(/<[^>]+>/g," ")).trim());
+ const plainParagraphs=raw.includes("<p")?[...raw.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi)].map(m=>decodeHtml(m[1].replace(/<[^>]+>/g," ")).replace(/\s+/g," ").trim()).filter(Boolean):raw.split(/\n\s*\n/).map(x=>x.trim()).filter(Boolean);
+ const paragraphWords=plainParagraphs.map(p=>p.split(/\s+/).filter(Boolean).length);
+ const leadWords=paragraphWords[0]||0,averageParagraph=paragraphWords.length?Math.round(paragraphWords.reduce((a,b)=>a+b,0)/paragraphWords.length):0;
+ const questionHeadings=headings.filter(h=>/\?|^(what|why|how|when|where|who|which)\b/i.test(h)).length;
+ const urlsInDraft=[...raw.matchAll(/https?:\/\/[^\s<>"')]+/gi)].map(m=>m[0]);
+ const citations=[...new Set([...sourceUrls,...urlsInDraft])];
+ const hasDate=!!String(input.published_at||"").trim();
+ const entityCoverage=entities.filter(entity=>text.toLowerCase().includes(entity.toLowerCase()));
+ const checks=[];
+ const add=(category,label,ok,detail,weight)=>checks.push({category,label,status:ok?"pass":"warning",detail,weight});
+ add("metadata","Headline length",title.length>=30&&title.length<=75,title.length+" characters; target 30–75 characters.",1);
+ add("metadata","Article URL and canonical target",!articleUrl||!isSafePublicTarget(articleUrl).error,articleUrl?"A valid public HTTP/HTTPS article URL was supplied.":"No article URL supplied; add the canonical URL before publishing.",1);
+ add("structure","Subheadings and content hierarchy",headings.length>=2,headings.length+" H2–H6 headings detected; aim for at least two meaningful sections.",1);
+ add("structure","Paragraph readability",paragraphWords.length>0&&averageParagraph<=100&&Math.max(...paragraphWords)<=180,"Average paragraph: "+averageParagraph+" words; longest: "+(Math.max(0,...paragraphWords))+". Keep paragraphs concise and scannable.",1);
+ add("aeo","Direct, self-contained opening",leadWords>=25&&leadWords<=100,"Opening paragraph: "+leadWords+" words; aim for a clear 25–100-word summary that answers the main news point.",2);
+ add("aeo","Question-led subheadings",questionHeadings>0,questionHeadings+" question-led headings detected. Add a natural reader-question heading where useful.",1);
+ add("aeo","FAQ or explanatory answers",/\bFAQ\b/i.test(raw)||/<details\b/i.test(raw)||/<summary\b/i.test(raw)||/\b(who|what|when|where|why|how)\b/i.test(headings.join(" ")), "FAQ or explanatory question structure "+( /\bFAQ\b/i.test(raw)||/<details\b/i.test(raw)||/<summary\b/i.test(raw)?"detected":"not clearly detected")+". Only add FAQs when they answer genuine reader questions.",1);
+ add("aeo","Clear subject and key entities",entities.length>0&&entityCoverage.length===entities.length,entities.length?entityCoverage.length+" of "+entities.length+" supplied key entities appear in the draft.":"No key entities supplied; add the main clubs, players, competition or event.",2);
+ add("geo","Named author",!!author,author?"Author supplied: "+author+".":"Add a named author or an explicit newsroom byline.",1);
+ add("geo","Publisher identity",!!publisher,publisher?"Publisher supplied: "+publisher+".":"Identify the publishing organisation.",1);
+ add("geo","Source references",citations.length>0,citations.length+" source URL(s) supplied or detected. Link to primary sources and original reporting where possible.",2);
+ add("geo","Publication date",hasDate,"Publication date "+(hasDate?"supplied.":"not supplied; populate datePublished when publishing.") ,1);
+ add("geo","Entity consistency",entities.length>0&&entityCoverage.length===entities.length,entities.length?entityCoverage.length+"/"+entities.length+" key entities appear in the copy.":"Supply key entities to verify that the article consistently names its subjects.",1);
+ const categoryWeights={metadata:15,structure:15,aeo:35,geo:35};
+ const categories=Object.entries(categoryWeights).map(([id,weight])=>{const rows=checks.filter(c=>c.category===id),passed=rows.filter(c=>c.status==="pass").length;return{id,label:({metadata:"Metadata",structure:"Content structure",aeo:"Answer Engine Optimisation (AEO)",geo:"Generative Engine Optimisation (GEO)"})[id],weight,passed,total:rows.length,score:Math.round(passed/rows.length*100)};});
+ const score=Math.round(categories.reduce((sum,c)=>sum+c.weight*c.score/100,0));
+ const publishedAt=String(input.published_at||"").trim();
+ const schema={ "@context":"https://schema.org","@type":"NewsArticle",headline:title,author:author?{"@type":"Person",name:author}:undefined,publisher:publisher?{"@type":"Organization",name:publisher}:undefined,datePublished:publishedAt||undefined,mainEntityOfPage:articleUrl?{"@type":"WebPage","@id":articleUrl}:undefined};
+ Object.keys(schema).forEach(key=>schema[key]===undefined&&delete schema[key]);
+ return {score,max_score:100,title,word_count:words.length,paragraph_count:paragraphWords.length,heading_count:headings.length,question_heading_count:questionHeadings,citation_count:citations.length,citations,entities,entity_coverage:entityCoverage,categories,checks,checks_count:checks.length,passed_count:checks.filter(c=>c.status==="pass").length,warning_count:checks.filter(c=>c.status!=="pass").length,suggested_jsonld:schema,audited_at:new Date().toISOString(),limitations:["This is a deterministic editorial and markup checklist, not an AI-generated fact check or legal review.","The checker cannot verify whether a source supports a claim; editors must open and validate every citation.","FAQ, Speakable and structured-data enhancements should only be published when they accurately represent visible page content and current search-engine policies."]};
+}
+
 async function fetchStories(env) {
   const configured = await getConfiguredFeeds(env);
   const results=await Promise.all(configured.map(async feed=>({feed,...await getFeed(feed)})));
@@ -400,6 +498,21 @@ export default {
         const raw=request.method==="GET"?(url.searchParams.get("url")||""):String((await request.json()).url||"");
         const result=await auditSiteUrl(raw);
         if(result.error)return json({error:result.error},400,origin);
+        return json(result,200,origin);
+      }
+      if(request.method==="POST"&&url.pathname==="/api/ai-audit/site"){
+        if(!await allowAuditRequest(request,env,5))return json({error:"Site audit rate limit reached. Maximum 5 site scans per hour per IP."},429,origin);
+        const body=await request.json(),raw=String(body.url||""),requested=Number(body.max_pages||20);
+        const maxPages=Math.min(30,Math.max(1,Number.isFinite(requested)?Math.floor(requested):20));
+        const result=await auditWholeSite(raw,maxPages);
+        if(result.error)return json({error:result.error},400,origin);
+        return json(result,200,origin);
+      }
+      if(request.method==="POST"&&url.pathname==="/api/ai-audit/prepublish"){
+        if(!await allowAuditRequest(request,env,20))return json({error:"Pre-publish check rate limit reached. Maximum 20 checks per hour per IP."},429,origin);
+        const body=await request.json();
+        if(!String(body.title||"").trim()||String(body.content||"").trim().length<80)return json({error:"Enter a headline and at least 80 characters of article copy."},400,origin);
+        const result=auditPrepublishDraft(body);
         return json(result,200,origin);
       }
       if (url.pathname === "/api/ai-audit/history" && request.method === "GET") {
