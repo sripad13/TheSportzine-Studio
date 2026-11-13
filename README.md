@@ -25,7 +25,7 @@ The Newsroom API CORS allowlist includes `https://newsroom.falsewinger.com` and 
 Formula1.com is included as requested. Personal use does not by itself establish permission under a publisher's feed terms, so confirm the current terms and keep use within the permitted scope. Feed access is not permission to republish full articles or images. The interface displays headlines and short feed excerpts with links to the publisher. Review each publisher's terms before any wider distribution.
 
 ## AI Crawler Audit
-The Newsroom includes an AI Visibility Audit at `/ai-visibility.html`. It accepts any public HTTP/HTTPS website hostname and runs 25 weighted checks across six categories, including 17 representative AI/search crawler User-Agent probes, source-HTML readability, JSON-LD, `robots.txt`, `sitemap.xml`, `llms.txt`, metadata and accessibility signals.
+The Newsroom includes an AI Search Visibility Audit at `/ai-audit/` (legacy `/ai-visibility.html` redirects). It accepts any public HTTP/HTTPS website and runs 35 weighted checks across eight categories, including 17 representative AI/search crawler User-Agent probes, readable HTML, JSON-LD, discovery files, Answer Engine Optimisation (AEO) and Generative Engine Optimisation (GEO) signals. AEO checks cover question-led headings, concise answer blocks, FAQ structure, definitions and optional speakable hints. GEO checks cover author/publisher identity, publication dates, source citations, publisher transparency and entity context. These are page-level heuristics, not guarantees of AI citations or rankings.
 
 The Worker exposes:
 - `POST /api/ai-audit` with JSON body `{"url":"https://example.com"}`.
