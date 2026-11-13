@@ -182,7 +182,7 @@ const AI_CRAWLERS=[
  {name:"Amazonbot",ua:"Amazonbot"},
  {name:"cohere-ai",ua:"cohere-ai"}
 ];
-const AUDIT_WEIGHTS={crawler:32,html:26,structured:14,files:10,metadata:10,trust:8};
+const AUDIT_WEIGHTS={crawler:25,html:18,structured:12,files:8,metadata:8,trust:6,aeo:11,geo:12};
 function isSafePublicTarget(raw){
  let target;try{target=new URL(raw)}catch{return {error:"Enter a valid public website URL."}}
  if(!["http:","https:"].includes(target.protocol)||target.username||target.password)return {error:"Only public HTTP or HTTPS website URLs are supported."};
@@ -292,7 +292,31 @@ async function auditSiteUrl(raw){
  add("metadata","SEO and social metadata",!!title&&!!description&&!!canonical,"Title: "+(title?"present":"missing")+". Description: "+(description?"present":"missing")+". Canonical: "+(canonical?"present":"missing")+".",{title,meta_description:description,canonical});
  add("trust","Secure delivery and index directives",target.protocol==="https:"&&!/noindex/i.test(robotsMeta),"HTTPS: "+(target.protocol==="https:"?"yes":"no")+". Robots meta: "+(robotsMeta||"not specified")+".",{robots_meta:robotsMeta});
  add("trust","Accessible image descriptions",images.length===0||missingAlt===0,missingAlt+" of "+images.length+" images lack alt attributes.",{image_count:images.length,images_missing_alt:missingAlt});
- const categories=Object.entries(AUDIT_WEIGHTS).map(([key,weight])=>{const rows=checks.filter(c=>c.category===key),passed=rows.filter(c=>c.status==="pass").length;return {id:key,label:({crawler:"AI crawler access",html:"Readable HTML content",structured:"Structured data",files:"AI crawl files and sitemap",metadata:"SEO metadata",trust:"Trust and accessibility"})[key],weight,passed,total:rows.length,score:rows.length?Math.round(passed/rows.length*100):0};});
+ const questionHeadings=(html.match(/<h[2-6]\\b[^>]*>[^<]*(?:\\?|\\bwhat\\b|\\bwhy\\b|\\bhow\\b|\\bwhen\\b|\\bwhere\\b|\\bwho\\b|\\bwhich\\b)[^<]*<\\/h[2-6]>/gi)||[]).length;
+ const answerBlocks=[...html.matchAll(/<h[2-6]\\b[^>]*>[\\s\\S]*?<\\/h[2-6]>\\s*<p\\b[^>]*>([\\s\\S]*?)<\\/p>/gi)].filter(m=>{const n=m[1].replace(/<[^>]+>/g," ").replace(/\\s+/g," ").trim().split(" ").length;return n>=25&&n<=110;}).length;
+ const hasFaqSchema=schemaTypes.some(type=>String(type).toLowerCase()==="faqpage");
+ const faqMarkup=hasFaqSchema||(/\\bfaq\\b/i.test(html)&&(/<details\\b/i.test(html)||/<summary\\b/i.test(html)));
+ const definitionSignals=(html.match(/<dfn\\b|<dt\\b|<abbr\\b|\\b(?:is defined as|refers to|means that)\\b/gi)||[]).length;
+ const speakable=/\\bSpeakableSpecification\\b/i.test(html);
+ add("aeo","Question-led headings",questionHeadings>0,questionHeadings+" question-style heading(s) detected. Use headings that mirror the questions readers ask.",{question_headings:questionHeadings});
+ add("aeo","Concise answer blocks",answerBlocks>0,answerBlocks+" heading-following paragraph(s) contain a concise answer-length response.",{answer_blocks:answerBlocks});
+ add("aeo","FAQ structure",faqMarkup,"FAQPage schema or visible FAQ/accordion markup "+(faqMarkup?"detected":"not detected")+".",{faq_schema:hasFaqSchema});
+ add("aeo","Definitions and explanatory markup",definitionSignals>0,definitionSignals+" definition-style signals found (dfn, dt, abbr or explicit definitions).",{definition_signals:definitionSignals});
+ add("aeo","Speakable content hints",speakable,"SpeakableSpecification "+(speakable?"detected":"not detected")+". This is an optional, limited-use schema signal.",{speakable});
+ const authorMeta=metaContent("author")||metaContent("article:author")||metaContent("parsely-author");
+ const authorSchema=/\\"author\\"\\s*:\\s*(?:\\{[^}]*\\"@type\\"\\s*:\\s*\\"Person\\"|\\"[^"]+\\"|\\[)/i.test(html);
+ const dateSignals=metaContent("article:published_time")||metaContent("date")||metaContent("article:modified_time")||/\\"datePublished\\"|\\"dateModified\\"|<time\\b[^>]*datetime=/i.test(html);
+ const outboundLinks=[...html.matchAll(/<a\\b[^>]*href=[\\"'](https?:\\/\\/[^\\"']+)[\\"'][^>]*>/gi)].map(m=>m[1]).filter(href=>{try{return new URL(href,target.href).hostname!==target.hostname}catch{return false}});
+ const citationSignals=/<cite\\b|\\b(references|sources|further reading|works cited)\\b/i.test(html)||outboundLinks.length>=2;
+ const publisherSchema=schemaTypes.some(type=>["Organization","NewsMediaOrganization","Person"].includes(String(type)));
+ const transparencyLinks=/(?:about|contact|editorial|ethics|standards|authors|team)/i.test(html.match(/<a\\b[^>]*href=[\\"'][^\\"']+[\\"'][^>]*>[\\s\\S]*?<\\/a>/gi)?.join(" ")||"");
+ const entitySignals=!!metaContent("og:site_name")||publisherSchema||/\\"sameAs\\"\\s*:/i.test(html);
+ add("geo","Author and publisher identity",!!(authorMeta||authorSchema)&&publisherSchema,"Author "+(authorMeta||authorSchema?"identified":"not clearly identified")+"; publisher/person schema "+(publisherSchema?"present":"not detected")+".",{author:authorMeta||null,author_schema:authorSchema,publisher_schema:publisherSchema});
+ add("geo","Publication and update dates",!!dateSignals,"Publication or modification date signals "+(dateSignals?"detected":"not detected")+".",{date_signals:Boolean(dateSignals)});
+ add("geo","Source citations and references",citationSignals,outboundLinks.length+" external links detected; "+(citationSignals?"citation/reference signals found":"clear source-reference signals not detected")+".",{external_links:outboundLinks.length});
+ add("geo","Publisher transparency signals",transparencyLinks,"About, contact, editorial standards or author/team links "+(transparencyLinks?"detected":"not detected")+".",{transparency_links:transparencyLinks});
+ add("geo","Entity and organisation context",entitySignals,"Publisher/site identity signals "+(entitySignals?"detected":"not detected")+" via site name, publisher schema or sameAs references.",{entity_signals:entitySignals});
+ const categories=Object.entries(AUDIT_WEIGHTS).map(([key,weight])=>{const rows=checks.filter(c=>c.category===key),passed=rows.filter(c=>c.status==="pass").length;return {id:key,label:({crawler:"AI crawler access",html:"Readable HTML content",structured:"Structured data",files:"AI crawl files and sitemap",metadata:"SEO metadata",trust:"Trust and accessibility",aeo:"Answer Engine Optimisation (AEO)",geo:"Generative Engine Optimisation (GEO)"})[key],weight,passed,total:rows.length,score:rows.length?Math.round(passed/rows.length*100):0};});
  const score=Math.round(categories.reduce((sum,c)=>sum+c.weight*c.score/100,0));
  return {url:target.href,hostname:target.hostname,status:pageResponse.status,response_time_ms:responseTime,content_type:contentType,content_bytes:new TextEncoder().encode(html).length,title,meta_description:description,canonical,word_count:wordCount,script_count:scripts,robots_meta:robotsMeta,score,max_score:100,checks_count:checks.length,passed_count:checks.filter(c=>c.status==="pass").length,warning_count:checks.filter(c=>c.status!=="pass").length,categories,checks,crawlers:crawlerResults,robots:{available:robotsAvailable,status:robotsResponse?.status||null,excerpt:robotsText.slice(0,2000)},files:{sitemap_available:!!sitemapResponse?.ok,llms_available:!!llmsResponse?.ok},audited_at:new Date().toISOString(),limitations:["Crawler checks use representative User-Agent headers and the site's published robots.txt rules; they do not prove that a provider has indexed or will cite the page.","The audit inspects source HTML returned to the Worker. It does not execute JavaScript or verify browser-rendered content.","A robots.txt allow rule is not a guarantee of crawl access, indexing or AI-search visibility."]};
 }
