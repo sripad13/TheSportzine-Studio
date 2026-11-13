@@ -397,7 +397,7 @@ function auditPrepublishDraft(input){
  const checks=[];
  const add=(category,label,ok,detail,weight)=>checks.push({category,label,status:ok?"pass":"warning",detail,weight});
  add("metadata","Headline length",title.length>=30&&title.length<=75,title.length+" characters; target 30–75 characters.",1);
- add("metadata","Article URL and canonical target",!articleUrl||!isSafePublicTarget(articleUrl).error,articleUrl?"A valid public HTTP/HTTPS article URL was supplied.":"No article URL supplied; add the canonical URL before publishing.",1);
+ add("metadata","Article URL and canonical target",!!articleUrl&&!isSafePublicTarget(articleUrl).error,articleUrl?(isSafePublicTarget(articleUrl).error?"Invalid article URL: "+isSafePublicTarget(articleUrl).error:"A valid public HTTP/HTTPS article URL was supplied."):"No article URL supplied; add the canonical URL before publishing.",1);
  add("structure","Subheadings and content hierarchy",headings.length>=2,headings.length+" H2–H6 headings detected; aim for at least two meaningful sections.",1);
  add("structure","Paragraph readability",paragraphWords.length>0&&averageParagraph<=100&&Math.max(...paragraphWords)<=180,"Average paragraph: "+averageParagraph+" words; longest: "+(Math.max(0,...paragraphWords))+". Keep paragraphs concise and scannable.",1);
  add("aeo","Direct, self-contained opening",leadWords>=25&&leadWords<=100,"Opening paragraph: "+leadWords+" words; aim for a clear 25–100-word summary that answers the main news point.",2);
