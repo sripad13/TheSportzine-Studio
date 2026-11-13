@@ -147,6 +147,21 @@ async function fetchGoogleTrends(windowName){
 
 function extractHtmlAttribute(tag,name){const re=new RegExp("\\b"+name+"\\s*=\\s*(?:\"([^\"]*)\"|'([^']*)'|([^\\s>]+))","i");const m=tag.match(re);return m?(m[1]||m[2]||m[3]||"").trim():"";}
 function decodeHtml(value){return String(value||"").replace(/&amp;/g,"&").replace(/&quot;/g,'"').replace(/&#39;|&apos;/g,"'").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&#(\d+);/g,(_,n)=>String.fromCharCode(Number(n))).replace(/&#x([\da-f]+);/gi,(_,n)=>String.fromCharCode(parseInt(n,16)));}
+const AUDIT_RATE_LIMITS=new Map();
+async function allowAuditRequest(request,env){
+ const ip=request.headers.get("CF-Connecting-IP")||"unknown",now=Date.now(),windowMs=60*60*1000,limit=5;
+ if(env.DB){
+  await env.DB.prepare("CREATE TABLE IF NOT EXISTS ai_audit_rate_limits (ip_hash TEXT PRIMARY KEY, window_start INTEGER NOT NULL, request_count INTEGER NOT NULL)").run();
+  const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(ip));
+  const key=[...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,"0")).join("");
+  const windowStart=Math.floor(now/windowMs)*windowMs;
+  const row=await env.DB.prepare("INSERT INTO ai_audit_rate_limits (ip_hash,window_start,request_count) VALUES (?,?,1) ON CONFLICT(ip_hash) DO UPDATE SET request_count=CASE WHEN ai_audit_rate_limits.window_start < excluded.window_start THEN 1 ELSE ai_audit_rate_limits.request_count+1 END,window_start=CASE WHEN ai_audit_rate_limits.window_start < excluded.window_start THEN excluded.window_start ELSE ai_audit_rate_limits.window_start END RETURNING request_count").bind(key,windowStart).first();
+  return Number(row?.request_count||0)<=limit;
+ }
+ const existing=AUDIT_RATE_LIMITS.get(ip);
+ if(!existing||now-existing.windowStart>=windowMs){AUDIT_RATE_LIMITS.set(ip,{windowStart:now,count:1});return true;}
+ existing.count++;return existing.count<=limit;
+}
 const AI_CRAWLERS=[
  {name:"GPTBot",ua:"GPTBot"},
  {name:"OAI-SearchBot",ua:"OAI-SearchBot"},
@@ -251,6 +266,7 @@ async function auditSiteUrl(raw){
  for(const rawJson of jsonLd){try{const parsed=JSON.parse(rawJson);validJsonLd++;const walk=value=>{if(!value||typeof value!=="object")return;if(value["@type"])schemaTypes.push(...(Array.isArray(value["@type"])?value["@type"]:[value["@type"]]));for(const child of Object.values(value))if(child&&typeof child==="object")Array.isArray(child)?child.forEach(walk):walk(child);};walk(parsed);}catch{}}
  const crawlerResults=await mapLimit(AI_CRAWLERS,5,async crawler=>{
   const policy=robotsAvailable?robotsDecision(robotsGroups,crawler.ua,target.pathname):{allowed:true,rule:"robots.txt unavailable; no published restriction could be confirmed."};
+  if(!policy.allowed)return {name:crawler.name,user_agent:crawler.ua,robots_allowed:false,robots_rule:policy.rule,http_status:null,reachable:false,redirected:false,content_type:"",status:"warning",detail:"Disallowed by robots.txt; live HTTP probe skipped."};
   let probe;
   try{probe=await publicFetch(target,{"User-Agent":crawler.ua,"Accept":"text/html,application/xhtml+xml"},6500);}
   catch(error){return {name:crawler.name,user_agent:crawler.ua,robots_allowed:policy.allowed,robots_rule:policy.rule,http_status:null,reachable:false,redirected:false,content_type:"",status:"warning",detail:"Crawler request failed: "+(error.message||"network error")};}
@@ -350,6 +366,7 @@ export default {
     try {
 
       if ((request.method === "GET" && url.pathname === "/api/seo/audit") || (request.method === "POST" && url.pathname === "/api/ai-audit")) {
+        if(!await allowAuditRequest(request,env))return json({error:"Audit rate limit reached. Try again later (maximum 5 scans per hour per IP)."},429,origin);
         const raw=request.method==="GET"?(url.searchParams.get("url")||""):String((await request.json()).url||"");
         const result=await auditSiteUrl(raw);
         if(result.error)return json({error:result.error},400,origin);
