@@ -225,19 +225,6 @@ function robotsDecision(groups,ua,path){
  if(!matches.length)return {allowed:true,rule:"No matching robots.txt rule; allowed by default."};
  const specific=matches.filter(g=>g.agents.some(a=>a!=="*"&&ua.toLowerCase().includes(a)));
  const selected=specific.length?specific:matches;
- const rules=selected.flatMap(g=>g.rules).filter(r=>r.path!=="").filter(r=>path.startsWith(r.path)).sort((a,b)=>b.path.length-a.path.length);
- if(!rules.length)return {allowed:true,rule:"No matching disallow rule."};
- const winner=rules[0],ties=rules.filter(r=>r.path.length===winner.path.length);
- const allowed=ties.some(r=>r.type==="allow");
- return {allowed,rule:(allowed?"Allow: ":"Disallow: ")+winner.path};
-}").replace(/\*/g,".*");
- try{return new RegExp("^"+escaped+(anchored?"$":"")).test(path);}catch{return path.startsWith(pattern);}
-}
-function robotsDecision(groups,ua,path){
- const matches=groups.filter(g=>g.agents.some(a=>a==="*"||ua.toLowerCase().includes(a)));
- if(!matches.length)return {allowed:true,rule:"No matching robots.txt rule; allowed by default."};
- const specific=matches.filter(g=>g.agents.some(a=>a!=="*"&&ua.toLowerCase().includes(a)));
- const selected=specific.length?specific:matches;
  const rules=selected.flatMap(g=>g.rules).filter(r=>r.path!=="").filter(r=>robotsRuleMatches(r.path,path)).sort((a,b)=>b.path.length-a.path.length);
  if(!rules.length)return {allowed:true,rule:"No matching disallow rule."};
  const winner=rules[0],ties=rules.filter(r=>r.path.length===winner.path.length);
