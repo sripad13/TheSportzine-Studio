@@ -360,7 +360,7 @@ async function auditWholeSite(raw,maxPages=20){
  if(rootReport.error)return rootReport;
  const discovery=await discoverAuditPages(target.href,maxPages);
  const urls=discovery.urls.filter(url=>url!==rootReport.url).slice(0,Math.max(0,maxPages-1));
- const scanned=await mapLimit(urls,3,async url=>auditSiteUrl(url,{skipCrawlerProbes:true,skipSiteFiles:true}));
+ const scanned=await mapLimit(urls,3,async url=>{try{const report=await auditSiteUrl(url,{skipCrawlerProbes:true,skipSiteFiles:true});return report.error?{...report,url}:report;}catch(error){return {url,error:error.message||"Page audit failed"};}});
  const pageReports=[rootReport,...scanned.filter(report=>report&&!report.error)];
  const failed=scanned.filter(report=>!report||report.error);
  const checks=[
