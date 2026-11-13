@@ -92,8 +92,8 @@ async function analysePublicUrl(){
  if(!['http:','https:'].includes(target.protocol)||target.username||target.password){status.innerHTML='<div class="url-error">Only public HTTP or HTTPS URLs are supported.</div>';return}
  button.disabled=true;button.textContent='Analysing…';status.innerHTML='<div class="url-loading">Fetching page and evaluating its SEO, AEO and GEO signals…</div>';results.innerHTML='';
  try{
-  const response=await fetch('/api/seo/url-audit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:target.href})});
-  const data=await response.json();if(!response.ok)throw new Error(data.error||'Could not analyse this page.');
+  const response=await fetch('https://newsroom-api.falsewinger.com/api/seo/url-audit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:target.href})});
+  const raw=await response.text();let data;try{data=JSON.parse(raw)}catch{throw new Error('The Newsroom API returned a non-JSON response (HTTP '+response.status+'). Confirm that the API Worker has deployed the URL audit endpoint.')}if(!response.ok)throw new Error(data.error||'Could not analyse this page.');
   const esc=escHtml;
   const score=(label,value)=>'<div class="url-score-card"><strong>'+Number(value||0)+'/100</strong><span>'+label+'</span></div>';
   const group=(label,items)=>'<div class="url-check-group"><h3>'+label+'</h3><div class="checks">'+(items||[]).map(c=>'<div class="check"><span class="dot '+(c.ok?'':'warn')+'">'+(c.ok?'✓':'!')+'</span><div><b>'+esc(c.name)+'</b><small>'+esc(c.detail)+'</small></div></div>').join('')+'</div></div>';
