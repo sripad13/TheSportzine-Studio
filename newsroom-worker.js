@@ -158,6 +158,7 @@ async function allowAuditRequest(request,env){
   const row=await env.DB.prepare("INSERT INTO ai_audit_rate_limits (ip_hash,window_start,request_count) VALUES (?,?,1) ON CONFLICT(ip_hash) DO UPDATE SET request_count=CASE WHEN ai_audit_rate_limits.window_start < excluded.window_start THEN 1 ELSE ai_audit_rate_limits.request_count+1 END,window_start=CASE WHEN ai_audit_rate_limits.window_start < excluded.window_start THEN excluded.window_start ELSE ai_audit_rate_limits.window_start END RETURNING request_count").bind(key,windowStart).first();
   return Number(row?.request_count||0)<=limit;
  }
+ if(AUDIT_RATE_LIMITS.size>5000){for(const [key,value] of AUDIT_RATE_LIMITS)if(now-value.windowStart>=windowMs)AUDIT_RATE_LIMITS.delete(key);}
  const existing=AUDIT_RATE_LIMITS.get(ip);
  if(!existing||now-existing.windowStart>=windowMs){AUDIT_RATE_LIMITS.set(ip,{windowStart:now,count:1});return true;}
  existing.count++;return existing.count<=limit;
@@ -214,12 +215,27 @@ function parseRobots(text){
  }
  flush();return groups;
 }
-function robotsDecision(groups,ua,path){
+function robotsRuleMatches(pattern,path){
+ const anchored=pattern.endsWith("$"),raw=anchored?pattern.slice(0,-1):pattern;
+ const escaped=raw.replace(/[.+?^${}()|[\]\\]/g,"\\function robotsDecision(groups,ua,path){
  const matches=groups.filter(g=>g.agents.some(a=>a==="*"||ua.toLowerCase().includes(a)));
  if(!matches.length)return {allowed:true,rule:"No matching robots.txt rule; allowed by default."};
  const specific=matches.filter(g=>g.agents.some(a=>a!=="*"&&ua.toLowerCase().includes(a)));
  const selected=specific.length?specific:matches;
  const rules=selected.flatMap(g=>g.rules).filter(r=>r.path!=="").filter(r=>path.startsWith(r.path)).sort((a,b)=>b.path.length-a.path.length);
+ if(!rules.length)return {allowed:true,rule:"No matching disallow rule."};
+ const winner=rules[0],ties=rules.filter(r=>r.path.length===winner.path.length);
+ const allowed=ties.some(r=>r.type==="allow");
+ return {allowed,rule:(allowed?"Allow: ":"Disallow: ")+winner.path};
+}").replace(/\*/g,".*");
+ try{return new RegExp("^"+escaped+(anchored?"$":"")).test(path);}catch{return path.startsWith(pattern);}
+}
+function robotsDecision(groups,ua,path){
+ const matches=groups.filter(g=>g.agents.some(a=>a==="*"||ua.toLowerCase().includes(a)));
+ if(!matches.length)return {allowed:true,rule:"No matching robots.txt rule; allowed by default."};
+ const specific=matches.filter(g=>g.agents.some(a=>a!=="*"&&ua.toLowerCase().includes(a)));
+ const selected=specific.length?specific:matches;
+ const rules=selected.flatMap(g=>g.rules).filter(r=>r.path!=="").filter(r=>robotsRuleMatches(r.path,path)).sort((a,b)=>b.path.length-a.path.length);
  if(!rules.length)return {allowed:true,rule:"No matching disallow rule."};
  const winner=rules[0],ties=rules.filter(r=>r.path.length===winner.path.length);
  const allowed=ties.some(r=>r.type==="allow");
@@ -265,7 +281,7 @@ async function auditSiteUrl(raw){
  let validJsonLd=0,schemaTypes=[];
  for(const rawJson of jsonLd){try{const parsed=JSON.parse(rawJson);validJsonLd++;const walk=value=>{if(!value||typeof value!=="object")return;if(value["@type"])schemaTypes.push(...(Array.isArray(value["@type"])?value["@type"]:[value["@type"]]));for(const child of Object.values(value))if(child&&typeof child==="object")Array.isArray(child)?child.forEach(walk):walk(child);};walk(parsed);}catch{}}
  const crawlerResults=await mapLimit(AI_CRAWLERS,5,async crawler=>{
-  const policy=robotsAvailable?robotsDecision(robotsGroups,crawler.ua,target.pathname):{allowed:true,rule:"robots.txt unavailable; no published restriction could be confirmed."};
+  const policy=robotsAvailable?robotsDecision(robotsGroups,crawler.ua,target.pathname+target.search):{allowed:true,rule:"robots.txt unavailable; no published restriction could be confirmed."};
   if(!policy.allowed)return {name:crawler.name,user_agent:crawler.ua,robots_allowed:false,robots_rule:policy.rule,http_status:null,reachable:false,redirected:false,content_type:"",status:"warning",detail:"Disallowed by robots.txt; live HTTP probe skipped."};
   let probe;
   try{probe=await publicFetch(target,{"User-Agent":crawler.ua,"Accept":"text/html,application/xhtml+xml"},6500);}
