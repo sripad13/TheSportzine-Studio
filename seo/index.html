@@ -48,6 +48,7 @@ function analyse(){
  $('#words').textContent=words.toLocaleString();$('#density').textContent=density.toFixed(2)+'%';$('#headings').textContent=heads;$('#checkCount').textContent=checks.filter(x=>x.ok).length+'/'+checks.length+' passed';
  $('#checks').innerHTML=checks.map(x=>'<div class="check"><span class="dot '+(x.ok?'':'warn')+'">'+(x.ok?'✓':'!')+'</span><div><b>'+x.name+'</b><small>'+x.detail+'</small></div></div>').join('');
  renderActionPlan('seoActions',checks);
+ runContentCheck('aeo');runContentCheck('geo');
  $('#previewUrl').textContent='thesportzine.com › '+(slug||'article');$('#previewTitle').textContent=title||'Your SEO title will appear here';$('#previewMeta').textContent=meta||'Your meta description will appear here.';$('#lengths').textContent='Title: '+title.length+' characters · Description: '+meta.length+' characters';
 }
 function renderBodyPreview(){
