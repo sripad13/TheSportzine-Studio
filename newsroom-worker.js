@@ -217,7 +217,10 @@ function parseRobots(text){
 }
 function robotsRuleMatches(pattern,path){
  const anchored=pattern.endsWith("$"),raw=anchored?pattern.slice(0,-1):pattern;
- const escaped=raw.replace(/[.+?^${}()|[\]\\]/g,"\\function robotsDecision(groups,ua,path){
+ const escaped=raw.split("").map(ch=>".+?^${}()|[]\\".includes(ch)?"\\"+ch:ch).join("").replaceAll("*",".*");
+ try{return new RegExp("^"+escaped+(anchored?"$":"")).test(path);}catch{return path.startsWith(pattern);}
+}
+function robotsDecision(groups,ua,path){
  const matches=groups.filter(g=>g.agents.some(a=>a==="*"||ua.toLowerCase().includes(a)));
  if(!matches.length)return {allowed:true,rule:"No matching robots.txt rule; allowed by default."};
  const specific=matches.filter(g=>g.agents.some(a=>a!=="*"&&ua.toLowerCase().includes(a)));
