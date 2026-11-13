@@ -482,6 +482,83 @@ async function listSources(db) {
   }).filter((feed,index)=>!deleted.has(DEFAULT_FEEDS[index].url));
   return [...builtins,...(result.results||[]).map(row=>({...cleanSource(row),is_default:false}))];
 }
+
+async function auditSeoPublicUrl(raw) {
+  const safe=isSafePublicTarget(raw);if(safe.error)return {error:safe.error};
+  let target=safe.url,response;
+  for(let hop=0;hop<=5;hop++){
+    response=await publicFetch(target,{"User-Agent":"Newsroom-SEO-Analyzer/1.0 (+https://newsroom.falsewinger.com)","Accept":"text/html,application/xhtml+xml"},12000);
+    if(response.status>=300&&response.status<400){
+      const location=response.headers.get("location");
+      if(!location)return {error:"The website returned a redirect without a destination."};
+      if(hop===5)return {error:"The page exceeded the redirect limit."};
+      const next=isSafePublicTarget(new URL(location,target).href);if(next.error)return {error:next.error};
+      target=next.url;continue;
+    }
+    break;
+  }
+  if(!response?.ok)return {error:"The website returned HTTP "+(response?.status||"unknown")+"."};
+  const type=response.headers.get("content-type")||"";
+  if(!/text\/html|application\/xhtml\+xml/i.test(type))return {error:"The URL did not return an HTML page."};
+  const html=await readResponseText(response,2*1024*1024);
+  const attr=(tag,name)=>extractHtmlAttribute(tag,name);
+  const meta=(name)=>{for(const tag of html.match(/<meta\b[^>]*>/gi)||[])if(attr(tag,"name").toLowerCase()===name.toLowerCase())return attr(tag,"content");return "";};
+  const titleMatch=html.match(/<title\b[^>]*>([\s\S]*?)<\/title\s*>/i);
+  const title=titleMatch?decodeHtml(titleMatch[1].replace(/<[^>]+>/g," ").replace(/\s+/g," ").trim()):"";
+  const description=meta("description");
+  const links=html.match(/<link\b[^>]*>/gi)||[];
+  const canonicalTag=links.find(tag=>attr(tag,"rel").toLowerCase().split(/\s+/).includes("canonical"));
+  let canonical="";try{canonical=canonicalTag?new URL(attr(canonicalTag,"href"),target).href:"";}catch{}
+  const headings=[...html.matchAll(/<h([1-6])\b[^>]*>([\s\S]*?)<\/h\1\s*>/gi)].map(m=>({level:Number(m[1]),text:decodeHtml(m[2].replace(/<[^>]+>/g," ").replace(/\s+/g," ").trim()).slice(0,240)}));
+  const body=(html.match(/<body\b[^>]*>([\s\S]*?)<\/body\s*>/i)||[null,html])[1];
+  const text=decodeHtml(body.replace(/<(script|style|noscript|svg|template|nav|footer|header|form)\b[^>]*>[\s\S]*?<\/\1\s*>/gi," ").replace(/<[^>]+>/g," ").replace(/\s+/g," ").trim());
+  const wordCount=text?text.split(/\s+/).length:0;
+  const paragraphs=[...body.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p\s*>/gi)].map(m=>m[1].replace(/<[^>]+>/g," ").replace(/\s+/g," ").trim()).filter(Boolean);
+  const schemas=[];
+  for(const match of html.matchAll(/<script\b[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script\s*>/gi)){
+    try{const parsed=JSON.parse(match[1]);const visit=value=>{if(!value||typeof value!=="object")return;if(Array.isArray(value))return value.forEach(visit);const type=value["@type"];if(type)(Array.isArray(type)?type:[type]).forEach(x=>schemas.push(String(x)));Object.values(value).forEach(visit);};visit(parsed);}catch{}
+  }
+  const uniqueSchemas=[...new Set(schemas)],h1=headings.filter(h=>h.level===1).length;
+  const images=html.match(/<img\b[^>]*>/gi)||[],linksCount=(html.match(/<a\b[^>]*href\s*=/gi)||[]).length;
+  const robots=(meta("robots")+" "+meta("googlebot")).toLowerCase();
+  const questions=(text.match(/\?/g)||[]).length,faq=/frequently asked questions|\bfaqs?\b/i.test(text)||uniqueSchemas.some(x=>["FAQPage","QAPage"].includes(x));
+  const answerParagraph=paragraphs.some(p=>{const n=p.split(/\s+/).length;return n>=20&&n<=90;});
+  const checks={
+    seo:[
+      {ok:title.length>=30&&title.length<=60,name:"Title tag",detail:title?title.length+" characters; aim for around 30–60.":"No title tag found."},
+      {ok:description.length>=120&&description.length<=160,name:"Meta description",detail:description?description.length+" characters; aim for around 120–160.":"No meta description found."},
+      {ok:h1===1,name:"Single H1 heading",detail:h1+" H1 headings found."},
+      {ok:headings.length>=2,name:"Heading hierarchy",detail:headings.length+" headings detected."},
+      {ok:!!canonical,name:"Canonical URL",detail:canonical?"Canonical URL is declared.":"No canonical link found."},
+      {ok:!robots.includes("noindex"),name:"Indexability directive",detail:robots.includes("noindex")?"A noindex directive was detected.":"No noindex directive detected."},
+      {ok:/name\s*=\s*["']viewport["']/i.test(html),name:"Mobile viewport",detail:/name\s*=\s*["']viewport["']/i.test(html)?"Viewport metadata is present.":"Add a responsive viewport meta tag."},
+      {ok:images.every(tag=>/\balt\s*=/i.test(tag)),name:"Image alt attributes",detail:images.filter(tag=>!/\balt\s*=/i.test(tag)).length+" of "+images.length+" images have missing alt text."},
+      {ok:linksCount>0,name:"Links",detail:linksCount+" links detected in the HTML."},
+      {ok:wordCount>=300,name:"Main content depth",detail:wordCount+" visible words extracted; context matters more than a fixed length."}
+    ],
+    aeo:[
+      {ok:wordCount>=120,name:"Answer context",detail:wordCount+" visible words extracted."},
+      {ok:headings.length>=2,name:"Question-friendly structure",detail:headings.length+" headings detected."},
+      {ok:questions>0||faq,name:"Questions and FAQs",detail:questions+" question marks detected; FAQ content "+(faq?"found.":"not found.")},
+      {ok:answerParagraph,name:"Extractable answer paragraphs",detail:answerParagraph?"A 20–90 word paragraph was found.":"No concise extractable answer paragraph detected."},
+      {ok:headings.some(h=>[2,3].includes(h.level)),name:"Semantic subheadings",detail:"H2/H3 sections "+(headings.some(h=>[2,3].includes(h.level))?"are present.":"are missing.")},
+      {ok:uniqueSchemas.some(x=>["Article","NewsArticle","BlogPosting","FAQPage","QAPage","HowTo"].includes(x)),name:"Relevant structured data",detail:uniqueSchemas.length?uniqueSchemas.join(", "):"No JSON-LD schema types detected."}
+    ],
+    geo:[
+      {ok:/\b[A-Z][a-z]{2,}(?:\s+[A-Z][a-z]{2,}){0,2}\b/.test(text),name:"Named entities",detail:"Use explicit names for people, organisations and places."},
+      {ok:/\b(according to|said|told|reported by|confirmed by|announced by|source:|via )\b/i.test(text),name:"Source attribution",detail:"Attribute reporting, quotes and claims to identifiable sources."},
+      {ok:/\b\d+(?:[.,]\d+)?\s*(?:%|percent|million|billion|thousand|years?|days?)?\b/i.test(text),name:"Evidence and specifics",detail:"Include verifiable figures and concrete details where relevant."},
+      {ok:/\b(?:20\d{2}|yesterday|today|on monday|on tuesday|on wednesday|on thursday|on friday|on saturday|on sunday)\b/i.test(text),name:"Temporal context",detail:"Make publication and event timing explicit."},
+      {ok:headings.length>=2,name:"Information hierarchy",detail:headings.length+" headings detected."},
+      {ok:/\b(after|before|since|because|following|while|during|compared with|in the context of)\b/i.test(text),name:"Context and relationships",detail:"Explain why the event happened and how it connects to the wider topic."},
+      {ok:uniqueSchemas.length>0,name:"Machine-readable entities",detail:uniqueSchemas.length?"Schema types: "+uniqueSchemas.join(", "):"No JSON-LD structured data detected."},
+      {ok:!!title&&!!description,name:"Clear page framing",detail:title&&description?"Title and description are both present.":"Title or description is missing."}
+    ]
+  };
+  const score=items=>Math.round(items.filter(x=>x.ok).length/Math.max(1,items.length)*100);
+  return {url:target.href,status:response.status,auditedAt:new Date().toISOString(),title,metaDescription:description,canonical,wordCount,headingCount:headings.length,headings,schemaTypes:uniqueSchemas,scores:{seo:score(checks.seo),aeo:score(checks.aeo),geo:score(checks.geo)},checks};
+}
+
 export default {
   async fetch(request, env) {
     const origin = request.headers.get("Origin") || "";
@@ -493,6 +570,14 @@ export default {
     if (!ALLOWED_ORIGINS.has(origin) && origin !== "") return json({ error: "Origin not allowed." }, 403, origin);
     try {
 
+      if(request.method==="POST"&&url.pathname==="/api/seo/url-audit"){
+        if(!await allowAuditRequest(request,env,5))return json({error:"URL analysis rate limit reached. Maximum 5 scans per hour per IP."},429,origin);
+        const body=await request.json();
+        if(!body||typeof body.url!=="string"||body.url.length>2048)return json({error:"Provide a valid URL (maximum 2,048 characters)."},400,origin);
+        const result=await auditSeoPublicUrl(body.url);
+        if(result.error)return json({error:result.error},400,origin);
+        return json(result,200,origin);
+      }
       if ((request.method === "GET" && url.pathname === "/api/seo/audit") || (request.method === "POST" && url.pathname === "/api/ai-audit")) {
         if(!await allowAuditRequest(request,env))return json({error:"Audit rate limit reached. Try again later (maximum 5 scans per hour per IP)."},429,origin);
         const raw=request.method==="GET"?(url.searchParams.get("url")||""):String((await request.json()).url||"");
