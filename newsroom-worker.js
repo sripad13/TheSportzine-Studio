@@ -385,7 +385,7 @@ function auditPrepublishDraft(input){
  const html=raw.replace(/<script\b[\s\S]*?<\/script>|<style\b[\s\S]*?<\/style>/gi," ");
  const text=decodeHtml(html.replace(/<[^>]+>/g," ").replace(/\s+/g," ")).trim();
  const words=text?text.split(/\s+/).filter(Boolean):[];
- const headings=[...raw.matchAll(/<h[2-6]\b[^>]*>([\s\S]*?)<\/h[2-6]>/gi)].map(m=>decodeHtml(m[1].replace(/<[^>]+>/g," ")).trim());
+ const headings=[...raw.matchAll(/<h[2-6]\b[^>]*>([\s\S]*?)<\/h[2-6]>/gi)].map(m=>decodeHtml(m[1].replace(/<[^>]+>/g," ")).trim()).concat([...raw.matchAll(/^#{2,6}\s+(.+)$/gm)].map(m=>m[1].trim()));
  const plainParagraphs=raw.includes("<p")?[...raw.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi)].map(m=>decodeHtml(m[1].replace(/<[^>]+>/g," ")).replace(/\s+/g," ").trim()).filter(Boolean):raw.split(/\n\s*\n/).map(x=>x.trim()).filter(Boolean);
  const paragraphWords=plainParagraphs.map(p=>p.split(/\s+/).filter(Boolean).length);
  const leadWords=paragraphWords[0]||0,averageParagraph=paragraphWords.length?Math.round(paragraphWords.reduce((a,b)=>a+b,0)/paragraphWords.length):0;
