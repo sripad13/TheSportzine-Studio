@@ -147,50 +147,131 @@ async function fetchGoogleTrends(windowName){
 
 function extractHtmlAttribute(tag,name){const re=new RegExp("\\b"+name+"\\s*=\\s*(?:\"([^\"]*)\"|'([^']*)'|([^\\s>]+))","i");const m=tag.match(re);return m?(m[1]||m[2]||m[3]||"").trim():"";}
 function decodeHtml(value){return String(value||"").replace(/&amp;/g,"&").replace(/&quot;/g,'"').replace(/&#39;|&apos;/g,"'").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&#(\d+);/g,(_,n)=>String.fromCharCode(Number(n))).replace(/&#x([\da-f]+);/gi,(_,n)=>String.fromCharCode(parseInt(n,16)));}
-async function auditSiteUrl(raw){
- let target;try{target=new URL(raw)}catch{return {error:"Enter a valid URL."}}
- if(!["http:","https:"].includes(target.protocol)||!["thesportzine.com","www.thesportzine.com"].includes(target.hostname.toLowerCase())||target.username||target.password)return {error:"Only public thesportzine.com URLs are allowed."};
+const AI_CRAWLERS=[
+ {name:"GPTBot",ua:"GPTBot"},
+ {name:"OAI-SearchBot",ua:"OAI-SearchBot"},
+ {name:"ChatGPT-User",ua:"ChatGPT-User"},
+ {name:"ClaudeBot",ua:"ClaudeBot"},
+ {name:"Claude-SearchBot",ua:"Claude-SearchBot"},
+ {name:"Claude-User",ua:"Claude-User"},
+ {name:"anthropic-ai",ua:"anthropic-ai"},
+ {name:"PerplexityBot",ua:"PerplexityBot"},
+ {name:"Perplexity-User",ua:"Perplexity-User"},
+ {name:"Google-Extended",ua:"Google-Extended"},
+ {name:"Googlebot",ua:"Googlebot"},
+ {name:"Bingbot",ua:"bingbot"},
+ {name:"Applebot-Extended",ua:"Applebot-Extended"},
+ {name:"Bytespider",ua:"Bytespider"},
+ {name:"Meta-ExternalAgent",ua:"Meta-ExternalAgent"},
+ {name:"Amazonbot",ua:"Amazonbot"},
+ {name:"cohere-ai",ua:"cohere-ai"}
+];
+const AUDIT_WEIGHTS={crawler:32,html:26,structured:14,files:10,metadata:10,trust:8};
+function isSafePublicTarget(raw){
+ let target;try{target=new URL(raw)}catch{return {error:"Enter a valid public website URL."}}
+ if(!["http:","https:"].includes(target.protocol)||target.username||target.password)return {error:"Only public HTTP or HTTPS website URLs are supported."};
+ const host=target.hostname.toLowerCase().replace(/^\[|\]$/g,"");
+ if(!host||host==="localhost"||host.endsWith(".localhost")||host.endsWith(".local")||host.endsWith(".internal")||host==="metadata.google.internal"||host==="0.0.0.0"||host==="::1"||host==="::"||/^\d{1,3}(?:\.\d{1,3}){3}$/.test(host)||host.includes(":"))return {error:"Private, local and IP-literal destinations are not supported. Enter a public website hostname."};
+ if(target.port&&target.port!=="80"&&target.port!=="443")return {error:"Only standard HTTP and HTTPS ports are supported."};
  target.hash="";
- const started=Date.now();
- const response=await fetch(target.href,{redirect:"manual",headers:{"User-Agent":"TheSportzine-SEO-Audit/1.0 (+https://thesportzine.com)","Accept":"text/html,application/xhtml+xml"},signal:AbortSignal.timeout(12000)});
- const elapsed=Date.now()-started;
- if(response.status>=300&&response.status<400)return {error:"The URL redirects (HTTP "+response.status+"). Audit the final destination URL directly."};
- const type=response.headers.get("content-type")||"";
- if(!response.ok)return {error:"Page returned HTTP "+response.status+"."};
- if(!/text\/html|application\/xhtml\+xml/i.test(type))return {error:"The URL did not return an HTML page ("+type+")."};
- const reader=response.body?.getReader();let html="",bytes=0;
- if(reader){while(true){const part=await reader.read();if(part.done)break;bytes+=part.value.byteLength;if(bytes>1500000){await reader.cancel();return {error:"Page exceeds the 1.5 MB audit limit."};}html+=new TextDecoder().decode(part.value,{stream:true});}html+=new TextDecoder().decode();}
- else html=await response.text();
+ return {url:target};
+}
+async function readResponseText(response,maxBytes){
+ const reader=response.body?.getReader();let text="",bytes=0;
+ if(!reader){const value=await response.text();if(new TextEncoder().encode(value).length>maxBytes)throw new Error("Response exceeds audit size limit.");return value;}
+ const decoder=new TextDecoder();
+ while(true){const part=await reader.read();if(part.done)break;bytes+=part.value.byteLength;if(bytes>maxBytes){await reader.cancel();throw new Error("Response exceeds audit size limit.");}text+=decoder.decode(part.value,{stream:true});}
+ return text+decoder.decode();
+}
+async function publicFetch(url,headers={},timeout=7000){
+ const safe=isSafePublicTarget(url.href||String(url));if(safe.error)throw new Error(safe.error);
+ return fetch(safe.url.href,{redirect:"manual",headers,signal:AbortSignal.timeout(timeout)});
+}
+function parseRobots(text){
+ const groups=[];let agents=[],rules=[];
+ const flush=()=>{if(agents.length)groups.push({agents:[...agents],rules:[...rules]});agents=[];rules=[];};
+ for(const raw of String(text||"").split(/\r?\n/)){
+  const line=raw.replace(/#.*$/,"").trim();if(!line)continue;
+  const colon=line.indexOf(":");if(colon<0)continue;
+  const key=line.slice(0,colon).trim().toLowerCase(),value=line.slice(colon+1).trim();
+  if(key==="user-agent"){if(rules.length)flush();agents.push(value.toLowerCase());}
+  else if((key==="allow"||key==="disallow")&&agents.length)rules.push({type:key,path:value});
+ }
+ flush();return groups;
+}
+function robotsDecision(groups,ua,path){
+ const matches=groups.filter(g=>g.agents.some(a=>a==="*"||ua.toLowerCase().includes(a)));
+ if(!matches.length)return {allowed:true,rule:"No matching robots.txt rule; allowed by default."};
+ const specific=matches.filter(g=>g.agents.some(a=>a!=="*"&&ua.toLowerCase().includes(a)));
+ const selected=specific.length?specific:matches;
+ const rules=selected.flatMap(g=>g.rules).filter(r=>r.path!=="").filter(r=>path.startsWith(r.path)).sort((a,b)=>b.path.length-a.path.length);
+ if(!rules.length)return {allowed:true,rule:"No matching disallow rule."};
+ const winner=rules[0],ties=rules.filter(r=>r.path.length===winner.path.length);
+ const allowed=ties.some(r=>r.type==="allow");
+ return {allowed,rule:(allowed?"Allow: ":"Disallow: ")+winner.path};
+}
+async function mapLimit(items,limit,fn){
+ const results=new Array(items.length);let cursor=0;
+ await Promise.all(Array.from({length:Math.min(limit,items.length)},async()=>{while(true){const i=cursor++;if(i>=items.length)return;try{results[i]=await fn(items[i],i)}catch(error){results[i]={error:error.message||"Request failed"};}}}));
+ return results;
+}
+async function auditSiteUrl(raw){
+ const safe=isSafePublicTarget(raw);if(safe.error)return {error:safe.error};
+ const target=safe.url,started=Date.now(),origin=target.origin;
+ const pageResponse=await publicFetch(target,{"User-Agent":"TheSportzine-AI-Visibility-Audit/1.0 (+https://thesportzine.com)","Accept":"text/html,application/xhtml+xml"},10000);
+ if(pageResponse.status>=300&&pageResponse.status<400){const location=pageResponse.headers.get("location");return {error:"The page redirects. Audit the final destination URL directly"+(location?" ("+new URL(location,target).origin+")":".")};}
+ if(!pageResponse.ok)return {error:"Website returned HTTP "+pageResponse.status+"."};
+ const contentType=pageResponse.headers.get("content-type")||"";
+ if(!/text\/html|application\/xhtml\+xml/i.test(contentType))return {error:"The URL did not return an HTML page ("+contentType+")."};
+ const html=await readResponseText(pageResponse,1500000),responseTime=Date.now()-started;
+ const [robotsResponse,sitemapResponse,llmsResponse]=await Promise.all([
+  publicFetch(new URL("/robots.txt",origin),{"User-Agent":"TheSportzine-AI-Visibility-Audit/1.0","Accept":"text/plain"}).catch(()=>null),
+  publicFetch(new URL("/sitemap.xml",origin),{"User-Agent":"TheSportzine-AI-Visibility-Audit/1.0","Accept":"application/xml,text/xml"}).catch(()=>null),
+  publicFetch(new URL("/llms.txt",origin),{"User-Agent":"TheSportzine-AI-Visibility-Audit/1.0","Accept":"text/plain"}).catch(()=>null)
+ ]);
+ let robotsText="",sitemapText="",llmsText="";
+ if(robotsResponse?.ok)robotsText=await readResponseText(robotsResponse,300000).catch(()=> "");
+ if(sitemapResponse?.ok)sitemapText=await readResponseText(sitemapResponse,500000).catch(()=> "");
+ if(llmsResponse?.ok)llmsText=await readResponseText(llmsResponse,300000).catch(()=> "");
+ const robotsGroups=parseRobots(robotsText),robotsAvailable=!!robotsResponse&&robotsResponse.status===200;
  const titleMatch=html.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i);
  const title=titleMatch?decodeHtml(titleMatch[1].replace(/<[^>]+>/g," ").replace(/\s+/g," ").trim()):"";
  const metaTags=html.match(/<meta\b[^>]*>/gi)||[];
  const metaContent=name=>{const tag=metaTags.find(t=>extractHtmlAttribute(t,"name").toLowerCase()===name);return tag?decodeHtml(extractHtmlAttribute(tag,"content")):"";};
- const description=metaContent("description"),robots=metaContent("robots")||metaContent("googlebot");
+ const description=metaContent("description"),robotsMeta=metaContent("robots")||metaContent("googlebot");
  const canonicalTag=(html.match(/<link\b[^>]*>/gi)||[]).find(t=>extractHtmlAttribute(t,"rel").toLowerCase().split(/\s+/).includes("canonical"));
  const canonical=canonicalTag?extractHtmlAttribute(canonicalTag,"href"):"";
  const h1=(html.match(/<h1\b[^>]*>/gi)||[]).length,h2=(html.match(/<h2\b[^>]*>/gi)||[]).length;
  const images=html.match(/<img\b[^>]*>/gi)||[],missingAlt=images.filter(t=>!extractHtmlAttribute(t,"alt")).length;
- const links=html.match(/<a\b[^>]*href\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi)||[];
- const base=new URL(target.href),internal=links.filter(t=>{const href=extractHtmlAttribute(t,"href");try{return new URL(href,base).hostname===base.hostname}catch{return false}}).length;
- const textContent=html.replace(/<script\b[\s\S]*?<\/script>|<style\b[\s\S]*?<\/style>/gi," ").replace(/<[^>]+>/g," ").replace(/&nbsp;|&#160;/g," ").replace(/\s+/g," ").trim();
- const wordCount=textContent?textContent.split(/\s+/).length:0;
+ const scripts=(html.match(/<script\b[^>]*>/gi)||[]).length;
+ const bodyText=html.replace(/<(script|style|noscript)\b[\s\S]*?<\/\1>/gi," ").replace(/<[^>]+>/g," ").replace(/&nbsp;|&#160;/g," ").replace(/\s+/g," ").trim();
+ const wordCount=bodyText?bodyText.split(/\s+/).length:0;
+ const jsonLd=[...html.matchAll(/<script\b[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)].map(m=>m[1]);
+ let validJsonLd=0,schemaTypes=[];
+ for(const rawJson of jsonLd){try{const parsed=JSON.parse(rawJson);validJsonLd++;const walk=value=>{if(!value||typeof value!=="object")return;if(value["@type"])schemaTypes.push(...(Array.isArray(value["@type"])?value["@type"]:[value["@type"]]));for(const child of Object.values(value))if(child&&typeof child==="object")Array.isArray(child)?child.forEach(walk):walk(child);};walk(parsed);}catch{}}
+ const crawlerResults=await mapLimit(AI_CRAWLERS,5,async crawler=>{
+  const policy=robotsAvailable?robotsDecision(robotsGroups,crawler.ua,target.pathname):{allowed:true,rule:"robots.txt unavailable; no published restriction could be confirmed."};
+  const probe=await publicFetch(target,{"User-Agent":crawler.ua,"Accept":"text/html,application/xhtml+xml"},6500);
+  if(probe.body)await probe.body.cancel().catch(()=>{});
+  return {name:crawler.name,user_agent:crawler.ua,robots_allowed:policy.allowed,robots_rule:policy.rule,http_status:probe.status,reachable:probe.ok,redirected:probe.status>=300&&probe.status<400,content_type:probe.headers.get("content-type")||"",status:policy.allowed&&probe.ok?"pass":"warning",detail:!policy.allowed?"Blocked by robots.txt policy.":probe.ok?"Page endpoint returned HTTP "+probe.status+".": "Crawler request received HTTP "+probe.status+"."};
+ });
  const checks=[];
- const add=(ok,label,detail)=>checks.push({status:ok?"pass":"warning",label,detail});
- add(!!title,"HTML title",title?title.length+" characters":"Missing title tag.");
- add(title.length>=30&&title.length<=60,"Title length",title.length+" characters; editorial target is roughly 30–60.");
- add(!!description,"Meta description",description?description.length+" characters":"Missing meta description.");
- add(description.length>=120&&description.length<=160,"Description length",description.length+" characters; target roughly 120–160.");
- add(h1===1,"Single H1",h1+" H1 elements found; aim for one descriptive H1.");
- add(h2>0,"H2 structure",h2+" H2 elements found.");
- add(!!canonical,"Canonical URL",canonical||"No canonical link found.");
- add(!/noindex/i.test(robots),"Indexability",robots||"No noindex directive found in meta robots.");
- add(images.length===0||missingAlt===0,"Image alt text",missingAlt+" of "+images.length+" images lack an alt attribute.");
- add(internal>0,"Internal links",internal+" internal links detected.");
- add(wordCount>=300,"Visible content",wordCount+" approximate visible words; thin pages may be intentional.");
- const score=Math.round(checks.filter(c=>c.status==="pass").length/checks.length*100);
- return {url:target.href,status:response.status,response_time_ms:elapsed,content_type:type,content_bytes:bytes,title,meta_description:description,canonical,h1,h2,image_count:images.length,images_missing_alt:missingAlt,internal_links:internal,word_count:wordCount,robots,score,checks,audited_at:new Date().toISOString()};
+ const add=(category,label,ok,detail,extra={})=>checks.push({category,label,status:ok?"pass":"warning",detail,...extra});
+ crawlerResults.forEach(c=>add("crawler",c.name,c.status==="pass",c.detail,{user_agent:c.user_agent,robots_allowed:c.robots_allowed,http_status:c.http_status,robots_rule:c.robots_rule}));
+ const mainText=/<main\b/i.test(html)||/<article\b/i.test(html);
+ const hasNoscript=/\<noscript\b/i.test(html);
+ add("html","Readable server-delivered content",wordCount>=120&&mainText,"Approx. "+wordCount+" visible words; "+(mainText?"main/article landmark found.":"no main/article landmark detected."),{word_count:wordCount});
+ add("html","HTML structure and JavaScript dependency",wordCount>=120&&(!hasNoscript||wordCount>=250),"Detected "+scripts+" script tags; "+(hasNoscript?"noscript fallback exists.":"no noscript fallback detected.")+" This is a source-HTML heuristic, not a browser rendering test.",{script_count:scripts});
+ add("structured","Valid JSON-LD structured data",validJsonLd>0,validJsonLd+" valid JSON-LD block(s) found.",{valid_jsonld_blocks:validJsonLd});
+ add("structured","Recognised schema types",schemaTypes.length>0,"Schema types: "+(schemaTypes.length?[...new Set(schemaTypes)].join(", "):"none detected")+".",{schema_types:[...new Set(schemaTypes)]});
+ add("files","AI and search discovery files",robotsAvailable&&sitemapResponse?.ok===true,"robots.txt: "+(robotsAvailable?"available":"not found")+". sitemap.xml: "+(sitemapResponse?.ok?"available":"not found")+". llms.txt: "+(llmsResponse?.ok?"available":"not found")+".",{robots_available:robotsAvailable,sitemap_available:!!sitemapResponse?.ok,llms_available:!!llmsResponse?.ok,llms_excerpt:llmsText.slice(0,1200),sitemap_excerpt:sitemapText.slice(0,500)});
+ add("metadata","SEO and social metadata",!!title&&!!description&&!!canonical,"Title: "+(title?"present":"missing")+". Description: "+(description?"present":"missing")+". Canonical: "+(canonical?"present":"missing")+".",{title,meta_description:description,canonical});
+ add("trust","Secure delivery and index directives",target.protocol==="https:"&&!/noindex/i.test(robotsMeta),"HTTPS: "+(target.protocol==="https:"?"yes":"no")+". Robots meta: "+(robotsMeta||"not specified")+".",{robots_meta:robotsMeta});
+ add("trust","Accessible image descriptions",images.length===0||missingAlt===0,missingAlt+" of "+images.length+" images lack alt attributes.",{image_count:images.length,images_missing_alt:missingAlt});
+ const categories=Object.entries(AUDIT_WEIGHTS).map(([key,weight])=>{const rows=checks.filter(c=>c.category===key),passed=rows.filter(c=>c.status==="pass").length;return {id:key,label:({crawler:"AI crawler access",html:"Readable HTML content",structured:"Structured data",files:"AI crawl files and sitemap",metadata:"SEO metadata",trust:"Trust and accessibility"})[key],weight,passed,total:rows.length,score:rows.length?Math.round(passed/rows.length*100):0};});
+ const score=Math.round(categories.reduce((sum,c)=>sum+c.weight*c.score/100,0));
+ return {url:target.href,hostname:target.hostname,status:pageResponse.status,response_time_ms:responseTime,content_type:contentType,content_bytes:new TextEncoder().encode(html).length,title,meta_description:description,canonical,word_count:wordCount,script_count:scripts,robots_meta:robotsMeta,score,max_score:100,checks_count:checks.length,passed_count:checks.filter(c=>c.status==="pass").length,warning_count:checks.filter(c=>c.status!=="pass").length,categories,checks,crawlers:crawlerResults,robots:{available:robotsAvailable,status:robotsResponse?.status||null,excerpt:robotsText.slice(0,2000)},files:{sitemap_available:!!sitemapResponse?.ok,llms_available:!!llmsResponse?.ok},audited_at:new Date().toISOString(),limitations:["Crawler checks use representative User-Agent headers and the site's published robots.txt rules; they do not prove that a provider has indexed or will cite the page.","The audit inspects source HTML returned to the Worker. It does not execute JavaScript or verify browser-rendered content.","A robots.txt allow rule is not a guarantee of crawl access, indexing or AI-search visibility."]};
 }
-
 async function fetchStories(env) {
   const configured = await getConfiguredFeeds(env);
   const results=await Promise.all(configured.map(async feed=>({feed,...await getFeed(feed)})));
@@ -266,11 +347,28 @@ export default {
     if (!ALLOWED_ORIGINS.has(origin) && origin !== "") return json({ error: "Origin not allowed." }, 403, origin);
     try {
 
-      if (request.method === "GET" && url.pathname === "/api/seo/audit") {
-        const raw=url.searchParams.get("url")||"";
+      if ((request.method === "GET" && url.pathname === "/api/seo/audit") || (request.method === "POST" && url.pathname === "/api/ai-audit")) {
+        const raw=request.method==="GET"?(url.searchParams.get("url")||""):String((await request.json()).url||"");
         const result=await auditSiteUrl(raw);
         if(result.error)return json({error:result.error},400,origin);
         return json(result,200,origin);
+      }
+      if (url.pathname === "/api/ai-audit/history" && request.method === "GET") {
+        if(!env.DB)return json({history_available:false,history:[]},200,origin);
+        await env.DB.prepare("CREATE TABLE IF NOT EXISTS ai_audit_history (id TEXT PRIMARY KEY, url TEXT NOT NULL, score INTEGER NOT NULL, report_json TEXT NOT NULL, audited_at TEXT NOT NULL)").run();
+        const rows=await env.DB.prepare("SELECT id,url,score,audited_at FROM ai_audit_history WHERE url=? ORDER BY audited_at DESC LIMIT 20").bind(url.searchParams.get("url")||"").all();
+        return json({history_available:true,history:rows.results||[]},200,origin);
+      }
+      if (url.pathname === "/api/ai-audit/history" && request.method === "POST") {
+        if(!env.DB)return json({error:"Audit history requires the newsroom D1 database binding."},503,origin);
+        const report=await request.json();
+        if(!report||typeof report.url!=="string"||!Number.isInteger(report.score)||!Array.isArray(report.checks))return json({error:"Invalid audit report."},400,origin);
+        const serialized=JSON.stringify(report);
+        if(serialized.length>250000)return json({error:"Audit report exceeds the storage limit."},413,origin);
+        await env.DB.prepare("CREATE TABLE IF NOT EXISTS ai_audit_history (id TEXT PRIMARY KEY, url TEXT NOT NULL, score INTEGER NOT NULL, report_json TEXT NOT NULL, audited_at TEXT NOT NULL)").run();
+        const id=crypto.randomUUID(),auditedAt=report.audited_at||new Date().toISOString();
+        await env.DB.prepare("INSERT INTO ai_audit_history (id,url,score,report_json,audited_at) VALUES (?,?,?,?,?)").bind(id,report.url,report.score,serialized,auditedAt).run();
+        return json({saved:true,id,audited_at:auditedAt},201,origin);
       }
       if (request.method === "GET" && url.pathname === "/api/trends") {
         const windowName=url.searchParams.get("window")||"rising";
