@@ -251,7 +251,9 @@ async function auditSiteUrl(raw){
  for(const rawJson of jsonLd){try{const parsed=JSON.parse(rawJson);validJsonLd++;const walk=value=>{if(!value||typeof value!=="object")return;if(value["@type"])schemaTypes.push(...(Array.isArray(value["@type"])?value["@type"]:[value["@type"]]));for(const child of Object.values(value))if(child&&typeof child==="object")Array.isArray(child)?child.forEach(walk):walk(child);};walk(parsed);}catch{}}
  const crawlerResults=await mapLimit(AI_CRAWLERS,5,async crawler=>{
   const policy=robotsAvailable?robotsDecision(robotsGroups,crawler.ua,target.pathname):{allowed:true,rule:"robots.txt unavailable; no published restriction could be confirmed."};
-  const probe=await publicFetch(target,{"User-Agent":crawler.ua,"Accept":"text/html,application/xhtml+xml"},6500);
+  let probe;
+  try{probe=await publicFetch(target,{"User-Agent":crawler.ua,"Accept":"text/html,application/xhtml+xml"},6500);}
+  catch(error){return {name:crawler.name,user_agent:crawler.ua,robots_allowed:policy.allowed,robots_rule:policy.rule,http_status:null,reachable:false,redirected:false,content_type:"",status:"warning",detail:"Crawler request failed: "+(error.message||"network error")};}
   if(probe.body)await probe.body.cancel().catch(()=>{});
   return {name:crawler.name,user_agent:crawler.ua,robots_allowed:policy.allowed,robots_rule:policy.rule,http_status:probe.status,reachable:probe.ok,redirected:probe.status>=300&&probe.status<400,content_type:probe.headers.get("content-type")||"",status:policy.allowed&&probe.ok?"pass":"warning",detail:!policy.allowed?"Blocked by robots.txt policy.":probe.ok?"Page endpoint returned HTTP "+probe.status+".": "Crawler request received HTTP "+probe.status+"."};
  });
