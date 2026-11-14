@@ -172,8 +172,6 @@ function runContentCheck(type){
  $('#'+prefix+'Checks').innerHTML=checks.map(c=>'<div class="check"><span class="dot '+(c.ok?'':'warn')+'">'+(c.ok?'✓':'!')+'</span><div><b>'+escHtml(c.name)+'</b><small>'+escHtml(c.detail)+'</small></div></div>').join('');
  renderActionPlan(prefix+'Actions',checks);
 }
-$('#checkAeo').onclick=()=>runContentCheck('aeo');
-$('#checkGeo').onclick=()=>runContentCheck('geo');
 
 function renderActionPlan(id,checks){
  const failed=checks.filter(c=>!c.ok),el=$('#'+id),words=$('#body').value.trim().split(/\s+/).filter(Boolean).length;

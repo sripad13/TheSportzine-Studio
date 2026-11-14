@@ -9,6 +9,8 @@ The root page is the Studio landing page. The live editorial workspace remains a
 The Worker exposes:
 - `GET /api/health` — service health and D1 status.
 - `GET /api/feed` — fetches the configured football and F1 RSS/Atom feeds, extracts headlines/excerpts and source links, and groups exact/near-exact headline matches.
+- `GET /api/search?keyword=...` — searches headlines and excerpts across the configured feeds (used by Newsroom keyword columns).
+- `POST /api/ideas` — generates social post ideas via OpenAI; limited to 30 requests per IP per hour.
 
 Configured feeds: BBC Sport Football, Sky Sports Football, BBC Sport Formula 1, Sky Sports Formula 1, Autosport F1, Motorsport.com F1 and Formula1.com. Feed availability and formats can change; individual failures are returned in the `feeds` array while other sources continue to load. The initial editorial priority/breaking flags are keyword heuristics, not AI analysis or fact-checking.
 
@@ -32,7 +34,7 @@ The Worker exposes:
 - `GET /api/seo/audit?url=...` as a backwards-compatible route.
 - `GET /api/ai-audit/history?url=...` and `POST /api/ai-audit/history` for D1-backed scan history.
 
-Audit history and hashed-IP rate limits are stored in D1 when the existing `DB` binding is configured; the Worker creates their tables on first use. Without D1, the interface keeps recent history in the current browser and the Worker applies a best-effort per-isolate rate limit. Audits are limited to five requests per IP per hour when D1 is available. Private/local hostnames, IP-literal destinations, non-standard ports and redirects are rejected to reduce SSRF risk.
+Audit history and hashed-IP rate limits are stored in D1 when the existing `DB` binding is configured; the Worker creates their tables on first use. Without D1, the interface keeps recent history in the current browser and the Worker applies a best-effort per-isolate rate limit. Audits are limited to five requests per IP per hour when D1 is available. Each tool (single-page audit, site audit, SEO URL check, pre-publish check) has its own separate limit. Private/local hostnames, IP-literal destinations, non-standard ports and redirects are rejected to reduce SSRF risk.
 
 Crawler checks use representative User-Agent headers and respect matching `robots.txt` disallow rules (a blocked probe is skipped). Results do not prove provider indexing, citation, ranking or future crawl behaviour. The scanner inspects server-delivered HTML and does not execute JavaScript. CORS is not authentication; protect the API Worker with Cloudflare Access and configure Cloudflare edge rate limiting for production.
 

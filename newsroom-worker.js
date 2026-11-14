@@ -107,7 +107,7 @@ async function getConfiguredFeeds(env) {
     edits = editRows.results || [];
   }
   const editMap=new Map(edits.map(row=>[row.feed_url,row]));
-  const builtins=DEFAULT_FEEDS.map(feed=>{const edit=editMap.get(feed.url)||{};return {name:edit.name||feed.name,url:edit.override_feed_url||feed.url,sport:sportCode(edit.sport||feed.sport)}}).filter(feed=>!deleted.includes(feed.url));
+  const builtins=DEFAULT_FEEDS.filter(feed=>!deleted.includes(feed.url)).map(feed=>{const edit=editMap.get(feed.url)||{};return {name:edit.name||feed.name,url:edit.override_feed_url||feed.url,sport:sportCode(edit.sport||feed.sport)}});
   return [...builtins, ...custom].filter((feed,index,all)=>all.findIndex(item=>item.url===feed.url)===index);
 }
 
@@ -148,8 +148,8 @@ async function fetchGoogleTrends(windowName){
 function extractHtmlAttribute(tag,name){const re=new RegExp("\\b"+name+"\\s*=\\s*(?:\"([^\"]*)\"|'([^']*)'|([^\\s>]+))","i");const m=tag.match(re);return m?(m[1]||m[2]||m[3]||"").trim():"";}
 function decodeHtml(value){return String(value||"").replace(/&amp;/g,"&").replace(/&quot;/g,'"').replace(/&#39;|&apos;/g,"'").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&#(\d+);/g,(_,n)=>String.fromCharCode(Number(n))).replace(/&#x([\da-f]+);/gi,(_,n)=>String.fromCharCode(parseInt(n,16)));}
 const AUDIT_RATE_LIMITS=new Map();
-async function allowAuditRequest(request,env,limit=5){
- const ip=request.headers.get("CF-Connecting-IP")||"unknown",now=Date.now(),windowMs=60*60*1000;
+async function allowAuditRequest(request,env,limit=5,bucket="audit"){
+ const ip=bucket+":"+(request.headers.get("CF-Connecting-IP")||"unknown"),now=Date.now(),windowMs=60*60*1000;
  if(env.DB && typeof env.DB.prepare === "function"){
   await env.DB.prepare("CREATE TABLE IF NOT EXISTS ai_audit_rate_limits (ip_hash TEXT PRIMARY KEY, window_start INTEGER NOT NULL, request_count INTEGER NOT NULL)").run();
   const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(ip));
@@ -578,7 +578,7 @@ export default {
     try {
 
       if(request.method==="POST"&&url.pathname==="/api/seo/url-audit"){
-        if(!await allowAuditRequest(request,env,5))return json({error:"URL analysis rate limit reached. Maximum 5 scans per hour per IP."},429,origin);
+        if(!await allowAuditRequest(request,env,5,"seo-url"))return json({error:"URL analysis rate limit reached. Maximum 5 scans per hour per IP."},429,origin);
         const body=await request.json();
         if(!body||typeof body.url!=="string"||body.url.length>2048)return json({error:"Provide a valid URL (maximum 2,048 characters)."},400,origin);
         const result=await auditSeoPublicUrl(body.url);
@@ -586,14 +586,14 @@ export default {
         return json(result,200,origin);
       }
       if ((request.method === "GET" && url.pathname === "/api/seo/audit") || (request.method === "POST" && url.pathname === "/api/ai-audit")) {
-        if(!await allowAuditRequest(request,env))return json({error:"Audit rate limit reached. Try again later (maximum 5 scans per hour per IP)."},429,origin);
+        if(!await allowAuditRequest(request,env,5,"audit"))return json({error:"Audit rate limit reached. Try again later (maximum 5 scans per hour per IP)."},429,origin);
         const raw=request.method==="GET"?(url.searchParams.get("url")||""):String((await request.json()).url||"");
         const result=await auditSiteUrl(raw);
         if(result.error)return json({error:result.error},400,origin);
         return json(result,200,origin);
       }
       if(request.method==="POST"&&url.pathname==="/api/ai-audit/site"){
-        if(!await allowAuditRequest(request,env,5))return json({error:"Site audit rate limit reached. Maximum 5 site scans per hour per IP."},429,origin);
+        if(!await allowAuditRequest(request,env,5,"site"))return json({error:"Site audit rate limit reached. Maximum 5 site scans per hour per IP."},429,origin);
         const body=await request.json(),raw=String(body.url||""),requested=Number(body.max_pages||20);
         const maxPages=Math.min(30,Math.max(1,Number.isFinite(requested)?Math.floor(requested):20));
         const result=await auditWholeSite(raw,maxPages);
@@ -601,7 +601,7 @@ export default {
         return json(result,200,origin);
       }
       if(request.method==="POST"&&url.pathname==="/api/ai-audit/prepublish"){
-        if(!await allowAuditRequest(request,env,20))return json({error:"Pre-publish check rate limit reached. Maximum 20 checks per hour per IP."},429,origin);
+        if(!await allowAuditRequest(request,env,20,"prepublish"))return json({error:"Pre-publish check rate limit reached. Maximum 20 checks per hour per IP."},429,origin);
         const body=await request.json();
         if(!String(body.title||"").trim()||String(body.content||"").trim().length<80)return json({error:"Enter a headline and at least 80 characters of article copy."},400,origin);
         const result=auditPrepublishDraft(body);
@@ -631,6 +631,11 @@ export default {
         return json({window:windowName,region:"IN",category:"Sports",trends,fetched_at:new Date().toISOString()},200,origin);
       }
       if (request.method === "GET" && url.pathname === "/api/feed") return json(await fetchStories(env),200,origin);
+      if (request.method === "GET" && url.pathname === "/api/search") {
+        const keyword=(url.searchParams.get("keyword")||"").trim();
+        if(!keyword||keyword.length>100)return json({error:"Enter a search keyword (maximum 100 characters)."},400,origin);
+        return json(await searchStories(env,keyword),200,origin);
+      }
       if (request.method === "GET" && url.pathname === "/api/version") {
         return json({
           service: "thesportzine-newsroom",
@@ -650,6 +655,7 @@ export default {
         return json({feeds:found},200,origin);
       }
       if (request.method === "POST" && url.pathname === "/api/ideas") {
+        if(!await allowAuditRequest(request,env,30,"ideas"))return json({error:"Idea generation rate limit reached. Maximum 30 requests per hour per IP."},429,origin);
         if (!env.OPENAI_API_KEY) return json({error:"OpenAI is not configured on the Newsroom Worker. Add the OPENAI_API_KEY secret in Cloudflare."},503,origin);
         const body=await request.json();
         const account=String(body.account||"").toLowerCase();
@@ -837,6 +843,7 @@ export default {
       }
       return json({ error: "Not found." }, 404, origin);
     } catch (error) {
+      if (error instanceof SyntaxError && /JSON/i.test(error.message)) return json({ error: "Request body must be valid JSON." }, 400, origin);
       return json({ error: error.message || "Newsroom API request failed." }, 500, origin);
     }
   }
