@@ -18,3 +18,12 @@ html[data-studio-theme=dark] body{background:#0B0B0D!important;color:#F5F6F2!imp
 html[data-studio-theme=dark] .studio-global-header .studio-global-nav a[aria-current=page]{color:#0B0B0D!important}
 @media(max-width:760px){.studio-global-header{height:60px;gap:12px;padding:0 14px}.studio-global-brand img{width:102px}.studio-menu-toggle{display:inline-flex;align-items:center;justify-content:center}.studio-global-nav{display:none;position:absolute;top:59px;left:0;right:0;margin:0;padding:10px 14px 14px;background:var(--studio-header-bg);border-bottom:1px solid var(--studio-header-border);flex-direction:column;align-items:stretch;gap:3px}.studio-global-nav.is-open{display:flex}.studio-global-nav a{min-height:42px}.studio-global-actions{margin-left:auto}.studio-theme-toggle{font-size:10px;padding:0 8px}}
 @media(prefers-reduced-motion:reduce){.studio-global-header *{scroll-behavior:auto!important;transition:none!important}}
+/* Workspace viewport offsets after the shared 66px Studio header. */
+body:has(.board){overflow-y:auto!important}
+body:has(.board) .board{height:calc(100dvh - 166px)!important}
+body:has(.drawer) .drawer{top:124px!important}
+html[data-studio-theme=light] .modal,html[data-studio-theme=light] .source-manager{background:#0008!important}
+html[data-studio-theme=light] .dialog h2,html[data-studio-theme=light] .panel h2,html[data-studio-theme=light] .source-name,html[data-studio-theme=light] .suggestion-name{color:#171916!important}
+html[data-studio-theme=light] .formatted-preview{color:#30342c!important}
+html[data-studio-theme=light] .formatted-preview h2,html[data-studio-theme=light] .formatted-preview h3,html[data-studio-theme=light] .formatted-preview strong{color:#171916!important}
+html[data-studio-theme=light] .formatted-preview blockquote{background:#F2F4EC!important;color:#30342c!important}
