@@ -38,6 +38,8 @@
     root.dataset.studioThemeChoice=choice;
     const logo=header.querySelector('.studio-global-brand img');
     logo.src=mode==='dark'?'/brand/studio-logo-dark.svg':'/brand/studio-logo-light.svg';
+    const favicon=document.querySelector('link[rel~="icon"]');
+    if(favicon) favicon.href=mode==='dark'?'/brand/studio-mark-dark.svg':'/brand/studio-mark-light.svg';
     themeButton.textContent='Theme: '+choice[0].toUpperCase()+choice.slice(1);
   };
   apply(getChoice());
