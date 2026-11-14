@@ -1,9 +1,9 @@
-# TheSportzine Studio — Newsroom
+# Studio — Sports content workspace
 
-The Studio has two modules: **Newsroom** (root) and the original **Graphics editor** at `/graphics.html`.
+Studio brings the Newsroom, Create, Optimize and Audit workflows together. The original **Graphics editor** remains available at `/graphics.html`.
 
 ## Newsroom interface
-The root page is a TweetDeck-inspired editorial workspace: independently scrolling, resizable columns; All Sports, Football, Formula 1 and Breaking workspaces; keyword columns; saved stories; and a right-side story inspection drawer. Column layout and saved stories persist in the current browser.
+The root page is the Studio landing page. The live editorial workspace remains available at `/live/` with independently scrolling, resizable columns; All Sports, Football, Formula 1 and Breaking workspaces; keyword columns; saved stories; and a right-side story inspection drawer.
 
 ## RSS aggregation API
 The Worker exposes:
@@ -52,3 +52,14 @@ Additional API endpoints:
 - `POST /api/ai-audit/prepublish` with JSON fields `title`, `content`, `author`, `publisher`, `url`, `published_at`, `source_urls` and `entities`. Rate limit: 20 checks per IP per hour when D1 rate limiting is configured.
 
 All scores are heuristic diagnostics. They do not represent measured AI citations, ranking, provider indexing or fact verification.
+
+
+## Studio brand system
+
+- Product name: **Studio**.
+- Official brand assets are in `/brand/`.
+- Shared navigation and theme styles are in `/assets/studio/`.
+- The header is shared across the landing page and application pages. Navigation order: Newsroom, Create, Optimize, Audit.
+- Theme choices: System, Light and Dark. The selection persists in the browser.
+- Brand palette: lime `#B7D957`, near-black `#0B0B0D`, white `#FFFFFF`, warm light canvas `#F5F6F2`.
+- The redesign does not change the current hostname, API hostname, route paths, Workers or D1 configuration. URL migration is a separate future phase.
