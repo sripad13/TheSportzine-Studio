@@ -1,17 +1,17 @@
-# THE STUDIO — Domain, IA and Design Migration Plan
+# Studio — Brand and Interface Redesign Plan
 
 Status: Approved implementation baseline
-Target host: https://studio.falsewinger.com
+Current host: newsroom.falsewinger.com (unchanged in this phase)
+Domain migration: explicitly deferred
 Repository: sripad13/TheSportzine-Studio
 Implementation branch: feature/studio-rebrand-migration
 Production branch: main (must remain untouched until acceptance)
 
 ## 1. Locked product decisions
 
-- Brand: THE STUDIO
-- Visual direction: light-first, with deliberate dark feature sections
-- Primary domain: studio.falsewinger.com
-- Legacy domain: newsroom.falsewinger.com remains owned and operational as a permanent redirect entry point
+- Brand: Studio
+- Visual direction: restrained, editorial and functional; light and dark themes available throughout
+- Current domain and routes remain unchanged until a separate URL migration is approved
 - Global navigation, in exact order: Newsroom, Create, Optimize, Audit
 - All application pages must use the exact same shared header component and responsive behaviour.
 
@@ -48,10 +48,20 @@ Retain query strings and fragments where possible. Normalize trailing slashes co
 
 ## 4. Visual system
 
-- Light surfaces as the default for the landing page and core workspace chrome.
-- Dark sections used selectively for product storytelling, feature showcases and high-contrast emphasis.
-- Neutral palette: warm/off-white canvas, white surfaces, near-black text, muted neutral secondary text, restrained borders.
-- One restrained accent colour; do not carry forward the previous multi-accent neon palette.
+### Approved brand identity
+
+- Product name: Studio (exactly; do not use “The Studio” or “THE STUDIO”).
+- Use the official supplied horizontal SVG wordmarks and icon from `brand/`.
+- Primary lime: `#B7D957`; near-black: `#0B0B0D`; white: `#FFFFFF`.
+- Light theme surfaces: `#F5F6F2` and `#FFFFFF`; dark theme surfaces: `#0B0B0D` and `#171916`.
+- One shared palette across the landing page and every application page.
+- Theme choices: System, Light and Dark; persist the selection across pages.
+- No glossy effects, gradients, glow, glassmorphism or decorative 3D.
+
+
+- Light is the default; Dark is a complete alternate theme, with System following the operating-system preference.
+- Neutral surfaces, near-black text, muted secondary text and restrained borders.
+- The supplied lime is the only brand accent.
 - Typography-led hierarchy, generous whitespace, consistent content widths and calm card treatments.
 - Motion is subtle and purposeful; no unnecessary 3D scenes, heavy gradients, glow effects or decorative clutter.
 - Responsive from narrow mobile through desktop; no horizontal overflow or clipped scores/panels.
@@ -107,7 +117,13 @@ Retain query strings and fragments where possible. Normalize trailing slashes co
 - Preserve /newsroom/sources and nested audit pages.
 - Preserve graphics editor and other existing utility paths.
 
-### Phase D — Host and redirect configuration
+### Phase D — Domain migration (deferred)
+
+- Do not change DNS, GitHub Pages custom domains, Cloudflare Access, Workers CORS or redirects in this redesign phase.
+- Keep newsroom.falsewinger.com and every existing route operational.
+- Revisit host migration only as a separate approved release after the visual redesign is accepted.
+
+### Phase F — Regression and release
 - Provision studio.falsewinger.com and validate TLS, Pages hosting and Access.
 - Add the new origin to Workers' CORS allowlists.
 - Configure legacy host redirects with explicit path mappings.
@@ -121,8 +137,8 @@ Retain query strings and fragments where possible. Normalize trailing slashes co
 
 ## 8. Acceptance criteria
 
-- [ ] studio.falsewinger.com resolves with valid TLS and intended Access protection.
-- [ ] Landing page follows the approved light-first/dark-sections design.
+- [ ] Current newsroom.falsewinger.com routes continue to resolve unchanged.
+- [ ] Landing page follows the approved Studio brand system and supports System, Light and Dark themes.
 - [ ] Newsroom, Create, Optimize and Audit all render the exact same shared header.
 - [ ] Active route state is correct without changing header structure or dimensions.
 - [ ] Desktop and mobile navigation work and remain accessible.
@@ -139,8 +155,16 @@ Retain query strings and fragments where possible. Normalize trailing slashes co
 
 ## 9. Rollback
 
-Keep the previous GitHub Pages deployment, old hostname and Worker configuration available throughout the cutover. If the new origin fails, disable the legacy redirect and restore the prior Pages hostname/origin configuration. Never delete the old hostname, database, Worker or production branch as part of rollback.
+Keep the existing GitHub Pages deployment, hostname and Worker configuration unchanged throughout the redesign. If the redesign fails, revert the redesign branch/deployment; there is no hostname cutover in this phase. Never delete the old hostname, database, Worker or production branch as part of rollback.
 
-## 10. Open technical verification items
+## 10. Current implementation notes
+
+- The shared header is delivered from `assets/studio/studio.js` and styled by `assets/studio/studio.css`.
+- Official logo variants are stored under `brand/`.
+- The header order is Newsroom, Create, Optimize, Audit; active state is route-derived.
+- The theme selector cycles System, Light and Dark and persists the choice in local storage.
+- Existing application workflows, API paths, hostnames and route paths are intentionally preserved.
+
+## 11. Open technical verification items
 
 The repository is currently a static-site style project and its full file inventory must be confirmed before choosing the least invasive shared-shell implementation. Confirm the current GitHub Pages custom-domain setup, Cloudflare DNS proxy/redirect capabilities, Access application hostname rules, Buffer Worker CORS configuration, and any OAuth authorized origins before production cutover.
