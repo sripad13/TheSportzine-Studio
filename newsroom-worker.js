@@ -94,7 +94,7 @@ async function getFeed(feed) {
 }
 async function getConfiguredFeeds(env) {
   let custom = [], deleted = [], edits = [];
-  if (env.DB) {
+  if (env.DB && typeof env.DB.prepare === "function") {
     await env.DB.prepare("CREATE TABLE IF NOT EXISTS newsroom_source_overrides (feed_url TEXT PRIMARY KEY, deleted INTEGER NOT NULL DEFAULT 0, updated_at TEXT NOT NULL)").run();
     await env.DB.prepare("CREATE TABLE IF NOT EXISTS newsroom_source_edits (feed_url TEXT PRIMARY KEY, name TEXT, override_feed_url TEXT, sport TEXT, updated_at TEXT NOT NULL)").run();
     const [customRows, overrideRows, editRows] = await Promise.all([
@@ -150,7 +150,7 @@ function decodeHtml(value){return String(value||"").replace(/&amp;/g,"&").replac
 const AUDIT_RATE_LIMITS=new Map();
 async function allowAuditRequest(request,env,limit=5){
  const ip=request.headers.get("CF-Connecting-IP")||"unknown",now=Date.now(),windowMs=60*60*1000;
- if(env.DB){
+ if(env.DB && typeof env.DB.prepare === "function"){
   await env.DB.prepare("CREATE TABLE IF NOT EXISTS ai_audit_rate_limits (ip_hash TEXT PRIMARY KEY, window_start INTEGER NOT NULL, request_count INTEGER NOT NULL)").run();
   const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(ip));
   const key=[...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,"0")).join("");
@@ -608,13 +608,13 @@ export default {
         return json(result,200,origin);
       }
       if (url.pathname === "/api/ai-audit/history" && request.method === "GET") {
-        if(!env.DB)return json({history_available:false,history:[]},200,origin);
+        if(!env.DB || typeof env.DB.prepare !== "function")return json({history_available:false,history:[]},200,origin);
         await env.DB.prepare("CREATE TABLE IF NOT EXISTS ai_audit_history (id TEXT PRIMARY KEY, url TEXT NOT NULL, score INTEGER NOT NULL, report_json TEXT NOT NULL, audited_at TEXT NOT NULL)").run();
         const rows=await env.DB.prepare("SELECT id,url,score,audited_at FROM ai_audit_history WHERE url=? ORDER BY audited_at DESC LIMIT 20").bind(url.searchParams.get("url")||"").all();
         return json({history_available:true,history:rows.results||[]},200,origin);
       }
       if (url.pathname === "/api/ai-audit/history" && request.method === "POST") {
-        if(!env.DB)return json({error:"Audit history requires the newsroom D1 database binding."},503,origin);
+        if(!env.DB || typeof env.DB.prepare !== "function")return json({error:"Audit history requires the newsroom D1 database binding."},503,origin);
         const report=await request.json();
         if(!report||typeof report.url!=="string"||!Number.isInteger(report.score)||!Array.isArray(report.checks))return json({error:"Invalid audit report."},400,origin);
         const serialized=JSON.stringify(report);
@@ -639,8 +639,8 @@ export default {
         }, 200, origin);
       }
       if (request.method === "GET" && url.pathname === "/api/health") {
-        if (env.DB) await env.DB.prepare("SELECT 1 AS ok").first();
-        return json({ ok: true, service: "thesportzine-newsroom", database: env.DB ? "connected" : "not_configured", feeds: "available" }, 200, origin);
+        if (env.DB && typeof env.DB.prepare === "function") await env.DB.prepare("SELECT 1 AS ok").first();
+        return json({ ok: true, service: "thesportzine-newsroom", database: env.DB && typeof env.DB.prepare === "function" ? "connected" : "not_configured", feeds: "available" }, 200, origin);
       }
       if (request.method === "POST" && url.pathname === "/api/discover-feed") {
         const body=await request.json();const homepage=String(body.url||"").trim();
@@ -761,10 +761,10 @@ export default {
       }
 
       if (request.method === "GET" && url.pathname === "/api/sources") {
-        return json({ sources: await listSources(env.DB), db_configured: Boolean(env.DB) }, 200, origin);
+        return json({ sources: await listSources(env.DB), db_configured: Boolean(env.DB && typeof env.DB.prepare === "function") }, 200, origin);
       }
       if (request.method === "POST" && url.pathname === "/api/sources") {
-        if (!env.DB) return json({ error: "Source management is unavailable because the Cloudflare D1 binding (DB) is not configured. Built-in sources are shown in read-only mode." }, 503, origin);
+        if (!env.DB || typeof env.DB.prepare !== "function") return json({ error: "Source management is unavailable because the Cloudflare D1 binding (DB) is not configured. Built-in sources are shown in read-only mode." }, 503, origin);
         const body = await request.json();
         const name = typeof body.name === "string" ? body.name.trim() : "";
         const feedUrl = typeof body.feed_url === "string" ? body.feed_url.trim() : "";
@@ -785,7 +785,7 @@ export default {
         return json({ source: (await env.DB.prepare("SELECT * FROM newsroom_sources WHERE id = ?").bind(id).first()) }, 201, origin);
       }
       const match = url.pathname.match(/^\/api\/sources\/([a-z0-9-]{1,80})$/i);
-      if (match && ["PATCH","DELETE"].includes(request.method) && !env.DB) {
+      if (match && ["PATCH","DELETE"].includes(request.method) && (!env.DB || typeof env.DB.prepare !== "function")) {
         return json({ error: "Source management is unavailable because the Cloudflare D1 binding (DB) is not configured. Built-in sources are shown in read-only mode." }, 503, origin);
       }
       if (match && request.method === "PATCH" && match[1].startsWith("builtin-")) {
