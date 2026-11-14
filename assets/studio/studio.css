@@ -1,5 +1,5 @@
 :root{--studio-lime:#B7D957;--studio-ink:#0B0B0D;--studio-light:#F5F6F2}
-.studio-global-header{display:flex;width:100%;min-width:0;flex:0 0 auto;height:66px;position:sticky;top:0;z-index:99999;isolation:isolate;align-items:center;gap:26px;padding:0 clamp(16px,3vw,42px);background:var(--studio-header-bg);color:var(--studio-header-ink);border-bottom:1px solid var(--studio-border);font:13px Inter,Arial,sans-serif;box-sizing:border-box}
+.studio-global-header{--studio-header-bg:#FFFFFF;--studio-header-ink:#0B0B0D;--studio-border:#E1E4DC;--studio-hover:#F0F2EB;--studio-control-border:#D9DDD3;--studio-nav-track:#F0F1EC;--studio-nav-active:#B7D957;--studio-nav-active-ink:#0B0B0D;display:flex;width:100%;min-width:0;flex:0 0 auto;height:66px;position:sticky;top:0;z-index:99999;isolation:isolate;align-items:center;gap:26px;padding:0 clamp(16px,3vw,42px);background:var(--studio-header-bg);color:var(--studio-header-ink);border-bottom:1px solid var(--studio-border);font:13px Inter,Arial,sans-serif;box-sizing:border-box}
 .studio-global-header *{box-sizing:border-box}
 .studio-global-brand{display:flex;align-items:center;flex:0 0 auto}
 .studio-global-brand img{display:block;width:126px;height:auto;max-height:34px;object-fit:contain}
