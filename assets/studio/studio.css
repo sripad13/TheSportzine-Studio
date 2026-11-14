@@ -4,7 +4,7 @@
 .studio-global-brand{display:flex;align-items:center;flex:0 0 auto}
 .studio-global-brand img{display:block;width:126px;height:auto;max-height:34px;object-fit:contain}
 .studio-global-nav{position:relative;isolation:isolate;display:flex;align-items:center;gap:3px;margin:auto;padding:4px;border-radius:999px;background:var(--studio-nav-track);box-shadow:inset 0 0 0 1px var(--studio-border)}
-.studio-nav-indicator{position:absolute;z-index:-1;left:4px;top:4px;height:calc(100% - 8px);width:0;border-radius:999px;background:var(--studio-nav-active);opacity:0;transform:translate3d(0,0,0);transition:width .34s cubic-bezier(.2,.8,.2,1),transform .48s cubic-bezier(.2,.8,.2,1),opacity .18s ease;pointer-events:none}
+.studio-nav-indicator{position:absolute;z-index:0;left:4px;top:4px;height:calc(100% - 8px);width:0;border-radius:999px;background:var(--studio-nav-active);opacity:0;transform:translate3d(0,0,0);transition:width .34s cubic-bezier(.2,.8,.2,1),transform .48s cubic-bezier(.2,.8,.2,1),opacity .18s ease;pointer-events:none}
 .studio-global-nav a{position:relative;z-index:1;display:inline-flex;align-items:center;justify-content:center;min-height:32px;padding:0 15px;border-radius:999px;color:inherit;text-decoration:none;font-size:12px;font-weight:650;white-space:nowrap;opacity:.78;transition:color .2s ease,opacity .2s ease}
 .studio-global-nav a:hover,.studio-global-nav a:focus-visible{opacity:1}
 .studio-global-nav a[aria-current=page]{opacity:1;color:var(--studio-nav-active-ink)}
