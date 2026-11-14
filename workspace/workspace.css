@@ -19,7 +19,6 @@ html,body{min-height:100%;background:var(--ws-bg);color:var(--ws-text);font-fami
 .studio-global-header .studio-global-nav{position:relative;isolation:isolate;gap:5px}
 .studio-global-header .studio-global-nav a{position:relative;z-index:1;transition:opacity .18s ease}
 .studio-global-header .studio-global-nav a[aria-current=page]{background:transparent!important;color:#0B0B0D!important;opacity:1}
-.studio-nav-indicator{position:absolute;z-index:0;left:0;top:50%;height:34px;transform:translateY(-50%);border-radius:7px;background:#B7D957;transition:transform .28s cubic-bezier(.2,.8,.2,1),width .28s cubic-bezier(.2,.8,.2,1);pointer-events:none}
 .studio-global-header .studio-global-nav a:hover,.studio-global-header .studio-global-nav a:focus-visible{background:transparent;opacity:1}
 @media(max-width:900px){.workspace-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:760px){
