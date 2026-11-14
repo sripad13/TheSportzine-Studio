@@ -107,3 +107,139 @@ html[data-studio-theme=light] .url-analyser .btn.primary,
 html[data-studio-theme=light] .ai-card .btn.primary {
   color:#0B0B0D!important;
 }
+
+
+/* Unified Studio theme layer — applied after legacy page styles. */
+html[data-studio-theme="light"] {
+  color-scheme: light;
+  --ui-bg:#F5F6F2;
+  --ui-surface:#FFFFFF;
+  --ui-surface-2:#F0F2EC;
+  --ui-surface-3:#E8EBE2;
+  --ui-text:#171916;
+  --ui-muted:#62665D;
+  --ui-border:#DDE1D7;
+  --ui-control:#FFFFFF;
+  --ui-control-text:#171916;
+  --ui-accent:#B7D957;
+}
+html[data-studio-theme="dark"] {
+  color-scheme: dark;
+  --ui-bg:#0B0B0D;
+  --ui-surface:#17191D;
+  --ui-surface-2:#1E2126;
+  --ui-surface-3:#282C32;
+  --ui-text:#F5F6F2;
+  --ui-muted:#A7ADA2;
+  --ui-border:#30343A;
+  --ui-control:#111317;
+  --ui-control-text:#F5F6F2;
+  --ui-accent:#B7D957;
+}
+html[data-studio-theme] body {
+  background:var(--ui-bg)!important;
+  color:var(--ui-text)!important;
+}
+html[data-studio-theme] .studio-global-header {
+  background:var(--studio-header-bg)!important;
+  color:var(--studio-header-ink)!important;
+}
+
+/* Shared page surfaces: neutral in light mode, layered charcoal in dark mode. */
+html[data-studio-theme] :is(
+  .panel,.hero,.column,.product,.card,.source-dialog,.dialog,.workflow-display,
+  .tile,.controls,.workspace,.source,.source-row,.source-list,.buffer-panel,
+  .buffer-channel,.editor-toolbar,.formatted-preview-wrap,.formbody,.checks,
+  .scoreline,.insight-card,.url-analyser,.ai-card,.score-panel,.score-card,
+  .analysis-panel,.metric,.snippet,.action-item,.notice,.url-score-card,
+  .stat,.cat,.category,.page,.form,.sourcebox,.settings-panel,.drawer .dhead,
+  .drawer .dcontent,.modal-card
+) {
+  background:var(--ui-surface)!important;
+  color:var(--ui-text)!important;
+  border-color:var(--ui-border)!important;
+  box-shadow:none;
+}
+html[data-studio-theme] :is(
+  .top,.topbar,.bar,.colhead,.colfilter,.cards,.story,.tileart,.canvaswrap,
+  .image-positioning,.status,.upload,.progress,.write-article>summary,
+  .preview-details>summary,.formatted-preview blockquote,.source-row,
+  .dcontent .sourcebox,.settings-panel
+) {
+  background:var(--ui-surface-2)!important;
+  color:var(--ui-text)!important;
+  border-color:var(--ui-border)!important;
+}
+html[data-studio-theme] :is(
+  input,textarea,select,.api,.bar input,.colfilter input,.colfilter select,
+  .field input,.field textarea,.field select,.form input,.form select,
+  .scanbar input,.modal-card input
+) {
+  background:var(--ui-control)!important;
+  color:var(--ui-control-text)!important;
+  border-color:var(--ui-border)!important;
+}
+html[data-studio-theme] :is(
+  h1,h2,h3,h4,h5,h6,label,.coltitle,.story h3,.source-name,.tileinfo,
+  .controls h3,.panelhead,.dhead strong,.dialog h2,.source-dialog h2,
+  .insight-value,.score,.metric strong,.stat strong,.catline,.check b
+) { color:var(--ui-text)!important; }
+html[data-studio-theme] :is(
+  .muted,.hint,.sub,.excerpt,.status,.meta,.source-url,.suggestion-meta,
+  .insight-label,.insight-change,.eyebrow,.footnote,.empty,.tileinfo small,
+  .field label,.dcontent p,.url-result-meta span,.url-analyser .hint
+) { color:var(--ui-muted)!important; }
+html[data-studio-theme] :is(
+  .btn:not(.primary),.tiny,.format-btn,.tab:not(.active),.pill,.tag,
+  .buffer-channel
+) {
+  background:var(--ui-surface-2)!important;
+  color:var(--ui-text)!important;
+  border-color:var(--ui-border)!important;
+}
+html[data-studio-theme] :is(.btn.primary,.btn.active,.tab.active,.ws.active) {
+  background:var(--ui-accent)!important;
+  color:#0B0B0D!important;
+  border-color:var(--ui-accent)!important;
+}
+html[data-studio-theme] :is(.story,.check,th,td,.check,.scoreline) {
+  border-color:var(--ui-border)!important;
+}
+html[data-studio-theme] .story:hover,
+html[data-studio-theme] .story.selected,
+html[data-studio-theme] .source-row:hover {
+  background:var(--ui-surface-3)!important;
+  color:var(--ui-text)!important;
+}
+html[data-studio-theme] .count {
+  background:var(--ui-surface-3)!important;
+  color:var(--ui-text)!important;
+}
+html[data-studio-theme] .empty b,
+html[data-studio-theme] .formatted-preview,
+html[data-studio-theme] .formatted-preview :is(h1,h2,h3,strong,p,li) {
+  color:var(--ui-text)!important;
+}
+html[data-studio-theme] .modal-backdrop,
+html[data-studio-theme] .modal,
+html[data-studio-theme] .source-manager {
+  background:rgba(0,0,0,.48)!important;
+}
+html[data-studio-theme] .drawer {
+  background:rgba(0,0,0,.48)!important;
+}
+html[data-studio-theme] .buffer-channel.selected {
+  border-color:var(--ui-accent)!important;
+  box-shadow:inset 0 0 0 1px var(--ui-accent)!important;
+}
+html[data-studio-theme] .btn.primary,
+html[data-studio-theme] .btn.active,
+html[data-studio-theme] .tab.active {
+  font-weight:700;
+}
+/* The graphic artwork/canvas is content, not application chrome: preserve its own colours. */
+html[data-studio-theme] #canvasStage,
+html[data-studio-theme] canvas,
+html[data-studio-theme] .canvas-artwork {
+  color:initial;
+}
