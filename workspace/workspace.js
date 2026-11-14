@@ -16,7 +16,8 @@
  function moveIndicator(target){
   if(!target||window.matchMedia('(max-width:760px)').matches)return;
   const navRect=nav.getBoundingClientRect(),rect=target.getBoundingClientRect();
-  indicator.style.width=rect.width+'px';indicator.style.transform='translate('+ (rect.left-navRect.left+nav.scrollLeft)+'px,-50%)';
+  indicator.style.width=rect.width+'px';
+  indicator.style.transform='translate('+ (rect.left-navRect.left+nav.scrollLeft)+'px,-50%)';
  }
  function render(key){
   const page=workspaces[key]||workspaces.live;active=workspaces[key]?key:'live';
@@ -30,10 +31,7 @@
  }
  links.forEach(link=>{
   link.addEventListener('click',event=>{event.preventDefault();const key=link.dataset.workspace||'live';if(location.hash!=='#/'+key)location.hash='/'+key;else render(key)});
-  link.addEventListener('mouseenter',()=>moveIndicator(link));
-  link.addEventListener('focus',()=>moveIndicator(link));
  });
- nav.addEventListener('mouseleave',()=>moveIndicator(links.find(link=>link.dataset.workspace===active)));
  window.addEventListener('hashchange',()=>render(location.hash.replace(/^#\/?/,'')||'live'));
  window.addEventListener('resize',()=>moveIndicator(links.find(link=>link.dataset.workspace===active)));
  render(location.hash.replace(/^#\/?/,'')||'live');
