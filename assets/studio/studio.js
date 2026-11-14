@@ -24,7 +24,8 @@
     if(settings) actions.appendChild(settings);
     [...pageControls.children].forEach(group=>{
       if(group===settings) return;
-      [...group.children].forEach(node=>contextActions.appendChild(node));
+      if(group.matches('a,button')) contextActions.appendChild(group);
+      else [...group.children].forEach(node=>contextActions.appendChild(node));
     });
     const hiddenCreate=pageControls.querySelector('#createBtn');
     if(hiddenCreate) hiddenControls.appendChild(hiddenCreate);
