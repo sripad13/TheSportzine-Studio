@@ -11,21 +11,14 @@
  const links=[...nav.querySelectorAll('a')];
  const routeByPath={'/live/':'live','/post/':'post','/seo/':'seo','/ai-audit/':'audit'};
  links.forEach(link=>{const key=routeByPath[new URL(link.href).pathname];if(key)link.dataset.workspace=key;link.href='#/'+(key||'live')});
- const indicator=document.createElement('span');indicator.className='studio-nav-indicator';indicator.setAttribute('aria-hidden','true');nav.prepend(indicator);
  let active='live';
- function moveIndicator(target){
-  if(!target||window.matchMedia('(max-width:760px)').matches)return;
-  const navRect=nav.getBoundingClientRect(),rect=target.getBoundingClientRect();
-  indicator.style.width=rect.width+'px';
-  indicator.style.transform='translate('+ (rect.left-navRect.left+nav.scrollLeft)+'px,-50%)';
- }
  function render(key){
   const page=workspaces[key]||workspaces.live;active=workspaces[key]?key:'live';
   document.getElementById('workspace-title').textContent=page.title;
   document.getElementById('workspace-description').textContent=page.description;
   content.innerHTML='<div class="workspace-grid">'+page.cards.map(card=>'<article class="workspace-card"><small>'+card[0]+'</small><strong>'+card[1]+'</strong><p>'+card[2]+'</p></article>').join('')+'</div><div class="workspace-note">You are viewing a shell prototype. The header stays mounted while this workspace region is replaced. The next phase will move the real page functionality into independently mountable modules.</div>';
   links.forEach(link=>{const selected=link.dataset.workspace===active;if(selected)link.setAttribute('aria-current','page');else link.removeAttribute('aria-current')});
-  moveIndicator(links.find(link=>link.dataset.workspace===active));
+  window.dispatchEvent(new Event('studio:navigation-change'));
   const navEl=document.querySelector('.studio-global-nav'),toggle=document.querySelector('.studio-menu-toggle');
   navEl.classList.remove('is-open');toggle?.setAttribute('aria-expanded','false');if(toggle)toggle.textContent='☰';
  }
@@ -33,6 +26,6 @@
   link.addEventListener('click',event=>{event.preventDefault();const key=link.dataset.workspace||'live';if(location.hash!=='#/'+key)location.hash='/'+key;else render(key)});
  });
  window.addEventListener('hashchange',()=>render(location.hash.replace(/^#\/?/,'')||'live'));
- window.addEventListener('resize',()=>moveIndicator(links.find(link=>link.dataset.workspace===active)));
+ 
  render(location.hash.replace(/^#\/?/,'')||'live');
 })();

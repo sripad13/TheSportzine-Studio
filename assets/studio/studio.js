@@ -24,20 +24,26 @@
     indicator.style.transform='translate3d('+(itemRect.left-navRect.left-nav.clientLeft)+'px,0,0)';
     indicator.style.opacity='1';
   };
-  const activeLink=nav.querySelector('a[aria-current="page"]');
   const linksInNav=[...nav.querySelectorAll('a')];
-  linksInNav.forEach(link=>{
-    link.addEventListener('pointerenter',()=>moveIndicator(link));
-    link.addEventListener('focus',()=>moveIndicator(link));
-    link.addEventListener('click',()=>moveIndicator(link));
-  });
-  nav.addEventListener('pointerleave',()=>moveIndicator(activeLink));
-  nav.addEventListener('focusout',event=>{
-    if(!nav.contains(event.relatedTarget)) moveIndicator(activeLink);
-  });
-  const positionIndicator=()=>moveIndicator(nav.querySelector('a:hover, a:focus-visible')||activeLink);
-  requestAnimationFrame(positionIndicator);
-  window.addEventListener('resize',positionIndicator,{passive:true});
+  const routeForLocation=()=>{
+    const hash=location.hash.replace(/^#\\/?/,'');
+    if(location.pathname==='/workspace/'&&hash){
+      return ({live:'Newsroom',post:'Create',seo:'Optimize',audit:'Audit'})[hash]||'Newsroom';
+    }
+    const path=location.pathname;
+    return path.startsWith('/live')?'Newsroom':path.startsWith('/post')||path==='/graphics.html'?'Create':path.startsWith('/seo')?'Optimize':path.startsWith('/ai-audit')?'Audit':'';
+  };
+  const syncIndicator=()=>{
+    const current=routeForLocation();
+    linksInNav.forEach(link=>{
+      if(link.textContent.trim()===current) link.setAttribute('aria-current','page');
+      else link.removeAttribute('aria-current');
+    });
+    moveIndicator(linksInNav.find(link=>link.getAttribute('aria-current')==='page'));
+  };
+  requestAnimationFrame(syncIndicator);
+  window.addEventListener('hashchange',syncIndicator);
+  window.addEventListener('resize',syncIndicator,{passive:true});
   const actions=header.querySelector('.studio-global-actions');
   const contextActions=document.createElement('div');
   contextActions.className='studio-context-actions';
