@@ -44,9 +44,9 @@ p,small,b,strong,span,td,th{overflow-wrap:anywhere}
   .metric:last-child{grid-column:1/-1}
   h1{font-size:26px}
 }
-</style><link rel="icon" href="/brand/studio-icon.svg" type="image/svg+xml"><link rel="stylesheet" href="/assets/studio/studio.css?v=20261114-2"><script defer src="/assets/studio/studio.js?v=20261114-2"></script>
-</head><body><div class="shell">
-<header class="top"><div><a href="/ai-audit/">← Single-page audit</a><div class="brand brandline">THE SPORTZINE <span>/ FULL-SITE AUDIT</span></div></div><div class="actions"><a class="btn" href="/ai-audit/prepublish/">Pre-publish checker ↗</a><button class="btn" id="export" disabled>↓ Export JSON</button></div></header>
+</style><link rel="icon" href="/brand/studio-mark-light.svg" type="image/svg+xml"><link rel="stylesheet" href="/assets/studio/studio.css?v=20261114-3"><script defer src="/assets/studio/studio.js?v=20261114-3"></script>
+</head><body><div id="studio-page-controls" hidden><div class="actions"><a class="btn" href="/ai-audit/prepublish/">Pre-publish checker ↗</a><button class="btn" id="export" disabled>↓ Export JSON</button></div></div><div class="shell">
+
 <div class="eyebrow">Site-wide diagnostics · Sitemap discovery</div><h1>Full-site AI Search Audit</h1><p class="sub">Scan a sample of your sitemap URLs and aggregate AEO, GEO, structured-data, content and crawler-readiness signals. The scan stays on the submitted hostname and respects its robots.txt rules when selecting sitemap pages.</p>
 <form class="form" id="form"><input id="url" type="url" required placeholder="https://example.com" aria-label="Public website URL"><select id="limit" aria-label="Maximum pages"><option value="10">10 pages</option><option value="20" selected>20 pages</option><option value="30">30 pages</option></select><button class="btn primary" id="run" type="submit">Run full-site audit ↗</button></form>
 <div class="muted" style="margin:9px 2px">Sitemap-based · Up to 30 pages · Five sitemap files maximum · No arbitrary link crawling</div><div class="status" id="status" role="status" aria-live="polite">Enter the site's homepage or a public page URL.</div><div class="progress" id="progress"><i></i></div>
