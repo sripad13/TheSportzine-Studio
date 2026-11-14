@@ -64,3 +64,21 @@ html[data-studio-theme] .studio-theme-toggle{background:var(--panel2)!important;
  .studio-context-actions{display:none!important}
 }
 @media(max-width:360px){.studio-global-header{gap:5px;padding-inline:7px}.studio-brand-word{font-size:16px}.studio-global-nav a{padding-inline:4px;font-size:9px}}
+
+/* Mobile header correction: keep all primary links in one horizontal row. */
+@media (max-width:760px){
+  .studio-global-header{display:flex!important;flex-wrap:nowrap!important;align-items:center!important;justify-content:space-between;height:60px!important;min-height:60px!important;padding:0 10px!important;gap:6px!important}
+  .studio-global-brand{flex:0 0 auto!important;width:auto!important;min-width:0!important;height:34px!important;gap:5px!important}
+  .studio-global-brand img.studio-brand-mark{width:22px!important;height:22px!important;flex:0 0 22px!important}
+  .studio-brand-word{font-size:17px!important;letter-spacing:-.8px}
+  .studio-global-nav{display:flex!important;flex-direction:row!important;flex-wrap:nowrap!important;align-items:center!important;justify-content:flex-end!important;position:static!important;inset:auto!important;flex:0 1 auto!important;width:auto!important;min-width:0!important;max-width:none!important;height:36px!important;margin:0!important;padding:2px!important;gap:0!important;overflow-x:auto!important;overflow-y:hidden!important;white-space:nowrap!important;border-radius:999px!important;scrollbar-width:none}
+  .studio-global-nav::-webkit-scrollbar{display:none}
+  .studio-global-nav a{display:inline-flex!important;flex:0 0 auto!important;min-height:30px!important;padding:0 clamp(4px,1.25vw,9px)!important;font-size:clamp(9px,2.35vw,11px)!important;line-height:1!important;white-space:nowrap!important}
+  .studio-global-actions,.studio-context-actions{display:none!important}
+}
+@media(max-width:380px){
+  .studio-global-header{padding-inline:7px!important;gap:4px!important}
+  .studio-global-brand img.studio-brand-mark{width:20px!important;height:20px!important;flex-basis:20px!important}
+  .studio-brand-word{font-size:15px!important}
+  .studio-global-nav a{padding-inline:4px!important;font-size:9px!important}
+}
