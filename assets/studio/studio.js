@@ -4,7 +4,7 @@
     if(!document.body) return;
     const links=[['Newsroom','/live/'],['Create','/post/'],['Optimize','/seo/'],['Audit','/ai-audit/']];
     const routeForLocation=()=>{
-      const hash=location.hash.replace(/^#\\/?/,'');
+      const hash=location.hash.replace(/^#\/?/,'');
       if(location.pathname==='/workspace/'&&hash) return ({live:'Newsroom',post:'Create',seo:'Optimize',audit:'Audit'})[hash]||'Newsroom';
       const path=location.pathname;
       return path.startsWith('/live')?'Newsroom':path.startsWith('/post')?'Create':path.startsWith('/seo')?'Optimize':path.startsWith('/ai-audit')?'Audit':'';
