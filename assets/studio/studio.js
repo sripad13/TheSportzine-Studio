@@ -11,6 +11,33 @@
   header.className='studio-global-header';
   header.innerHTML='<a class="studio-global-brand" href="/" aria-label="Studio home"><img alt="Studio" src="/brand/studio-logo-light.svg"></a><button class="studio-menu-toggle" type="button" aria-label="Toggle navigation" aria-expanded="false">☰</button><nav class="studio-global-nav" aria-label="Primary navigation">'+links.map(([name,url])=>'<a href="'+url+'" '+(active===name?'aria-current="page"':'')+'>'+name+'</a>').join('')+'</nav><div class="studio-global-actions"><button class="studio-theme-toggle" type="button">Theme: System</button></div>';
   document.body.insertBefore(header,document.body.firstChild);
+  const nav=header.querySelector('.studio-global-nav');
+  const indicator=document.createElement('span');
+  indicator.className='studio-nav-indicator';
+  indicator.setAttribute('aria-hidden','true');
+  nav.prepend(indicator);
+  const moveIndicator=target=>{
+    if(!target) return;
+    const navRect=nav.getBoundingClientRect();
+    const itemRect=target.getBoundingClientRect();
+    indicator.style.width=itemRect.width+'px';
+    indicator.style.transform='translate3d('+(itemRect.left-navRect.left-nav.clientLeft)+'px,0,0)';
+    indicator.style.opacity='1';
+  };
+  const activeLink=nav.querySelector('a[aria-current="page"]');
+  const linksInNav=[...nav.querySelectorAll('a')];
+  linksInNav.forEach(link=>{
+    link.addEventListener('pointerenter',()=>moveIndicator(link));
+    link.addEventListener('focus',()=>moveIndicator(link));
+    link.addEventListener('click',()=>moveIndicator(link));
+  });
+  nav.addEventListener('pointerleave',()=>moveIndicator(activeLink));
+  nav.addEventListener('focusout',event=>{
+    if(!nav.contains(event.relatedTarget)) moveIndicator(activeLink);
+  });
+  const positionIndicator=()=>moveIndicator(nav.querySelector('a:hover, a:focus-visible')||activeLink);
+  requestAnimationFrame(positionIndicator);
+  window.addEventListener('resize',positionIndicator,{passive:true});
   const actions=header.querySelector('.studio-global-actions');
   const contextActions=document.createElement('div');
   contextActions.className='studio-context-actions';
