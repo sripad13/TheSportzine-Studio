@@ -37,3 +37,73 @@ html[data-studio-theme=light] .field input,html[data-studio-theme=light] .field 
 html[data-studio-theme=light] .pill,html[data-studio-theme=light] .tag{background:#F5F6F2!important;color:#454A40!important;border-color:#D9DDD3!important}
 html[data-studio-theme=light] .drawer,html[data-studio-theme=light] .modal-card{background:#fff!important;color:#171916!important;border-color:#E4E6DF!important}
 html[data-studio-theme=light] .dcontent p,html[data-studio-theme=light] .source-url,html[data-studio-theme=light] .suggestion-meta{color:#62665D!important}
+
+
+/* Studio light-theme contrast corrections for legacy workspace components. */
+html[data-studio-theme=light] .insight-card,
+html[data-studio-theme=light] .url-analyser,
+html[data-studio-theme=light] .ai-card,
+html[data-studio-theme=light] .score-panel,
+html[data-studio-theme=light] .score-card,
+html[data-studio-theme=light] .analysis-panel {
+  background:#15181f!important;
+  color:#f5f6f2!important;
+  border-color:#30343d!important;
+}
+html[data-studio-theme=light] .insight-card *,
+html[data-studio-theme=light] .url-analyser *,
+html[data-studio-theme=light] .ai-card *,
+html[data-studio-theme=light] .score-panel *,
+html[data-studio-theme=light] .score-card *,
+html[data-studio-theme=light] .analysis-panel * {
+  color:inherit;
+}
+html[data-studio-theme=light] .insight-card .insight-label,
+html[data-studio-theme=light] .insight-card .insight-change,
+html[data-studio-theme=light] .ai-card .sub,
+html[data-studio-theme=light] .ai-card .hint,
+html[data-studio-theme=light] .url-analyser .hint {
+  color:#b8beca!important;
+}
+html[data-studio-theme=light] .url-analyser input,
+html[data-studio-theme=light] .ai-card input,
+html[data-studio-theme=light] .ai-card textarea,
+html[data-studio-theme=light] .ai-card select {
+  background:#fff!important;
+  color:#171916!important;
+}
+html[data-studio-theme=light] .empty b {
+  color:#171916!important;
+}
+html[data-studio-theme=light] .column .coltitle,
+html[data-studio-theme=light] .column .coltitle strong,
+html[data-studio-theme=light] .colhead .coltitle {
+  color:#252922!important;
+}
+html[data-studio-theme=light] .column .count {
+  background:#293243!important;
+  color:#fff!important;
+}
+html[data-studio-theme=light] .column .tiny {
+  color:#30342c!important;
+}
+html[data-studio-theme=light] .column .source {
+  color:#30342c!important;
+}
+html[data-studio-theme=light] .column .story h3 {
+  color:#171916!important;
+}
+html[data-studio-theme=light] .column .meta {
+  color:#62665d!important;
+}
+/* Remove the legacy product masthead; the Studio header is the sole brand header. */
+body:has(.board) > header.top > .brand,
+body:has(.wrap) > header.top > .brand,
+body:has(.newsroom-top) .newsroom-top > .brand {
+  display:none!important;
+}
+
+html[data-studio-theme=light] .url-analyser .btn.primary,
+html[data-studio-theme=light] .ai-card .btn.primary {
+  color:#0B0B0D!important;
+}
