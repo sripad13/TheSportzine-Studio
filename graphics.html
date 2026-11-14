@@ -30,12 +30,12 @@
 .buffer-panel{margin-top:14px;padding:15px}.buffer-panel textarea{min-height:100px}.buffer-channels{display:flex;align-items:center;gap:10px;flex-wrap:wrap;max-height:none;overflow:visible}.buffer-channel{width:58px;height:54px;display:grid;place-items:center;background:#101218;border:1px solid #383b46;border-radius:10px;padding:8px;color:#777b86;opacity:.42;cursor:pointer;transition:background .15s,border-color .15s,color .15s,opacity .15s}.buffer-channel.selected{opacity:1;color:#fff;border-color:var(--yellow);background:#24232a;box-shadow:0 0 0 1px var(--yellow) inset}.buffer-channel svg{width:27px;height:27px;display:block;fill:currentColor}.buffer-channel:focus-visible{outline:2px solid var(--yellow);outline-offset:3px}.buffer-channel .channel-fallback{font-size:10px;font-weight:700;text-transform:uppercase}.buffer-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.buffer-actions button{width:100%}.buffer-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.buffer-actions button{width:100%}.counter{font-size:11px;color:var(--muted);text-align:right}.counter.over{color:#ff6b6b}.buffer-panel input[type=datetime-local]{width:100%;background:#101218;border:1px solid #383b46;color:#fff;border-radius:7px;padding:9px}
 .insights-block{margin:0 0 22px}.insights-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px}.insights-head h2{margin:0;font-size:17px}.insights-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.insight-card{background:#202322;border:1px solid #303633;border-radius:13px;padding:17px 18px;min-height:112px;min-width:0}.insight-label{color:#aeb4b1;font-size:13px;margin-bottom:15px}.insight-value-row{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}.insight-value{font-size:clamp(22px,2.2vw,30px);font-weight:750;letter-spacing:-.7px}.insight-change{font-size:14px;color:#8ecb91}.insight-change.down{color:#e99a91}.insight-change.neutral{color:#9ca39f}.insight-foot{font-size:10px;color:#89918d;margin-top:7px}.insight-refresh{font-size:11px;padding:6px 9px}@media(max-width:900px){.insights-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:480px){.insight-card{padding:13px;min-height:98px}.insight-label{font-size:12px;margin-bottom:11px}.insight-value{font-size:23px}.insight-change{font-size:12px}}
 </style>
-<link rel="icon" href="/brand/studio-icon.svg" type="image/svg+xml"><link rel="stylesheet" href="/assets/studio/studio.css?v=20261114-2"><script defer src="/assets/studio/studio.js?v=20261114-2"></script>
+<link rel="icon" href="/brand/studio-mark-light.svg" type="image/svg+xml"><link rel="stylesheet" href="/assets/studio/studio.css?v=20261114-3"><script defer src="/assets/studio/studio.js?v=20261114-3"></script>
 </head>
-<body>
+<body><div id="studio-page-controls" hidden><button type="button" id="createBtn" style="display:none" aria-hidden="true" tabindex="-1">New graphic</button></div>
 <div class="app">
 <main class="main">
- <header class="top"><button type="button" id="createBtn" style="display:none" aria-hidden="true" tabindex="-1">New graphic</button><img id="headerBrand" alt="TheSportzine" style="display:block;width:190px;max-width:42vw;height:auto;opacity:.72;object-fit:contain;object-position:left center"></header>
+ 
  <section class="insights-block" aria-label="Buffer performance insights">
   <div class="insights-head"><h2>Buffer Insights <span class="muted" style="font-size:11px;font-weight:400">· Last 30 days</span></h2><button class="btn insight-refresh" id="refreshInsights" type="button">↻ Refresh</button></div>
   <div class="insights-grid">
@@ -246,7 +246,7 @@ function save(){const item={name:template+' · '+new Date().toLocaleString(),tem
 $('saveBtn').onclick=save;
 function renderProjects(){const markup=projects.map((p,i)=>`<div class="panel" style="padding:9px"><img src="${p.data}" style="width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:6px"><b style="display:block;margin-top:8px;font-size:12px">${p.template}</b><button class="btn" style="margin-top:8px;width:100%" data-open="${i}">Reopen</button></div>`).join('')||'<p class="muted">No saved projects yet.</p>';$('recent').innerHTML=markup;$('projectTiles').innerHTML=markup;document.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>{const p=projects[+b.dataset.open];openEditor(p.template);$('headline').value=p.headline;$('highlight').value=p.highlight;$('subtitle').value=p.subtitle;draw()})}
 $('createBtn').onclick=()=>openEditor('Breaking With Text');
-$('headerBrand').src=$('wordmarkBrand').src;
+if($('headerBrand'))$('headerBrand').src=$('wordmarkBrand').src;
 
 // Buffer scheduling integration. API credentials remain on the Cloudflare Worker.
 const BUFFER_API='https://thesportzine-buffer-api.sripad48.workers.dev';
