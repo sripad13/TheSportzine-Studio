@@ -467,6 +467,13 @@ function validFeedUrl(value) {
   } catch { return false; }
 }
 async function listSources(db) {
+  // Keep the Sources page useful when the Cloudflare D1 binding is absent.
+  // Built-in feeds are available without persistence; custom source management
+  // remains disabled until the DB binding is configured.
+  if (!db) return DEFAULT_FEEDS.map((feed,index)=>({
+    id:"builtin-"+index,name:feed.name,feed_url:feed.url,sport:feed.sport,
+    priority:1,enabled:true,is_default:true
+  }));
   await db.prepare("CREATE TABLE IF NOT EXISTS newsroom_source_overrides (feed_url TEXT PRIMARY KEY, deleted INTEGER NOT NULL DEFAULT 0, updated_at TEXT NOT NULL)").run();
   await db.prepare("CREATE TABLE IF NOT EXISTS newsroom_source_edits (feed_url TEXT PRIMARY KEY, name TEXT, override_feed_url TEXT, sport TEXT, updated_at TEXT NOT NULL)").run();
   const [result, overrides, edits] = await Promise.all([
@@ -754,9 +761,10 @@ export default {
       }
 
       if (request.method === "GET" && url.pathname === "/api/sources") {
-        return json({ sources: await listSources(env.DB) }, 200, origin);
+        return json({ sources: await listSources(env.DB), db_configured: Boolean(env.DB) }, 200, origin);
       }
       if (request.method === "POST" && url.pathname === "/api/sources") {
+        if (!env.DB) return json({ error: "Source management is unavailable because the Cloudflare D1 binding (DB) is not configured. Built-in sources are shown in read-only mode." }, 503, origin);
         const body = await request.json();
         const name = typeof body.name === "string" ? body.name.trim() : "";
         const feedUrl = typeof body.feed_url === "string" ? body.feed_url.trim() : "";
@@ -777,6 +785,9 @@ export default {
         return json({ source: (await env.DB.prepare("SELECT * FROM newsroom_sources WHERE id = ?").bind(id).first()) }, 201, origin);
       }
       const match = url.pathname.match(/^\/api\/sources\/([a-z0-9-]{1,80})$/i);
+      if (match && ["PATCH","DELETE"].includes(request.method) && !env.DB) {
+        return json({ error: "Source management is unavailable because the Cloudflare D1 binding (DB) is not configured. Built-in sources are shown in read-only mode." }, 503, origin);
+      }
       if (match && request.method === "PATCH" && match[1].startsWith("builtin-")) {
         const index=Number(match[1].slice(8)),feed=DEFAULT_FEEDS[index];
         if(!feed)return json({error:"Source not found."},404,origin);
