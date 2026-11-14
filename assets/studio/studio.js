@@ -16,6 +16,18 @@
   hiddenControls.hidden=true;
   hiddenControls.id='studio-legacy-controls';
   document.body.appendChild(hiddenControls);
+  const pageControls=document.getElementById('studio-page-controls');
+  if(pageControls){
+    const settings=pageControls.querySelector('#settingsMenu,.settings-menu');
+    if(settings) actions.appendChild(settings);
+    [...pageControls.children].forEach(group=>{
+      if(group===settings) return;
+      [...group.children].forEach(node=>contextActions.appendChild(node));
+    });
+    const hiddenCreate=pageControls.querySelector('#createBtn');
+    if(hiddenCreate) hiddenControls.appendChild(hiddenCreate);
+    pageControls.remove();
+  }
   const contextActions=document.createElement('div');
   contextActions.className='studio-context-actions';
   const themeButton=header.querySelector('.studio-theme-toggle');
@@ -29,7 +41,7 @@
   };
   apply(getChoice());
   // Fold all legacy page mastheads into the shared Studio header.
-  document.querySelectorAll('body > header:not(.studio-global-header), body > main header, body > div header, body header.top, body header.topbar').forEach(old=>{
+  document.querySelectorAll('body header:not(.studio-global-header)').forEach(old=>{
     if(old===header||old.classList.contains('studio-global-header')) return;
     const settings=old.querySelector('#settingsMenu,.settings-menu');
     if(settings) actions.appendChild(settings);
@@ -43,7 +55,7 @@
     });
     const hiddenCreate=old.querySelector('#createBtn');
     if(hiddenCreate) hiddenControls.appendChild(hiddenCreate);
-    old.querySelectorAll('#headerBrand').forEach(node=>node.remove());
+    old.querySelectorAll('#headerBrand').forEach(node=>hiddenControls.appendChild(node));
     old.remove();
   });
   if(contextActions.children.length) actions.appendChild(contextActions);
