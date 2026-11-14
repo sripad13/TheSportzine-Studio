@@ -112,7 +112,7 @@ function populate(){ $('categoryTiles').innerHTML=categories.map(n=>tile(n,'Refe
 populate();
 function show(view){['homeView','templatesView','projectsView','editorView'].forEach(id=>$(id).classList.toggle('hidden',id!==view));$('editorView').classList.toggle('open',view==='editorView');const pageTitle=$('pageTitle');if(pageTitle)pageTitle.textContent=({homeView:'Dashboard',templatesView:'Templates',projectsView:'My Projects',editorView:'Graphic Editor'})[view];document.querySelectorAll('[data-nav]').forEach(b=>b.classList.toggle('active',b.dataset.nav===(view==='homeView'?'home':view==='templatesView'?'templates':view==='projectsView'?'projects':'')))}
 document.querySelectorAll('[data-nav]').forEach(b=>b.onclick=()=>show(({home:'homeView',templates:'templatesView',projects:'projectsView'})[b.dataset.nav]));
-$('createBtn').onclick=()=>openEditor('Breaking With Text');
+
 const postParams=new URLSearchParams(window.location.search);
 const incomingHeadline=postParams.get('headline');
 const incomingSource=postParams.get('subtitle');
@@ -255,8 +255,8 @@ document.querySelectorAll('[data-format]').forEach(b=>b.onclick=()=>exportGraphi
 function save(){const item={name:template+' · '+new Date().toLocaleString(),template,headline:$('headline').value,highlight:$('highlight').value,subtitle:$('subtitle').value,accent:'#ffeb00',data:canvas.toDataURL('image/jpeg',.88)};projects.unshift(item);renderProjects();$('faceStatus').textContent='Project saved locally in this browser session.'}
 $('saveBtn').onclick=save;
 function renderProjects(){const markup=projects.map((p,i)=>`<div class="panel" style="padding:9px"><img src="${p.data}" style="width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:6px"><b style="display:block;margin-top:8px;font-size:12px">${p.template}</b><button class="btn" style="margin-top:8px;width:100%" data-open="${i}">Reopen</button></div>`).join('')||'<p class="muted">No saved projects yet.</p>';$('recent').innerHTML=markup;$('projectTiles').innerHTML=markup;document.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>{const p=projects[+b.dataset.open];openEditor(p.template);$('headline').value=p.headline;$('highlight').value=p.highlight;$('subtitle').value=p.subtitle;draw()})}
-$('createBtn').onclick=()=>openEditor('Breaking With Text');
-// Shared newsroom header is text-based; no legacy brand image assignment is needed.
+
+
 
 // Buffer scheduling integration. API credentials remain on the Cloudflare Worker.
 const BUFFER_API='https://thesportzine-buffer-api.sripad48.workers.dev';
