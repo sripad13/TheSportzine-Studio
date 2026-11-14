@@ -102,3 +102,8 @@ body:has(.wrap) > header.top > .brand,
 body:has(.newsroom-top) .newsroom-top > .brand {
   display:none!important;
 }
+
+html[data-studio-theme=light] .url-analyser .btn.primary,
+html[data-studio-theme=light] .ai-card .btn.primary {
+  color:#0B0B0D!important;
+}
