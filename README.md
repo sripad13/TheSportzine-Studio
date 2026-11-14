@@ -1,6 +1,6 @@
 # Studio — Sports content workspace
 
-Studio brings the Newsroom, Create, Optimize and Audit workflows together. The original **Graphics editor** remains available at `/graphics.html`.
+Studio brings Newsroom, Create, Optimize and Audit workflows together. The original **Graphics editor** remains available at `/graphics.html`.
 
 ## Newsroom interface
 The root page is the Studio landing page. The live editorial workspace remains available at `/live/` with independently scrolling, resizable columns; All Sports, Football, Formula 1 and Breaking workspaces; keyword columns; saved stories; and a right-side story inspection drawer.
@@ -15,17 +15,17 @@ Configured feeds: BBC Sport Football, Sky Sports Football, BBC Sport Formula 1, 
 ### Deploy
 1. Deploy `newsroom-worker.js` as the Cloudflare Worker `thesportzine-newsroom-api`.
 2. Attach the custom domain `newsroom-api.falsewinger.com`.
-3. In the Newsroom header, enter `https://newsroom-api.falsewinger.com` and select **Connect**.
+3. In the Studio header, enter `https://newsroom-api.falsewinger.com` and select **Connect**.
 4. Test `https://newsroom-api.falsewinger.com/api/health` and `/api/feed`.
 5. D1 is only required for the existing source-management endpoints. Add the binding and apply `newsroom-schema.sql` if you want to use those endpoints; RSS aggregation itself does not require D1.
 
-The Newsroom API CORS allowlist includes `https://newsroom.falsewinger.com` and the GitHub Pages origin. Cloudflare Access should be used to protect the app/API if desired; CORS is not authentication.
+The API Worker's CORS allowlist includes `https://newsroom.falsewinger.com` and the GitHub Pages origin. Cloudflare Access should be used to protect the app/API if desired; CORS is not authentication.
 
 ## RSS terms and editorial use
 Formula1.com is included as requested. Personal use does not by itself establish permission under a publisher's feed terms, so confirm the current terms and keep use within the permitted scope. Feed access is not permission to republish full articles or images. The interface displays headlines and short feed excerpts with links to the publisher. Review each publisher's terms before any wider distribution.
 
 ## AI Crawler Audit
-The Newsroom includes an AI Search Visibility Audit at `/ai-audit/` (legacy `/ai-visibility.html` redirects). It accepts any public HTTP/HTTPS website and runs 35 weighted checks across eight categories, including 17 representative AI/search crawler User-Agent probes, readable HTML, JSON-LD, discovery files, Answer Engine Optimisation (AEO) and Generative Engine Optimisation (GEO) signals. AEO checks cover question-led headings, concise answer blocks, FAQ structure, definitions and optional speakable hints. GEO checks cover author/publisher identity, publication dates, source citations, publisher transparency and entity context. These are page-level heuristics, not guarantees of AI citations or rankings.
+Studio includes an AI Search Visibility Audit at `/ai-audit/` (legacy `/ai-visibility.html` redirects). It accepts any public HTTP/HTTPS website and runs 35 weighted checks across eight categories, including 17 representative AI/search crawler User-Agent probes, readable HTML, JSON-LD, discovery files, Answer Engine Optimisation (AEO) and Generative Engine Optimisation (GEO) signals. AEO checks cover question-led headings, concise answer blocks, FAQ structure, definitions and optional speakable hints. GEO checks cover author/publisher identity, publication dates, source citations, publisher transparency and entity context. These are page-level heuristics, not guarantees of AI citations or rankings.
 
 The Worker exposes:
 - `POST /api/ai-audit` with JSON body `{"url":"https://example.com"}`.
@@ -34,10 +34,10 @@ The Worker exposes:
 
 Audit history and hashed-IP rate limits are stored in D1 when the existing `DB` binding is configured; the Worker creates their tables on first use. Without D1, the interface keeps recent history in the current browser and the Worker applies a best-effort per-isolate rate limit. Audits are limited to five requests per IP per hour when D1 is available. Private/local hostnames, IP-literal destinations, non-standard ports and redirects are rejected to reduce SSRF risk.
 
-Crawler checks use representative User-Agent headers and respect matching `robots.txt` disallow rules (a blocked probe is skipped). Results do not prove provider indexing, citation, ranking or future crawl behaviour. The scanner inspects server-delivered HTML and does not execute JavaScript. CORS is not authentication; protect the Newsroom Worker with Cloudflare Access and configure Cloudflare edge rate limiting for production.
+Crawler checks use representative User-Agent headers and respect matching `robots.txt` disallow rules (a blocked probe is skipped). Results do not prove provider indexing, citation, ranking or future crawl behaviour. The scanner inspects server-delivered HTML and does not execute JavaScript. CORS is not authentication; protect the API Worker with Cloudflare Access and configure Cloudflare edge rate limiting for production.
 
 ## Graphics module
-The original graphics editor remains preserved at `graphics.html`. Its Buffer integration continues to use `buffer-worker.js`; the Newsroom hostname has been added to that Worker's CORS allowlist.
+The original graphics editor remains preserved at `graphics.html`. Its Buffer integration continues to use `buffer-worker.js`; the Studio frontend hostname has been added to that Worker's CORS allowlist.
 
 
 ## Expanded AI Search Visibility tools

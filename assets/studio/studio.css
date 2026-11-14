@@ -1,245 +1,42 @@
-:root{--studio-lime:#B7D957;--studio-ink:#0B0B0D;--studio-light:#F5F6F2;--studio-border:#E4E6DF}
-.studio-global-header{height:66px;position:sticky;top:0;z-index:9999;display:flex;align-items:center;gap:28px;padding:0 clamp(16px,3vw,42px);background:var(--studio-header-bg,#fff);color:var(--studio-header-ink,#0B0B0D);border-bottom:1px solid var(--studio-header-border,#E4E6DF);font:13px Inter,Arial,sans-serif;box-sizing:border-box}
-.studio-global-header *{box-sizing:border-box}.studio-global-brand{display:flex;align-items:center;flex:0 0 auto}.studio-global-brand img{display:block;width:116px;height:auto;max-height:38px;object-fit:contain}.studio-global-nav{display:flex;align-items:center;gap:5px;margin:auto}.studio-global-nav a{display:inline-flex;align-items:center;min-height:34px;padding:0 13px;border-radius:7px;color:inherit;text-decoration:none;font-size:12px;font-weight:650;white-space:nowrap;opacity:.76}.studio-global-nav a:hover{opacity:1;background:var(--studio-hover,#f1f2ed)}.studio-global-nav a[aria-current=page]{opacity:1;background:var(--studio-lime);color:#0B0B0D}.studio-global-actions{display:flex;align-items:center;gap:8px}.studio-theme-toggle,.studio-menu-toggle{height:34px;padding:0 11px;border:1px solid var(--studio-control-border,#dfe2d9);border-radius:7px;background:transparent;color:inherit;font:600 11px Inter,Arial,sans-serif;cursor:pointer}.studio-theme-toggle:hover,.studio-menu-toggle:hover{background:var(--studio-hover,#f1f2ed)}.studio-menu-toggle{display:none;font-size:17px;padding:0 10px}.studio-global-header+.studio-page-spacer{display:none}
-html[data-studio-theme=light]{color-scheme:light;--studio-header-bg:#fff;--studio-header-ink:#0B0B0D;--studio-header-border:#E4E6DF;--studio-hover:#f0f2eb;--studio-control-border:#dfe2d9}
-html[data-studio-theme=dark]{color-scheme:dark;--studio-header-bg:#0B0B0D;--studio-header-ink:#fff;--studio-header-border:#292a2d;--studio-hover:#222420;--studio-control-border:#393b35}
-html[data-studio-theme=light] body{background:#F5F6F2!important;color:#171916!important}
-html[data-studio-theme=light] .panel,html[data-studio-theme=light] .hero,html[data-studio-theme=light] .column,html[data-studio-theme=light] .product,html[data-studio-theme=light] .card,html[data-studio-theme=light] .source-dialog,html[data-studio-theme=light] .dialog,html[data-studio-theme=light] .workflow-display{background:#fff!important;color:#171916!important;border-color:#E4E6DF!important;box-shadow:none}
-html[data-studio-theme=light] .top,html[data-studio-theme=light] .topbar,html[data-studio-theme=light] .bar,html[data-studio-theme=light] .colhead{background:#fff!important;color:#171916!important;border-color:#E4E6DF!important}
-html[data-studio-theme=light] input,html[data-studio-theme=light] textarea,html[data-studio-theme=light] select{background:#fff!important;color:#171916!important;border-color:#D9DDD3!important}
-html[data-studio-theme=light] .story:hover,html[data-studio-theme=light] .story.selected{background:#F2F4EC!important;color:#171916!important}
-html[data-studio-theme=light] .muted,html[data-studio-theme=light] .hint,html[data-studio-theme=light] .sub,html[data-studio-theme=light] .excerpt,html[data-studio-theme=light] .status{color:#62665D!important}
-html[data-studio-theme=light] .btn:not(.primary),html[data-studio-theme=light] .tiny,html[data-studio-theme=light] .format-btn{background:#F5F6F2!important;color:#171916!important;border-color:#D9DDD3!important}
-html[data-studio-theme=light] .btn.primary,html[data-studio-theme=light] .btn.active,html[data-studio-theme=light] .tab.active{background:#B7D957!important;color:#0B0B0D!important;border-color:#B7D957!important}
-html[data-studio-theme=light] .story,html[data-studio-theme=light] .check,html[data-studio-theme=light] th,html[data-studio-theme=light] td{border-color:#E4E6DF!important}
-html[data-studio-theme=light] .source-row,html[data-studio-theme=light] .suggestion,html[data-studio-theme=light] .metric,html[data-studio-theme=light] .cat,html[data-studio-theme=light] .snippet,html[data-studio-theme=light] .action-item,html[data-studio-theme=light] .notice{background:#F7F8F4!important;color:#171916!important;border-color:#E4E6DF!important}
-html[data-studio-theme=light] .workflow-display{background:#fff!important}
-html[data-studio-theme=dark] body{background:#0B0B0D!important;color:#F5F6F2!important}
-html[data-studio-theme=dark] .studio-global-header .studio-global-nav a[aria-current=page]{color:#0B0B0D!important}
-@media(max-width:760px){.studio-global-header{height:60px;gap:12px;padding:0 14px}.studio-global-brand img{width:102px}.studio-menu-toggle{display:inline-flex;align-items:center;justify-content:center}.studio-global-nav{display:none;position:absolute;top:59px;left:0;right:0;margin:0;padding:10px 14px 14px;background:var(--studio-header-bg);border-bottom:1px solid var(--studio-header-border);flex-direction:column;align-items:stretch;gap:3px}.studio-global-nav.is-open{display:flex}.studio-global-nav a{min-height:42px}.studio-global-actions{margin-left:auto}.studio-theme-toggle{font-size:10px;padding:0 8px}}
+:root{--studio-lime:#B7D957;--studio-ink:#0B0B0D;--studio-light:#F5F6F2}
+.studio-global-header{height:66px;position:sticky;top:0;z-index:9999;display:flex;align-items:center;gap:26px;padding:0 clamp(16px,3vw,42px);background:var(--studio-header-bg);color:var(--studio-header-ink);border-bottom:1px solid var(--studio-border);font:13px Inter,Arial,sans-serif;box-sizing:border-box}
+.studio-global-header *{box-sizing:border-box}
+.studio-global-brand{display:flex;align-items:center;flex:0 0 auto}
+.studio-global-brand img{display:block;width:126px;height:auto;max-height:34px;object-fit:contain}
+.studio-global-nav{display:flex;align-items:center;gap:5px;margin:auto}
+.studio-global-nav a{display:inline-flex;align-items:center;min-height:34px;padding:0 13px;border-radius:7px;color:inherit;text-decoration:none;font-size:12px;font-weight:650;white-space:nowrap;opacity:.78}
+.studio-global-nav a:hover{opacity:1;background:var(--studio-hover)}
+.studio-global-nav a[aria-current=page]{opacity:1;background:var(--studio-accent);color:#0B0B0D}
+.studio-global-actions{display:flex;align-items:center;gap:8px;min-width:0}
+.studio-theme-toggle,.studio-menu-toggle{height:34px;padding:0 11px;border:1px solid var(--studio-control-border);border-radius:7px;background:transparent;color:inherit;font:600 11px Inter,Arial,sans-serif;white-space:nowrap;cursor:pointer}
+.studio-theme-toggle:hover,.studio-menu-toggle:hover{background:var(--studio-hover)}
+.studio-menu-toggle{display:none;font-size:17px;padding:0 10px}
+.studio-context-actions{display:flex;align-items:center;gap:6px;min-width:0}
+.studio-context-actions .btn{white-space:nowrap}
+.studio-settings-menu{position:relative!important}
+.studio-settings-menu .settings-panel{position:absolute!important;top:calc(100% + 9px)!important;right:0!important;left:auto!important;z-index:10001}
+#studio-legacy-controls{display:none!important}
+html[data-studio-theme=light]{color-scheme:light;--bg:#F5F6F2;--panel:#FFFFFF;--panel2:#F0F2EC;--line:#DDE1D7;--muted:#62665D;--text:#171916;--white:#171916;--yellow:#B7D957;--green:#247A4B;--red:#B53A3A;--blue:#2867A6;--amber:#8A6417;--studio-header-bg:#FFFFFF;--studio-header-ink:#0B0B0D;--studio-border:#E1E4DC;--studio-hover:#F0F2EB;--studio-control-border:#D9DDD3;--studio-accent:#B7D957;--ui-surface:#FFFFFF;--ui-surface-alt:#F0F2EC;--ui-text:#171916;--ui-muted:#62665D}
+html[data-studio-theme=dark]{color-scheme:dark;--bg:#0B0B0D;--panel:#17191D;--panel2:#1E2126;--line:#30343A;--muted:#A7ADA2;--text:#F5F6F2;--white:#F5F6F2;--yellow:#B7D957;--green:#8BD49A;--red:#FF8D8D;--blue:#8DBDFF;--amber:#E7B75E;--studio-header-bg:#0B0B0D;--studio-header-ink:#FFFFFF;--studio-border:#292C30;--studio-hover:#222420;--studio-control-border:#393B35;--studio-accent:#B7D957;--ui-surface:#17191D;--ui-surface-alt:#1E2126;--ui-text:#F5F6F2;--ui-muted:#A7ADA2}
+html[data-studio-theme] body{background:var(--bg)!important;color:var(--text)!important}
+html[data-studio-theme] :is(h1,h2,h3,h4,h5,h6,label,.coltitle,.story h3,.source-name,.tileinfo,.controls h3,.panelhead,.dhead strong,.dialog h2,.source-dialog h2,.insight-value,.score,.metric strong,.stat strong,.catline,.check b,.brandline){color:var(--text)!important}
+html[data-studio-theme] :is(.muted,.hint,.sub,.excerpt,.status,.meta,.source-url,.suggestion-meta,.insight-label,.insight-change,.eyebrow,.footnote,.tileinfo small,.field label,.dcontent p,.url-result-meta span,.notice small){color:var(--muted)!important}
+html[data-studio-theme] :is(.panel,.hero,.column,.product,.card,.source-dialog,.dialog,.workflow-display,.tile,.controls,.workspace,.source,.source-row,.source-list,.buffer-panel,.buffer-channel,.editor-toolbar,.formatted-preview-wrap,.formbody,.checks,.scoreline,.insight-card,.url-analyser,.ai-card,.score-panel,.score-card,.analysis-panel,.metric,.snippet,.action-item,.notice,.url-score-card,.stat,.cat,.category,.page,.form,.sourcebox,.settings-panel,.drawer .dhead,.drawer .dcontent,.modal-card,.mainpanel,.sidepanel){background:var(--panel)!important;color:var(--text)!important;border-color:var(--line)!important;box-shadow:none}
+html[data-studio-theme] :is(.colhead,.colfilter,.toolbar,.panelhead,.topbar,.top,.bar,.cards,.tileart,.canvaswrap,.image-positioning,.upload,.progress,.write-article>summary,.preview-details>summary,.formatted-preview blockquote,.dcontent .sourcebox){background:var(--panel2)!important;color:var(--text)!important;border-color:var(--line)!important}
+html[data-studio-theme] :is(input,textarea,select,.api,.bar input,.colfilter input,.colfilter select,.field input,.field textarea,.field select,.form input,.form select,.scanbar input,.modal-card input){background:var(--panel)!important;color:var(--text)!important;border-color:var(--line)!important}
+html[data-studio-theme] :is(.btn:not(.primary),.tiny,.format-btn,.tab:not(.active),.pill,.tag,.iconbtn,.button.secondary){background:var(--panel2)!important;color:var(--text)!important;border-color:var(--line)!important}
+html[data-studio-theme] :is(.btn.primary,.btn.active,.tab.active,.ws.active,.button:not(.secondary)){background:var(--yellow)!important;color:#0B0B0D!important;border-color:var(--yellow)!important}
+html[data-studio-theme] :is(.story,.check,th,td,.scoreline,.source-row){border-color:var(--line)!important}
+html[data-studio-theme] :is(.story,.source-row,.suggestion,.metric,.cat,.snippet,.action-item){background:var(--panel2)!important;color:var(--text)!important}
+html[data-studio-theme] .story:hover,html[data-studio-theme] .story.selected,html[data-studio-theme] .source-row:hover{background:var(--ui-surface-alt)!important;color:var(--ui-text)!important}
+html[data-studio-theme] .count{background:var(--panel2)!important;color:var(--text)!important}
+html[data-studio-theme] .empty strong{color:var(--text)!important}
+html[data-studio-theme] .formatted-preview,html[data-studio-theme] .formatted-preview :is(h1,h2,h3,strong,p,li){color:var(--text)!important}
+html[data-studio-theme] .ring{border-color:var(--line)!important}
+html[data-studio-theme] .modal-backdrop,html[data-studio-theme] .modal,html[data-studio-theme] .source-manager{background:rgba(0,0,0,.5)!important}
+html[data-studio-theme] .drawer{background:var(--panel)!important;color:var(--text)!important}
+html[data-studio-theme] .buffer-channel.selected{border-color:var(--yellow)!important;box-shadow:inset 0 0 0 1px var(--yellow)!important}
+html[data-studio-theme] .btn:focus-visible,html[data-studio-theme] a:focus-visible,html[data-studio-theme] button:focus-visible,html[data-studio-theme] input:focus-visible,html[data-studio-theme] textarea:focus-visible,html[data-studio-theme] select:focus-visible{outline:2px solid var(--yellow);outline-offset:2px}
+html[data-studio-theme] #canvasStage,html[data-studio-theme] canvas,html[data-studio-theme] .canvas-artwork{background:initial;color:initial}
+@media(max-width:760px){.studio-global-header{height:60px;gap:10px;padding:0 12px}.studio-global-brand img{width:105px;max-height:30px}.studio-menu-toggle{display:inline-flex;align-items:center;justify-content:center}.studio-global-nav{display:none;position:absolute;top:59px;left:0;right:0;margin:0;padding:10px 14px 14px;background:var(--studio-header-bg);border-bottom:1px solid var(--studio-border);flex-direction:column;align-items:stretch;gap:3px}.studio-global-nav.is-open{display:flex}.studio-global-nav a{min-height:42px}.studio-global-actions{margin-left:auto} .studio-context-actions{display:flex;max-width:40vw;overflow-x:auto;gap:4px}.studio-context-actions .btn{font-size:10px;padding:6px 7px}.studio-theme-toggle{font-size:10px;padding:0 8px}}
 @media(prefers-reduced-motion:reduce){.studio-global-header *{scroll-behavior:auto!important;transition:none!important}}
-/* Workspace viewport offsets after the shared 66px Studio header. */
-body:has(.board){overflow-y:auto!important}
-body:has(.board) .board{height:calc(100dvh - 166px)!important}
-body:has(.drawer) .drawer{top:124px!important}
-html[data-studio-theme=light] .modal,html[data-studio-theme=light] .source-manager{background:#0008!important}
-html[data-studio-theme=light] .dialog h2,html[data-studio-theme=light] .panel h2,html[data-studio-theme=light] .source-name,html[data-studio-theme=light] .suggestion-name{color:#171916!important}
-html[data-studio-theme=light] .formatted-preview{color:#30342c!important}
-html[data-studio-theme=light] .formatted-preview h2,html[data-studio-theme=light] .formatted-preview h3,html[data-studio-theme=light] .formatted-preview strong{color:#171916!important}
-html[data-studio-theme=light] .formatted-preview blockquote{background:#F2F4EC!important;color:#30342c!important}
-
-html[data-studio-theme=light] .tile,html[data-studio-theme=light] .controls,html[data-studio-theme=light] .canvaswrap,html[data-studio-theme=light] .image-positioning,html[data-studio-theme=light] .workspace,html[data-studio-theme=light] .workflow-tab,html[data-studio-theme=light] .source,html[data-studio-theme=light] .source-row,html[data-studio-theme=light] .source-list,html[data-studio-theme=light] .source-dialog,html[data-studio-theme=light] .source-manager,html[data-studio-theme=light] .buffer-panel,html[data-studio-theme=light] .buffer-channel,html[data-studio-theme=light] .editor-toolbar,html[data-studio-theme=light] .formatted-preview-wrap,html[data-studio-theme=light] .formbody,html[data-studio-theme=light] .checks,html[data-studio-theme=light] .scoreline{background:#fff!important;color:#171916!important;border-color:#E4E6DF!important}
-html[data-studio-theme=light] .tileinfo,html[data-studio-theme=light] .controls h3,html[data-studio-theme=light] .source-dialog h2,html[data-studio-theme=light] .dcontent h2,html[data-studio-theme=light] .dhead strong{color:#171916!important}
-html[data-studio-theme=light] .tileart{background:#E9ECE3!important;color:#171916!important}
-html[data-studio-theme=light] .canvaswrap{background:#F5F6F2!important}
-html[data-studio-theme=light] .field label,html[data-studio-theme=light] label{color:#454A40!important}
-html[data-studio-theme=light] .field input,html[data-studio-theme=light] .field textarea,html[data-studio-theme=light] .field select,html[data-studio-theme=light] .source input,html[data-studio-theme=light] .api,html[data-studio-theme=light] .bar input,html[data-studio-theme=light] .colfilter input,html[data-studio-theme=light] .colfilter select{background:#fff!important;color:#171916!important;border-color:#D9DDD3!important}
-html[data-studio-theme=light] .pill,html[data-studio-theme=light] .tag{background:#F5F6F2!important;color:#454A40!important;border-color:#D9DDD3!important}
-html[data-studio-theme=light] .drawer,html[data-studio-theme=light] .modal-card{background:#fff!important;color:#171916!important;border-color:#E4E6DF!important}
-html[data-studio-theme=light] .dcontent p,html[data-studio-theme=light] .source-url,html[data-studio-theme=light] .suggestion-meta{color:#62665D!important}
-
-
-/* Studio light-theme contrast corrections for legacy workspace components. */
-html[data-studio-theme=light] .insight-card,
-html[data-studio-theme=light] .url-analyser,
-html[data-studio-theme=light] .ai-card,
-html[data-studio-theme=light] .score-panel,
-html[data-studio-theme=light] .score-card,
-html[data-studio-theme=light] .analysis-panel {
-  background:#15181f!important;
-  color:#f5f6f2!important;
-  border-color:#30343d!important;
-}
-html[data-studio-theme=light] .insight-card *,
-html[data-studio-theme=light] .url-analyser *,
-html[data-studio-theme=light] .ai-card *,
-html[data-studio-theme=light] .score-panel *,
-html[data-studio-theme=light] .score-card *,
-html[data-studio-theme=light] .analysis-panel * {
-  color:inherit;
-}
-html[data-studio-theme=light] .insight-card .insight-label,
-html[data-studio-theme=light] .insight-card .insight-change,
-html[data-studio-theme=light] .ai-card .sub,
-html[data-studio-theme=light] .ai-card .hint,
-html[data-studio-theme=light] .url-analyser .hint {
-  color:#b8beca!important;
-}
-html[data-studio-theme=light] .url-analyser input,
-html[data-studio-theme=light] .ai-card input,
-html[data-studio-theme=light] .ai-card textarea,
-html[data-studio-theme=light] .ai-card select {
-  background:#fff!important;
-  color:#171916!important;
-}
-html[data-studio-theme=light] .empty b {
-  color:#171916!important;
-}
-html[data-studio-theme=light] .column .coltitle,
-html[data-studio-theme=light] .column .coltitle strong,
-html[data-studio-theme=light] .colhead .coltitle {
-  color:#252922!important;
-}
-html[data-studio-theme=light] .column .count {
-  background:#293243!important;
-  color:#fff!important;
-}
-html[data-studio-theme=light] .column .tiny {
-  color:#30342c!important;
-}
-html[data-studio-theme=light] .column .source {
-  color:#30342c!important;
-}
-html[data-studio-theme=light] .column .story h3 {
-  color:#171916!important;
-}
-html[data-studio-theme=light] .column .meta {
-  color:#62665d!important;
-}
-/* Remove the legacy product masthead; the Studio header is the sole brand header. */
-body:has(.board) > header.top > .brand,
-body:has(.wrap) > header.top > .brand,
-body:has(.newsroom-top) .newsroom-top > .brand {
-  display:none!important;
-}
-
-html[data-studio-theme=light] .url-analyser .btn.primary,
-html[data-studio-theme=light] .ai-card .btn.primary {
-  color:#0B0B0D!important;
-}
-
-
-/* Unified Studio theme layer — applied after legacy page styles. */
-html[data-studio-theme="light"] {
-  color-scheme: light;
-  --ui-bg:#F5F6F2;
-  --ui-surface:#FFFFFF;
-  --ui-surface-2:#F0F2EC;
-  --ui-surface-3:#E8EBE2;
-  --ui-text:#171916;
-  --ui-muted:#62665D;
-  --ui-border:#DDE1D7;
-  --ui-control:#FFFFFF;
-  --ui-control-text:#171916;
-  --ui-accent:#B7D957;
-}
-html[data-studio-theme="dark"] {
-  color-scheme: dark;
-  --ui-bg:#0B0B0D;
-  --ui-surface:#17191D;
-  --ui-surface-2:#1E2126;
-  --ui-surface-3:#282C32;
-  --ui-text:#F5F6F2;
-  --ui-muted:#A7ADA2;
-  --ui-border:#30343A;
-  --ui-control:#111317;
-  --ui-control-text:#F5F6F2;
-  --ui-accent:#B7D957;
-}
-html[data-studio-theme] body {
-  background:var(--ui-bg)!important;
-  color:var(--ui-text)!important;
-}
-html[data-studio-theme] .studio-global-header {
-  background:var(--studio-header-bg)!important;
-  color:var(--studio-header-ink)!important;
-}
-
-/* Shared page surfaces: neutral in light mode, layered charcoal in dark mode. */
-html[data-studio-theme] :is(
-  .panel,.hero,.column,.product,.card,.source-dialog,.dialog,.workflow-display,
-  .tile,.controls,.workspace,.source,.source-row,.source-list,.buffer-panel,
-  .buffer-channel,.editor-toolbar,.formatted-preview-wrap,.formbody,.checks,
-  .scoreline,.insight-card,.url-analyser,.ai-card,.score-panel,.score-card,
-  .analysis-panel,.metric,.snippet,.action-item,.notice,.url-score-card,
-  .stat,.cat,.category,.page,.form,.sourcebox,.settings-panel,.drawer .dhead,
-  .drawer .dcontent,.modal-card
-) {
-  background:var(--ui-surface)!important;
-  color:var(--ui-text)!important;
-  border-color:var(--ui-border)!important;
-  box-shadow:none;
-}
-html[data-studio-theme] :is(
-  .top,.topbar,.bar,.colhead,.colfilter,.cards,.story,.tileart,.canvaswrap,
-  .image-positioning,.status,.upload,.progress,.write-article>summary,
-  .preview-details>summary,.formatted-preview blockquote,.source-row,
-  .dcontent .sourcebox,.settings-panel
-) {
-  background:var(--ui-surface-2)!important;
-  color:var(--ui-text)!important;
-  border-color:var(--ui-border)!important;
-}
-html[data-studio-theme] :is(
-  input,textarea,select,.api,.bar input,.colfilter input,.colfilter select,
-  .field input,.field textarea,.field select,.form input,.form select,
-  .scanbar input,.modal-card input
-) {
-  background:var(--ui-control)!important;
-  color:var(--ui-control-text)!important;
-  border-color:var(--ui-border)!important;
-}
-html[data-studio-theme] :is(
-  h1,h2,h3,h4,h5,h6,label,.coltitle,.story h3,.source-name,.tileinfo,
-  .controls h3,.panelhead,.dhead strong,.dialog h2,.source-dialog h2,
-  .insight-value,.score,.metric strong,.stat strong,.catline,.check b
-) { color:var(--ui-text)!important; }
-html[data-studio-theme] :is(
-  .muted,.hint,.sub,.excerpt,.status,.meta,.source-url,.suggestion-meta,
-  .insight-label,.insight-change,.eyebrow,.footnote,.empty,.tileinfo small,
-  .field label,.dcontent p,.url-result-meta span,.url-analyser .hint
-) { color:var(--ui-muted)!important; }
-html[data-studio-theme] :is(
-  .btn:not(.primary),.tiny,.format-btn,.tab:not(.active),.pill,.tag,
-  .buffer-channel
-) {
-  background:var(--ui-surface-2)!important;
-  color:var(--ui-text)!important;
-  border-color:var(--ui-border)!important;
-}
-html[data-studio-theme] :is(.btn.primary,.btn.active,.tab.active,.ws.active) {
-  background:var(--ui-accent)!important;
-  color:#0B0B0D!important;
-  border-color:var(--ui-accent)!important;
-}
-html[data-studio-theme] :is(.story,.check,th,td,.check,.scoreline) {
-  border-color:var(--ui-border)!important;
-}
-html[data-studio-theme] .story:hover,
-html[data-studio-theme] .story.selected,
-html[data-studio-theme] .source-row:hover {
-  background:var(--ui-surface-3)!important;
-  color:var(--ui-text)!important;
-}
-html[data-studio-theme] .count {
-  background:var(--ui-surface-3)!important;
-  color:var(--ui-text)!important;
-}
-html[data-studio-theme] .empty b,
-html[data-studio-theme] .formatted-preview,
-html[data-studio-theme] .formatted-preview :is(h1,h2,h3,strong,p,li) {
-  color:var(--ui-text)!important;
-}
-html[data-studio-theme] .modal-backdrop,
-html[data-studio-theme] .modal,
-html[data-studio-theme] .source-manager {
-  background:rgba(0,0,0,.48)!important;
-}
-html[data-studio-theme] .drawer {
-  background:rgba(0,0,0,.48)!important;
-}
-html[data-studio-theme] .buffer-channel.selected {
-  border-color:var(--ui-accent)!important;
-  box-shadow:inset 0 0 0 1px var(--ui-accent)!important;
-}
-html[data-studio-theme] .btn.primary,
-html[data-studio-theme] .btn.active,
-html[data-studio-theme] .tab.active {
-  font-weight:700;
-}
-/* The graphic artwork/canvas is content, not application chrome: preserve its own colours. */
-html[data-studio-theme] #canvasStage,
-html[data-studio-theme] canvas,
-html[data-studio-theme] .canvas-artwork {
-  color:initial;
-}
