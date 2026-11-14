@@ -12,6 +12,8 @@
   header.innerHTML='<a class="studio-global-brand" href="/" aria-label="Studio home"><img alt="Studio" src="/brand/studio-logo-light.svg"></a><button class="studio-menu-toggle" type="button" aria-label="Toggle navigation" aria-expanded="false">☰</button><nav class="studio-global-nav" aria-label="Primary navigation">'+links.map(([name,url])=>'<a href="'+url+'" '+(active===name?'aria-current="page"':'')+'>'+name+'</a>').join('')+'</nav><div class="studio-global-actions"><button class="studio-theme-toggle" type="button">Theme: System</button></div>';
   document.body.insertBefore(header,document.body.firstChild);
   const actions=header.querySelector('.studio-global-actions');
+  const contextActions=document.createElement('div');
+  contextActions.className='studio-context-actions';
   const hiddenControls=document.createElement('div');
   hiddenControls.hidden=true;
   hiddenControls.id='studio-legacy-controls';
@@ -28,8 +30,6 @@
     if(hiddenCreate) hiddenControls.appendChild(hiddenCreate);
     pageControls.remove();
   }
-  const contextActions=document.createElement('div');
-  contextActions.className='studio-context-actions';
   const themeButton=header.querySelector('.studio-theme-toggle');
   const apply=choice=>{
     const mode=choice==='system'?systemTheme():choice;
