@@ -31,7 +31,7 @@ const suggestedSites=[
 function renderSuggestions(){
  const existing=new Set(sources.map(s=>{try{return new URL(s.feed_url).hostname.replace(/^www\./,'').toLowerCase()}catch{return ''}}));
  const activeSports=new Set(sources.map(s=>normalizeSport(s.sport).toLowerCase()));
- const picks=suggestedSites.filter(site=>activeSports.has(site.sport.toLowerCase())&&!existing.has(new URL(site.url).hostname.replace(/^www\./,'').toLowerCase()));
+ const picks=suggestedSites.filter(site=>(activeSports.size===0||activeSports.has(site.sport.toLowerCase()))&&!existing.has(new URL(site.url).hostname.replace(/^www\./,'').toLowerCase()));
  $('suggestions').innerHTML=picks.length?picks.map(site=>'<div class="suggestion"><div class="suggestion-info"><div class="suggestion-name">'+esc(site.name)+'</div><div class="suggestion-meta">'+esc(site.url)+'</div></div><div class="suggestion-actions"><span class="suggestion-sport">'+esc(site.sport)+'</span><button class="btn" data-suggest="'+esc(site.name)+'">Check RSS</button></div></div>').join(''):'<div class="empty">No additional suggestions right now. Add sources in another sport to discover more publications.</div>';
  document.querySelectorAll('[data-suggest]').forEach(button=>button.onclick=()=>{const site=suggestedSites.find(x=>x.name===button.dataset.suggest);if(!site)return;$('name').value=site.name;$('url').value=site.url;$('sport').value=site.sport;document.querySelector('.source-form').scrollIntoView({behavior:'smooth',block:'center'});$('url').focus();message('discovery','Website loaded. Select Find RSS to detect its feed, then add it.','ok')});
 }
