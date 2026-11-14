@@ -14,10 +14,6 @@
   const actions=header.querySelector('.studio-global-actions');
   const contextActions=document.createElement('div');
   contextActions.className='studio-context-actions';
-  const hiddenControls=document.createElement('div');
-  hiddenControls.hidden=true;
-  hiddenControls.id='studio-legacy-controls';
-  document.body.appendChild(hiddenControls);
   const pageControls=document.getElementById('studio-page-controls');
   if(pageControls){
     const settings=pageControls.querySelector('#settingsMenu,.settings-menu');
@@ -27,8 +23,6 @@
       if(group.matches('a,button')) contextActions.appendChild(group);
       else [...group.children].forEach(node=>contextActions.appendChild(node));
     });
-    const hiddenCreate=pageControls.querySelector('#createBtn');
-    if(hiddenCreate) hiddenControls.appendChild(hiddenCreate);
     pageControls.remove();
   }
   const themeButton=header.querySelector('.studio-theme-toggle');
@@ -43,24 +37,6 @@
     themeButton.textContent='Theme: '+choice[0].toUpperCase()+choice.slice(1);
   };
   apply(getChoice());
-  // Fold all legacy page mastheads into the shared Studio header.
-  document.querySelectorAll('body header:not(.studio-global-header)').forEach(old=>{
-    if(old===header||old.classList.contains('studio-global-header')) return;
-    const settings=old.querySelector('#settingsMenu,.settings-menu');
-    if(settings) actions.appendChild(settings);
-    const actionGroups=old.querySelectorAll('.top-actions,.actions,.topright');
-    actionGroups.forEach(group=>{
-      [...group.children].forEach(node=>{
-        if(node.matches('.backlink')) return;
-        if(node===settings) return;
-        contextActions.appendChild(node);
-      });
-    });
-    const hiddenCreate=old.querySelector('#createBtn');
-    if(hiddenCreate) hiddenControls.appendChild(hiddenCreate);
-    old.querySelectorAll('#headerBrand').forEach(node=>hiddenControls.appendChild(node));
-    old.remove();
-  });
   if(contextActions.children.length) actions.appendChild(contextActions);
   const settings=actions.querySelector('.settings-menu');
   if(settings){
