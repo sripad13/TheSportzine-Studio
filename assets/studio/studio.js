@@ -16,6 +16,8 @@
       header.innerHTML='<a class="studio-global-brand" href="/" aria-label="Studio home"><img class="studio-brand-mark" alt="" src="/brand/studio-mark-light.svg"><span class="studio-brand-word">Studio</span></a><button class="studio-menu-toggle" type="button" aria-label="Toggle navigation" aria-expanded="false">☰</button><nav class="studio-global-nav" aria-label="Primary navigation">'+links.map(([name,url])=>'<a href="'+url+'" '+(active===name?'aria-current="page"':'')+'>'+name+'</a>').join('')+'</nav><div class="studio-global-actions"><button class="studio-theme-toggle" type="button" aria-label="Change colour theme">Theme: System</button></div>';
       document.body.insertBefore(header,document.body.firstChild);
     }
+    header.querySelector('.studio-menu-toggle')?.remove();
+    header.querySelector('.studio-theme-toggle')?.remove();
     const nav=header.querySelector('.studio-global-nav');
     if(!nav) return;
     const navLinks=[...nav.querySelectorAll('a')];
@@ -42,7 +44,6 @@
       });
       pageControls.remove();
     }
-    const themeButton=header.querySelector('.studio-theme-toggle');
     const getChoice=()=>{try{return localStorage.getItem('studio-theme')||'system'}catch{return 'system'}};
     const setChoice=value=>{try{localStorage.setItem('studio-theme',value)}catch{}};
     const systemTheme=()=>window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';
@@ -55,10 +56,6 @@
       if(logo) logo.src=mode==='dark'?'/brand/studio-mark-dark.svg':'/brand/studio-mark-light.svg';
       const favicon=document.querySelector('link[rel~="icon"]');
       if(favicon) favicon.href=mode==='dark'?'/brand/studio-mark-dark.svg':'/brand/studio-mark-light.svg';
-      if(themeButton){
-        themeButton.textContent='Theme: '+safeChoice[0].toUpperCase()+safeChoice.slice(1);
-        themeButton.setAttribute('aria-label','Colour theme: '+safeChoice+'. Activate to change theme.');
-      }
       document.querySelector('meta[name="theme-color"]')?.setAttribute('content',mode==='dark'?'#0B0B0D':'#F5F6F2');
     };
     apply(getChoice());
@@ -70,19 +67,6 @@
       settings.style.top='auto';
       settings.style.right='auto';
     }
-    themeButton?.addEventListener('click',()=>{
-      const order=['system','light','dark'];
-      const current=getChoice();
-      const next=order[(order.indexOf(current)+1)%order.length];
-      setChoice(next);
-      apply(next);
-    });
-    const menu=header.querySelector('.studio-menu-toggle');
-    menu?.addEventListener('click',()=>{
-      const open=nav.classList.toggle('is-open');
-      menu.setAttribute('aria-expanded',String(open));
-      menu.textContent=open?'×':'☰';
-    });
     window.matchMedia?.('(prefers-color-scheme: dark)').addEventListener?.('change',()=>{if(getChoice()==='system') apply('system')});
   };
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init,{once:true});
