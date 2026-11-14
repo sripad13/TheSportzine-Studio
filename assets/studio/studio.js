@@ -13,7 +13,7 @@
     const header=document.querySelector('.studio-global-header')||document.createElement('header');
     if(!header.isConnected){
       header.className='studio-global-header';
-      header.innerHTML='<a class="studio-global-brand" href="/" aria-label="Studio home"><img alt="Studio" src="/brand/studio-logo-light.svg"></a><button class="studio-menu-toggle" type="button" aria-label="Toggle navigation" aria-expanded="false">☰</button><nav class="studio-global-nav" aria-label="Primary navigation">'+links.map(([name,url])=>'<a href="'+url+'" '+(active===name?'aria-current="page"':'')+'>'+name+'</a>').join('')+'</nav><div class="studio-global-actions"><button class="studio-theme-toggle" type="button" aria-label="Change colour theme">Theme: System</button></div>';
+      header.innerHTML='<a class="studio-global-brand" href="/" aria-label="Studio home"><img class="studio-brand-mark" alt="" src="/brand/studio-mark-light.svg"><span class="studio-brand-word">Studio</span></a><button class="studio-menu-toggle" type="button" aria-label="Toggle navigation" aria-expanded="false">☰</button><nav class="studio-global-nav" aria-label="Primary navigation">'+links.map(([name,url])=>'<a href="'+url+'" '+(active===name?'aria-current="page"':'')+'>'+name+'</a>').join('')+'</nav><div class="studio-global-actions"><button class="studio-theme-toggle" type="button" aria-label="Change colour theme">Theme: System</button></div>';
       document.body.insertBefore(header,document.body.firstChild);
     }
     const nav=header.querySelector('.studio-global-nav');
@@ -52,7 +52,7 @@
       root.setAttribute('data-studio-theme',mode);
       root.setAttribute('data-studio-theme-choice',safeChoice);
       const logo=header.querySelector('.studio-global-brand img');
-      if(logo) logo.src=mode==='dark'?'/brand/studio-logo-dark.svg':'/brand/studio-logo-light.svg';
+      if(logo) logo.src=mode==='dark'?'/brand/studio-mark-dark.svg':'/brand/studio-mark-light.svg';
       const favicon=document.querySelector('link[rel~="icon"]');
       if(favicon) favicon.href=mode==='dark'?'/brand/studio-mark-dark.svg':'/brand/studio-mark-light.svg';
       if(themeButton){
