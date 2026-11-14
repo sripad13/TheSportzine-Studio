@@ -1,6 +1,8 @@
-(()=>{\n  const init=()=>{
+(()=>{
+  const init=()=>{
   const root=document.documentElement;
-  if(!document.body) return;\n  if(document.querySelector('.studio-global-header')) return;
+  if(!document.body) return;
+  if(document.querySelector('.studio-global-header')) return;
   const getChoice=()=>{try{return localStorage.getItem('studio-theme')||'system'}catch{return 'system'}};
   const setChoice=value=>{try{localStorage.setItem('studio-theme',value)}catch{}};
   const systemTheme=()=>window.matchMedia?.('(prefers-color-scheme: dark)').matches?'dark':'light';
@@ -93,4 +95,7 @@
   window.matchMedia?.('(prefers-color-scheme: dark)').addEventListener?.('change',()=>{
     if(getChoice()==='system') apply('system');
   });
-  };\n  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init,{once:true});\n  else init();\n})();
+  };
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init,{once:true});
+  else init();
+})();
