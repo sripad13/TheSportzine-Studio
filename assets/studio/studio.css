@@ -27,3 +27,13 @@ html[data-studio-theme=light] .dialog h2,html[data-studio-theme=light] .panel h2
 html[data-studio-theme=light] .formatted-preview{color:#30342c!important}
 html[data-studio-theme=light] .formatted-preview h2,html[data-studio-theme=light] .formatted-preview h3,html[data-studio-theme=light] .formatted-preview strong{color:#171916!important}
 html[data-studio-theme=light] .formatted-preview blockquote{background:#F2F4EC!important;color:#30342c!important}
+
+html[data-studio-theme=light] .tile,html[data-studio-theme=light] .controls,html[data-studio-theme=light] .canvaswrap,html[data-studio-theme=light] .image-positioning,html[data-studio-theme=light] .workspace,html[data-studio-theme=light] .workflow-tab,html[data-studio-theme=light] .source,html[data-studio-theme=light] .source-row,html[data-studio-theme=light] .source-list,html[data-studio-theme=light] .source-dialog,html[data-studio-theme=light] .source-manager,html[data-studio-theme=light] .buffer-panel,html[data-studio-theme=light] .buffer-channel,html[data-studio-theme=light] .editor-toolbar,html[data-studio-theme=light] .formatted-preview-wrap,html[data-studio-theme=light] .formbody,html[data-studio-theme=light] .checks,html[data-studio-theme=light] .scoreline{background:#fff!important;color:#171916!important;border-color:#E4E6DF!important}
+html[data-studio-theme=light] .tileinfo,html[data-studio-theme=light] .controls h3,html[data-studio-theme=light] .source-dialog h2,html[data-studio-theme=light] .dcontent h2,html[data-studio-theme=light] .dhead strong{color:#171916!important}
+html[data-studio-theme=light] .tileart{background:#E9ECE3!important;color:#171916!important}
+html[data-studio-theme=light] .canvaswrap{background:#F5F6F2!important}
+html[data-studio-theme=light] .field label,html[data-studio-theme=light] label{color:#454A40!important}
+html[data-studio-theme=light] .field input,html[data-studio-theme=light] .field textarea,html[data-studio-theme=light] .field select,html[data-studio-theme=light] .source input,html[data-studio-theme=light] .api,html[data-studio-theme=light] .bar input,html[data-studio-theme=light] .colfilter input,html[data-studio-theme=light] .colfilter select{background:#fff!important;color:#171916!important;border-color:#D9DDD3!important}
+html[data-studio-theme=light] .pill,html[data-studio-theme=light] .tag{background:#F5F6F2!important;color:#454A40!important;border-color:#D9DDD3!important}
+html[data-studio-theme=light] .drawer,html[data-studio-theme=light] .modal-card{background:#fff!important;color:#171916!important;border-color:#E4E6DF!important}
+html[data-studio-theme=light] .dcontent p,html[data-studio-theme=light] .source-url,html[data-studio-theme=light] .suggestion-meta{color:#62665D!important}
