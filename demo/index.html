@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex">
-<title>Newsroom demo — Studio</title>
+<title>Studio demo</title>
 <link rel="icon" href="/brand/studio-mark-light.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/assets/studio/studio.css?v=20261115-demo">
 <script defer src="/assets/studio/studio.js?v=20261114-14"></script>
@@ -13,7 +13,14 @@
 body{margin:0;font:14px/1.45 Inter,system-ui,Arial,sans-serif;background:#F5F6F2;color:#0B0B0D}
 @media (prefers-color-scheme:dark){body{background:#0B0B0D;color:#F5F6F2}}
 .demo-banner{background:#B7D957;color:#0B0B0D;padding:10px 16px;font-weight:600;text-align:center}
-main{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;padding:18px;max-width:1200px;margin:0 auto}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;max-width:1200px;margin:14px auto 0;padding:0 18px}
+.tabs button{border:1px solid #B7D957;background:transparent;color:inherit;border-radius:20px;padding:7px 14px;font:inherit;font-weight:600;cursor:pointer}
+.tabs button[aria-selected=true]{background:#B7D957;color:#0B0B0D}
+.view{display:none;max-width:1200px;margin:0 auto;padding:18px}
+.view.active{display:block}
+.panel{background:#FFFFFF;border:1px solid #dcdfd6;border-radius:10px;padding:14px;margin-bottom:14px}
+@media (prefers-color-scheme:dark){.panel{background:#171916;border-color:#2c2f27}}
+.board{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
 .column{background:#FFFFFF;border:1px solid #dcdfd6;border-radius:10px;overflow:hidden}
 @media (prefers-color-scheme:dark){.column{background:#171916;border-color:#2c2f27}}
 .column h2{font-size:15px;margin:0;padding:12px 14px;border-bottom:1px solid #dcdfd6;display:flex;justify-content:space-between}
@@ -23,18 +30,78 @@ main{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1
 .pill{border:1px solid #B7D957;border-radius:20px;padding:0 6px;color:#3d4a17}
 .story h3{font-size:15px;margin:6px 0 4px}
 .story p{margin:0;color:#4d5147;font-size:13px}
+label{display:block;font-size:12px;color:#6b6f63;margin:10px 0 4px}
+input,textarea,select{width:100%;box-sizing:border-box;font:inherit;padding:9px 10px;border:1px solid #c9ccc1;border-radius:8px;background:#FFFFFF;color:inherit}
+@media (prefers-color-scheme:dark){input,textarea,select{background:#0B0B0D;border-color:#3a3d33}}
+textarea{min-height:110px;resize:vertical}
+.btn{margin-top:12px;background:#B7D957;color:#0B0B0D;border:0;border-radius:20px;padding:9px 16px;font:inherit;font-weight:700;cursor:pointer}
+.chip{display:inline-block;border:1px solid #c9ccc1;border-radius:20px;padding:5px 10px;margin:4px 6px 0 0;font-size:12px;cursor:pointer;user-select:none}
+.chip[aria-pressed=true]{background:#B7D957;border-color:#B7D957;color:#0B0B0D}
+.result{margin-top:12px;font-size:13px}
+.score{font-size:34px;font-weight:800}
+.check{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid #eceee6;font-size:13px}
+.check span:last-child{color:#6b6f63;text-align:right}
 .note{max-width:1200px;margin:0 auto;padding:0 18px 30px;font-size:12px;color:#6b6f63}
-a{color:inherit}
 </style>
 </head>
 <body>
 <header class="studio-global-header"><a class="studio-global-brand" href="/" aria-label="Studio home"><img class="studio-brand-mark" alt="" src="/brand/studio-mark-light.svg"><span class="studio-brand-word">Studio</span></a><nav class="studio-global-nav" aria-label="Primary navigation"><a href="/live/">Newsroom</a><a href="/post/">Create</a><a href="/seo/">Optimize</a><a href="/ai-audit/">Audit</a></nav><div class="studio-global-actions"></div></header>
-<div class="demo-banner">Demo with sample stories. These are not live headlines, and no feeds, AI tools or Buffer accounts are connected.</div>
-<main id="board" aria-label="Demo Newsroom columns"></main>
-<p class="note">This page shows how the Newsroom is laid out. Headlines are invented for the demo and do not come from any publisher. The live Newsroom is private.</p>
+<div class="demo-banner">Demo: every screen works, but results are fixed sample data. Nothing is posted, scanned or saved.</div>
+
+<nav class="tabs" role="tablist" aria-label="Demo sections">
+  <button role="tab" data-view="newsroom" aria-selected="true">Newsroom</button>
+  <button role="tab" data-view="create" aria-selected="false">Create</button>
+  <button role="tab" data-view="optimize" aria-selected="false">Optimize</button>
+  <button role="tab" data-view="audit" aria-selected="false">Audit</button>
+</nav>
+
+<!-- Newsroom -->
+<section class="view active" id="view-newsroom">
+  <div class="board" id="board" aria-label="Demo Newsroom columns"></div>
+</section>
+
+<!-- Create -->
+<section class="view" id="view-create">
+  <div class="panel">
+    <strong>Create a post</strong>
+    <label for="caption">Caption (280 characters max)</label>
+    <textarea id="caption" maxlength="280">Striker completes a move to the rebuilding club. What do you make of it?</textarea>
+    <label>Channels (sample)</label>
+    <div id="channels"></div>
+    <label for="when">When</label>
+    <select id="when"><option>Add to queue</option><option>Share now</option><option>Save as draft</option></select>
+    <button class="btn" id="publish" type="button">Create post</button>
+    <div class="result" id="publishResult" role="status"></div>
+  </div>
+</section>
+
+<!-- Optimize -->
+<section class="view" id="view-optimize">
+  <div class="panel">
+    <strong>Check a page for search and AI readiness</strong>
+    <label for="seoUrl">Page address</label>
+    <input id="seoUrl" value="https://example.com/sample-article">
+    <button class="btn" id="seoRun" type="button">Run check</button>
+    <div class="result" id="seoResult" role="status"></div>
+  </div>
+</section>
+
+<!-- Audit -->
+<section class="view" id="view-audit">
+  <div class="panel">
+    <strong>AI visibility audit</strong>
+    <label for="auditUrl">Website address</label>
+    <input id="auditUrl" value="https://example.com">
+    <button class="btn" id="auditRun" type="button">Run audit</button>
+    <div class="result" id="auditResult" role="status"></div>
+  </div>
+</section>
+
+<p class="note">Sample data only. Headlines, channels and scores are invented to show how the screens work. The live tools are private.</p>
+
 <script>
-// Fixed sample data only: no network requests, no API keys, no user data.
-const SAMPLE = [
+// Everything below is fixed sample data. The page makes no network requests.
+const STORIES = [
   {column:'Football latest', sport:'Football', source:'Sample Sports Daily', age:'12 min ago', title:'Striker completes move to rebuilding club', summary:'Sample headline for the demo layout.', breaking:true},
   {column:'Football latest', sport:'Football', source:'Sample Sports Daily', age:'40 min ago', title:'Manager praises young squad after late win', summary:'Sample headline for the demo layout.'},
   {column:'Football latest', sport:'Football', source:'Sample Football Wire', age:'2 hr ago', title:'Injury update ahead of cup weekend', summary:'Sample headline for the demo layout.'},
@@ -42,15 +109,57 @@ const SAMPLE = [
   {column:'Formula 1 latest', sport:'Formula 1', source:'Sample Motorsport', age:'3 hr ago', title:'Qualifying order shaped by changing weather', summary:'Sample headline for the demo layout.'},
   {column:'Breaking', sport:'Football', source:'Sample Sports Daily', age:'5 min ago', title:'Club confirms surprise coaching change', summary:'Sample headline for the demo layout.', breaking:true}
 ];
-const board = document.getElementById('board');
-const columns = [...new Set(SAMPLE.map(s => s.column))];
-board.innerHTML = columns.map(name => {
-  const stories = SAMPLE.filter(s => s.column === name);
-  return '<section class="column"><h2><span>' + name + '</span><span>' + stories.length + '</span></h2>' +
-    stories.map(s => '<article class="story"><div class="meta"><span>' + s.source + '</span><span>·</span><span>' + s.age + '</span>' +
-      (s.breaking ? '<span class="pill">Breaking</span>' : '') + '</div><h3>' + s.title + '</h3><p>' + s.summary + '</p></article>').join('') +
+const CHANNELS = ['Sample Instagram', 'Sample X', 'Sample Facebook'];
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+// Tabs
+document.querySelectorAll('[role=tab]').forEach(tab => tab.addEventListener('click', () => {
+  document.querySelectorAll('[role=tab]').forEach(t => t.setAttribute('aria-selected', String(t === tab)));
+  document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === 'view-' + tab.dataset.view));
+}));
+
+// Newsroom
+const columns = [...new Set(STORIES.map(s => s.column))];
+document.getElementById('board').innerHTML = columns.map(name => {
+  const list = STORIES.filter(s => s.column === name);
+  return '<section class="column"><h2><span>' + esc(name) + '</span><span>' + list.length + '</span></h2>' +
+    list.map(s => '<article class="story"><div class="meta"><span>' + esc(s.source) + '</span><span>·</span><span>' + esc(s.age) + '</span>' +
+      (s.breaking ? '<span class="pill">Breaking</span>' : '') + '</div><h3>' + esc(s.title) + '</h3><p>' + esc(s.summary) + '</p></article>').join('') +
     '</section>';
 }).join('');
+
+// Create
+const chipEls = CHANNELS.map((name, i) => {
+  const b = document.createElement('span');
+  b.className = 'chip'; b.setAttribute('role', 'button'); b.setAttribute('aria-pressed', String(i === 0)); b.textContent = name;
+  b.addEventListener('click', () => b.setAttribute('aria-pressed', String(b.getAttribute('aria-pressed') !== 'true')));
+  return b;
+});
+document.getElementById('channels').append(...chipEls);
+document.getElementById('publish').addEventListener('click', () => {
+  const picked = chipEls.filter(c => c.getAttribute('aria-pressed') === 'true').map(c => c.textContent);
+  const out = document.getElementById('publishResult');
+  if (!picked.length) { out.textContent = 'Choose at least one sample channel.'; return; }
+  out.textContent = 'Demo only: this would be saved to ' + picked.join(', ') + ' as "' + document.getElementById('when').value + '". Nothing was posted.';
+});
+
+// Optimize
+document.getElementById('seoRun').addEventListener('click', () => {
+  document.getElementById('seoResult').innerHTML =
+    '<div class="score">78 / 100</div><p>Sample result for ' + esc(document.getElementById('seoUrl').value) + '</p>' +
+    [['Title length', 'Good'], ['Meta description', 'Missing: add one line summarising the story'], ['Headings', 'Good'], ['Image alt text', '2 of 3 images need alt text'], ['Structured data', 'Article markup found']]
+      .map(([k, v]) => '<div class="check"><span>' + esc(k) + '</span><span>' + esc(v) + '</span></div>').join('') +
+    '<p>Demo only: no page was fetched.</p>';
+});
+
+// Audit
+document.getElementById('auditRun').addEventListener('click', () => {
+  document.getElementById('auditResult').innerHTML =
+    '<div class="score">64 / 100</div><p>Sample result for ' + esc(document.getElementById('auditUrl').value) + '</p>' +
+    [['AI crawler access', 'Allowed for 15 of 17 checked crawlers'], ['Readable HTML', 'Good'], ['Structured data', 'Partial: no author markup'], ['Publication dates', 'Found'], ['Source citations', 'Few links to primary sources']]
+      .map(([k, v]) => '<div class="check"><span>' + esc(k) + '</span><span>' + esc(v) + '</span></div>').join('') +
+    '<p>Demo only: no site was scanned.</p>';
+});
 </script>
 </body>
 </html>
