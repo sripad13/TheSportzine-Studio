@@ -7,7 +7,7 @@ function cors(origin) {
   return {
     "Access-Control-Allow-Origin": ALLOWED_ORIGINS.has(origin) ? origin : "null",
     "Access-Control-Allow-Methods": "GET, POST, PATCH, DELETE, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, CF-Access-Jwt-Assertion",
+    "Access-Control-Allow-Headers": "Content-Type, CF-Access-Jwt-Assertion, X-Studio-Key",
     "Vary": "Origin"
   };
 }
@@ -34,13 +34,38 @@ function sportCode(value) {
   if(sport==="general sports"||sport==="general")return "general";
   return sport.replace(/[^a-z0-9]+/g,"-");
 }
+const NAMED_ENTITIES = {
+  amp:"&", lt:"<", gt:">", quot:'"', apos:"'", nbsp:" ", ndash:"–", mdash:"—", hellip:"…",
+  lsquo:"‘", rsquo:"’", ldquo:"“", rdquo:"”", sbquo:"‚", bdquo:"„", laquo:"«", raquo:"»",
+  pound:"£", euro:"€", dollar:"$", cent:"¢", yen:"¥", copy:"©", reg:"®", trade:"™", deg:"°",
+  middot:"·", bull:"•", times:"×", frac12:"½", frac14:"¼", frac34:"¾"
+};
+function decodeEntities(text) {
+  // Single pass, so "&amp;lt;" correctly becomes the literal text "&lt;".
+  return text.replace(/&(#x[0-9a-f]+|#\d+|[a-z][a-z0-9]*);/gi, (whole, ref) => {
+    if (ref[0] === "#") {
+      const code = ref[1] === "x" || ref[1] === "X" ? parseInt(ref.slice(2), 16) : Number(ref.slice(1));
+      if (!Number.isFinite(code) || code < 1 || code > 0x10ffff) return whole;
+      try { return String.fromCodePoint(code); } catch { return whole; }
+    }
+    const named = NAMED_ENTITIES[ref.toLowerCase()];
+    return named === undefined ? whole : named;
+  });
+}
 function decodeXml(value) {
-  return String(value || "").replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g,"$1").replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,'"').replace(/&#39;|&apos;/g,"'").replace(/&#(\d+);/g,(_,n)=>String.fromCodePoint(Number(n))).replace(/<[^>]*>/g," ").replace(/\s+/g," ").trim();
+  let text = String(value || "").replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1");
+  // Feeds often entity-encode HTML inside <description>: strip real tags, decode, then strip any tags that decoding revealed.
+  text = text.replace(/<[^>]*>/g, " ");
+  text = decodeEntities(text);
+  // Entity-encoded HTML (e.g. "&lt;p&gt;Fish &amp;amp; chips&lt;/p&gt;") carries a second layer of entities.
+  if (/<\/?[a-z][^>]*>/i.test(text)) text = decodeEntities(text.replace(/<\/?[a-z][^>]*>/gi, " "));
+  return text.replace(/\s+/g, " ").trim();
 }
 function tag(block,name) {
   const re=new RegExp("<(?:[\\w.-]+:)?" + name + "(?:\\s[^>]*)?>([\\s\\S]*?)<\\/(?:[\\w.-]+:)?" + name + "\\s*>","i");
   const m=block.match(re);return m?decodeXml(m[1]):"";
 }
+const BREAKING_TERMS=/\b(breaking|confirmed|sacked|resigns|signs|signed|announces|injury|injured|ruled out|crash|crashes|penalty|suspended|banned)\b/i;
 function parseFeed(xml,feed) {
   return [...xml.matchAll(/<(item|entry)(?:\s[^>]*)?>([\s\S]*?)<\/\1>/gi)].map((match)=>{
     const block=match[2],title=tag(block,"title");let link=tag(block,"link");
@@ -48,11 +73,26 @@ function parseFeed(xml,feed) {
     const summary=tag(block,"description")||tag(block,"summary")||tag(block,"content");
     const published=tag(block,"pubDate")||tag(block,"published")||tag(block,"updated");
     if(!title||!/^https?:\/\//i.test(link))return null;
-    const date=published?new Date(published):null,hot=/breaking|confirmed|sacked|resigns|signs|announces|injury|ruled out|crash|penalty|suspended/i.test(title);
+    const date=published?new Date(published):null,hot=BREAKING_TERMS.test(title);
     return {id:link,title,summary:summary.slice(0,420),link,source:feed.name,sport:sportCode(feed.sport),published:published||"",timestamp:date&&!Number.isNaN(date.getTime())?date.getTime():0,timeLabel:date&&!Number.isNaN(date.getTime())?date.toLocaleString("en-GB",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit",timeZone:"UTC"})+" UTC":"Time unavailable",breaking:hot,priority:hot};
   }).filter(Boolean);
 }
-async function getFeed(feed) {
+const FEED_CACHE = new Map();
+const FEED_CACHE_TTL_MS = 3 * 60 * 1000;
+async function getFeed(feed, { fresh = false } = {}) {
+  const cached = FEED_CACHE.get(feed.url);
+  // A manual refresh still reuses results younger than 30 seconds, so repeated clicks cannot flood publishers.
+  const maxAge = fresh ? 30 * 1000 : FEED_CACHE_TTL_MS;
+  if (cached && Date.now() - cached.at < maxAge) {
+    return { ...cached.result, items: cached.result.items.map(item => ({ ...item, source: feed.name, sport: sportCode(feed.sport) })) };
+  }
+  const result = await fetchFeedUncached(feed);
+  // Cache successes and failures alike so a broken publisher is not hammered by every column.
+  FEED_CACHE.set(feed.url, { at: Date.now(), result });
+  if (FEED_CACHE.size > 200) FEED_CACHE.delete(FEED_CACHE.keys().next().value);
+  return result;
+}
+async function fetchFeedUncached(feed) {
   try {
     const response = await fetch(feed.url, {
       headers: {
@@ -65,38 +105,33 @@ async function getFeed(feed) {
     const xml = await response.text();
     const rootMatch = /<(rss|feed|rdf:RDF)\b/i.exec(xml);
     if (!rootMatch) throw new Error("Response is not RSS/Atom");
-    const blocks = [...xml.matchAll(/<(item|entry)(?:\s[^>]*)?>([\s\S]*?)<\/\1>/gi)];
     const items = parseFeed(xml, feed);
-    const firstBlock = blocks[0]?.[2] || "";
-    const firstTitle = firstBlock ? tag(firstBlock, "title") : "";
-    let firstLink = firstBlock ? tag(firstBlock, "link") : "";
-    if (!firstLink && firstBlock) {
-      const linkMatch = firstBlock.match(/<link[^>]+href=["']([^"']+)["']/i);
-      if (linkMatch) firstLink = linkMatch[1];
-    }
     return {
       items,
       error: null,
-      diagnostic: {
-        httpStatus: response.status,
-        contentType: response.headers.get("content-type") || "",
-        bodyLength: xml.length,
-        root: rootMatch[1],
-        entryBlocks: blocks.length,
-        firstEntryHasTitle: Boolean(firstTitle),
-        firstEntryHasHttpLink: /^https?:\/\//i.test(firstLink),
-        firstEntryStart: firstBlock.slice(0, 350)
-      }
+      diagnostic: { httpStatus: response.status, root: rootMatch[1], entryBlocks: (xml.match(/<(item|entry)[\s>]/gi) || []).length }
     };
   } catch (error) {
     return { items: [], error: error.message, diagnostic: null };
   }
 }
+let schemaReady = null;
+async function ensureNewsroomSchema(db) {
+  if (!db || typeof db.prepare !== "function") return;
+  if (!schemaReady) {
+    schemaReady = db.batch([
+      db.prepare("CREATE TABLE IF NOT EXISTS newsroom_sources (id TEXT PRIMARY KEY, name TEXT NOT NULL, feed_url TEXT NOT NULL UNIQUE, sport TEXT NOT NULL DEFAULT 'General sports', priority INTEGER NOT NULL DEFAULT 2 CHECK (priority BETWEEN 1 AND 3), enabled INTEGER NOT NULL DEFAULT 1, created_at TEXT NOT NULL, updated_at TEXT NOT NULL, last_fetched_at TEXT)"),
+      db.prepare("CREATE TABLE IF NOT EXISTS newsroom_source_overrides (feed_url TEXT PRIMARY KEY, deleted INTEGER NOT NULL DEFAULT 0, updated_at TEXT NOT NULL)"),
+      db.prepare("CREATE TABLE IF NOT EXISTS newsroom_source_edits (feed_url TEXT PRIMARY KEY, name TEXT, override_feed_url TEXT, sport TEXT, updated_at TEXT NOT NULL)"),
+      db.prepare("CREATE TABLE IF NOT EXISTS newsroom_saved_stories (id TEXT PRIMARY KEY, story_json TEXT NOT NULL, saved_at TEXT NOT NULL)")
+    ]).catch(error => { schemaReady = null; throw error; });
+  }
+  await schemaReady;
+}
 async function getConfiguredFeeds(env) {
   let custom = [], deleted = [], edits = [];
   if (env.DB && typeof env.DB.prepare === "function") {
-    await env.DB.prepare("CREATE TABLE IF NOT EXISTS newsroom_source_overrides (feed_url TEXT PRIMARY KEY, deleted INTEGER NOT NULL DEFAULT 0, updated_at TEXT NOT NULL)").run();
-    await env.DB.prepare("CREATE TABLE IF NOT EXISTS newsroom_source_edits (feed_url TEXT PRIMARY KEY, name TEXT, override_feed_url TEXT, sport TEXT, updated_at TEXT NOT NULL)").run();
+    await ensureNewsroomSchema(env.DB);
     const [customRows, overrideRows, editRows] = await Promise.all([
       env.DB.prepare("SELECT name, feed_url, sport FROM newsroom_sources WHERE enabled = 1 ORDER BY priority ASC, name COLLATE NOCASE ASC").all(),
       env.DB.prepare("SELECT feed_url FROM newsroom_source_overrides WHERE deleted = 1").all(),
@@ -418,36 +453,54 @@ function auditPrepublishDraft(input){
  return {score,max_score:100,title,word_count:words.length,paragraph_count:paragraphWords.length,heading_count:headings.length,question_heading_count:questionHeadings,citation_count:citations.length,citations,entities,entity_coverage:entityCoverage,categories,checks,checks_count:checks.length,passed_count:checks.filter(c=>c.status==="pass").length,warning_count:checks.filter(c=>c.status!=="pass").length,suggested_jsonld:schema,audited_at:new Date().toISOString(),limitations:["This is a deterministic editorial and markup checklist, not an AI-generated fact check or legal review.","The checker cannot verify whether a source supports a claim; editors must open and validate every citation.","FAQ, Speakable and structured-data enhancements should only be published when they accurately represent visible page content and current search-engine policies."]};
 }
 
-async function fetchStories(env) {
-  const configured = await getConfiguredFeeds(env);
-  const results=await Promise.all(configured.map(async feed=>({feed,...await getFeed(feed)})));
-  const seen=new Map();
-  for(const story of results.flatMap(result=>result.items)){const key=story.title.toLowerCase().replace(/[^a-z0-9]+/g," ").trim().split(" ").filter(Boolean).slice(0,10).join(" ");const existing=seen.get(key);if(existing){existing.duplicateCount=(existing.duplicateCount||1)+1;existing.sources=[...(existing.sources||[existing.source]),story.source];}else seen.set(key,story);}
-  return{stories:[...seen.values()].sort((a,b)=>b.timestamp-a.timestamp),feeds:results.map(({feed,items,error,diagnostic})=>({name:feed.name,sport:feed.sport,count:items.length,error,diagnostic})),fetched_at:new Date().toISOString()};
+function canonicalLink(link) {
+  try { const u = new URL(link); return (u.hostname.replace(/^www\./, "") + u.pathname.replace(/\/$/, "")).toLowerCase(); }
+  catch { return String(link || "").toLowerCase(); }
 }
-
-async function searchStories(env, keyword) {
+function headlineKey(title) {
+  return title.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().split(" ").filter(Boolean).slice(0, 10).join(" ");
+}
+async function loadAllFeeds(env, fresh) {
   const configured = await getConfiguredFeeds(env);
-  const results = await Promise.all(configured.map(async feed => ({ feed, ...await getFeed(feed) })));
-  const needle = keyword.toLocaleLowerCase();
-  const matches = results.flatMap(result => result.items)
-    .filter(story => (story.title + " " + story.summary).toLocaleLowerCase().includes(needle))
-    .sort((a, b) => b.timestamp - a.timestamp);
-  const seen = new Set();
-  const stories = matches.filter(story => {
-    const key = story.link || story.title;
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  }).slice(0, 100);
+  return Promise.all(configured.map(async feed => ({ feed, ...await getFeed(feed, { fresh }) })));
+}
+function groupStories(items) {
+  const byLink = new Map(), byHeadline = new Map(), stories = [];
+  for (const story of items) {
+    const linkKey = canonicalLink(story.link), titleKey = headlineKey(story.title);
+    const existing = byLink.get(linkKey) || byHeadline.get(titleKey);
+    if (existing) {
+      // The same article listed in two of one publisher's feeds is not a second source.
+      if (!existing.sources.includes(story.source)) { existing.sources.push(story.source); existing.duplicateCount = existing.sources.length; }
+      if (story.breaking) existing.breaking = existing.priority = true;
+      byLink.set(linkKey, existing);
+      continue;
+    }
+    const grouped = { ...story, sources: [story.source], duplicateCount: 1 };
+    byLink.set(linkKey, grouped); byHeadline.set(titleKey, grouped); stories.push(grouped);
+  }
+  return stories.sort((a, b) => b.timestamp - a.timestamp);
+}
+async function fetchStories(env, { fresh = false } = {}) {
+  const results = await loadAllFeeds(env, fresh);
+  return {
+    stories: groupStories(results.flatMap(result => result.items)),
+    feeds: results.map(({ feed, items, error, diagnostic }) => ({ name: feed.name, sport: feed.sport, count: items.length, error, diagnostic })),
+    fetched_at: new Date().toISOString()
+  };
+}
+function keywordTerms(keyword) {
+  return keyword.split(",").map(term => term.trim().toLocaleLowerCase()).filter(Boolean);
+}
+async function searchStories(env, keyword) {
+  const results = await loadAllFeeds(env, false);
+  const terms = keywordTerms(keyword);
+  const matchesTerms = story => { const text = (story.title + " " + story.summary).toLocaleLowerCase(); return terms.some(term => text.includes(term)); };
   return {
     keyword,
-    stories,
-    feeds: results.map(({ feed, items, error }) => ({
-      name: feed.name, count: items.length, matches: items.filter(story =>
-        (story.title + " " + story.summary).toLocaleLowerCase().includes(needle)
-      ).length, error
-    })),
+    terms,
+    stories: groupStories(results.flatMap(result => result.items).filter(matchesTerms)).slice(0, 100),
+    feeds: results.map(({ feed, items, error }) => ({ name: feed.name, count: items.length, matches: items.filter(matchesTerms).length, error })),
     fetched_at: new Date().toISOString()
   };
 }
@@ -461,10 +514,40 @@ function cleanSource(row) {
   };
 }
 function validFeedUrl(value) {
-  try {
-    const url = new URL(value);
-    return ["https:", "http:"].includes(url.protocol) && !["localhost", "127.0.0.1", "::1"].includes(url.hostname);
-  } catch { return false; }
+  return !isSafePublicTarget(String(value || "")).error;
+}
+function timingSafeEqual(a, b) {
+  const x = new TextEncoder().encode(String(a)), y = new TextEncoder().encode(String(b));
+  let diff = x.length ^ y.length;
+  for (let i = 0; i < Math.max(x.length, y.length); i++) diff |= (x[i] || 0) ^ (y[i] || 0);
+  return diff === 0;
+}
+// Write protection for source management and saved stories.
+// If the STUDIO_WRITE_KEY secret is set, every write must send it in X-Studio-Key.
+// Without the secret, writes must at least come from an allowed browser origin.
+function writeDenied(request, env, origin) {
+  if (env.STUDIO_WRITE_KEY) {
+    const supplied = request.headers.get("X-Studio-Key") || "";
+    if (!supplied || !timingSafeEqual(supplied, env.STUDIO_WRITE_KEY)) return json({ error: "This change needs the Studio write key. Add it under Newsroom settings.", auth_required: true }, 401, origin);
+    return null;
+  }
+  if (!ALLOWED_ORIGINS.has(origin)) return json({ error: "Changes are only accepted from the Studio app." }, 403, origin);
+  return null;
+}
+const SAVED_STORY_LIMIT = 1000;
+function cleanSavedStory(input) {
+  if (!input || typeof input !== "object") return null;
+  const text = (value, max) => typeof value === "string" ? value.replace(/\s+/g, " ").trim().slice(0, max) : "";
+  const story = {
+    id: text(input.id, 2048), title: text(input.title, 400), summary: text(input.summary, 700), link: text(input.link, 2048),
+    source: text(input.source, 120), sport: text(input.sport, 60), published: text(input.published, 80),
+    timestamp: Number.isFinite(Number(input.timestamp)) ? Number(input.timestamp) : 0,
+    breaking: Boolean(input.breaking), priority: Boolean(input.priority),
+    sources: Array.isArray(input.sources) ? input.sources.map(x => text(x, 120)).filter(Boolean).slice(0, 20) : [],
+    duplicateCount: Math.max(1, Math.min(50, Number(input.duplicateCount) || 1))
+  };
+  if (!story.id || !story.title || !/^https?:\/\//i.test(story.link)) return null;
+  return story;
 }
 async function listSources(db) {
   // Keep the Sources page useful when the Cloudflare D1 binding is absent.
@@ -474,8 +557,7 @@ async function listSources(db) {
     id:"builtin-"+index,name:feed.name,feed_url:feed.url,sport:feed.sport,
     priority:1,enabled:true,is_default:true
   }));
-  await db.prepare("CREATE TABLE IF NOT EXISTS newsroom_source_overrides (feed_url TEXT PRIMARY KEY, deleted INTEGER NOT NULL DEFAULT 0, updated_at TEXT NOT NULL)").run();
-  await db.prepare("CREATE TABLE IF NOT EXISTS newsroom_source_edits (feed_url TEXT PRIMARY KEY, name TEXT, override_feed_url TEXT, sport TEXT, updated_at TEXT NOT NULL)").run();
+  await ensureNewsroomSchema(db);
   const [result, overrides, edits] = await Promise.all([
     db.prepare("SELECT id, name, feed_url, sport, priority, enabled, created_at, updated_at, last_fetched_at FROM newsroom_sources ORDER BY priority ASC, name COLLATE NOCASE ASC").all(),
     db.prepare("SELECT feed_url FROM newsroom_source_overrides WHERE deleted = 1").all(),
@@ -630,7 +712,7 @@ export default {
         const trends=await fetchGoogleTrends(windowName);
         return json({window:windowName,region:"IN",category:"Sports",trends,fetched_at:new Date().toISOString()},200,origin);
       }
-      if (request.method === "GET" && url.pathname === "/api/feed") return json(await fetchStories(env),200,origin);
+      if (request.method === "GET" && url.pathname === "/api/feed") return json(await fetchStories(env,{fresh:url.searchParams.get("fresh")==="1"}),200,origin);
       if (request.method === "GET" && url.pathname === "/api/search") {
         const keyword=(url.searchParams.get("keyword")||"").trim();
         if(!keyword||keyword.length>100)return json({error:"Enter a search keyword (maximum 100 characters)."},400,origin);
@@ -639,19 +721,20 @@ export default {
       if (request.method === "GET" && url.pathname === "/api/version") {
         return json({
           service: "thesportzine-newsroom",
-          workerVersion: "headline-fix-2026-11-10-02",
+          workerVersion: "newsroom-fixes-2026-11-15",
           headlineModel: "@cf/google/gemma-4-26b-a4b-it"
         }, 200, origin);
       }
       if (request.method === "GET" && url.pathname === "/api/health") {
         if (env.DB && typeof env.DB.prepare === "function") await env.DB.prepare("SELECT 1 AS ok").first();
-        return json({ ok: true, service: "thesportzine-newsroom", database: env.DB && typeof env.DB.prepare === "function" ? "connected" : "not_configured", feeds: "available" }, 200, origin);
+        return json({ ok: true, service: "thesportzine-newsroom", database: env.DB && typeof env.DB.prepare === "function" ? "connected" : "not_configured", feeds: "available", write_key: env.STUDIO_WRITE_KEY ? "required" : "not_configured" }, 200, origin);
       }
       if (request.method === "POST" && url.pathname === "/api/discover-feed") {
         const body=await request.json();const homepage=String(body.url||"").trim();
         if(!validFeedUrl(homepage)||homepage.length>2048)return json({error:"Enter a valid public website URL."},400,origin);
+        const denied=writeDenied(request,env,origin);if(denied)return denied;
         const base=new URL(homepage);const candidates=[homepage,base.origin+"/feed",base.origin+"/rss",base.origin+"/feed.xml",base.origin+"/rss.xml",base.origin+"/atom.xml",base.origin+"/index.xml"];const found=[];
-        for(const candidate of candidates){try{const res=await fetch(candidate,{headers:{"Accept":"application/rss+xml, application/atom+xml, application/xml, text/xml, text/html","User-Agent":"TheSportzine-Newsroom/1.0"},signal:AbortSignal.timeout(6000)});if(!res.ok)continue;const bodyText=await res.text();if(/<(rss|feed|rdf:RDF)\b/i.test(bodyText)){found.push({url:candidate,title:base.hostname});break;}if(candidate===homepage){const tags=bodyText.match(/<link\b[^>]*>/gi)||[];for(const tagText of tags){if(!/alternate/i.test(tagText)||!/(rss|atom)\+xml/i.test(tagText))continue;const href=tagText.match(/href=["']([^"']+)["']/i);if(href){found.push({url:new URL(href[1],homepage).href,title:base.hostname});}}}}catch{}}
+        for(const candidate of candidates){if(!validFeedUrl(candidate))continue;try{const res=await fetch(candidate,{headers:{"Accept":"application/rss+xml, application/atom+xml, application/xml, text/xml, text/html","User-Agent":"TheSportzine-Newsroom/1.0"},signal:AbortSignal.timeout(6000)});if(!res.ok)continue;const bodyText=await res.text();if(/<(rss|feed|rdf:RDF)\b/i.test(bodyText)){found.push({url:candidate,title:base.hostname});break;}if(candidate===homepage){const tags=bodyText.match(/<link\b[^>]*>/gi)||[];for(const tagText of tags){if(!/alternate/i.test(tagText)||!/(rss|atom)\+xml/i.test(tagText))continue;const href=tagText.match(/href=["']([^"']+)["']/i);if(href){const feedHref=new URL(decodeHtml(href[1]),homepage).href;if(validFeedUrl(feedHref))found.push({url:feedHref,title:base.hostname});}}}}catch{}}
         return json({feeds:found},200,origin);
       }
       if (request.method === "POST" && url.pathname === "/api/ideas") {
@@ -766,6 +849,40 @@ export default {
         return json({ title: shortTitle, words: wordCount }, 200, origin);
       }
 
+      if (url.pathname === "/api/saved") {
+        const dbReady = env.DB && typeof env.DB.prepare === "function";
+        if (request.method === "GET") {
+          if (!dbReady) return json({ db_configured: false, stories: [] }, 200, origin);
+          await ensureNewsroomSchema(env.DB);
+          const rows = await env.DB.prepare("SELECT story_json, saved_at FROM newsroom_saved_stories ORDER BY saved_at DESC LIMIT ?").bind(SAVED_STORY_LIMIT).all();
+          const stories = (rows.results || []).map(row => { try { return { ...JSON.parse(row.story_json), saved_at: row.saved_at }; } catch { return null; } }).filter(Boolean);
+          return json({ db_configured: true, stories }, 200, origin);
+        }
+        if (request.method === "POST" || request.method === "DELETE") {
+          const denied = writeDenied(request, env, origin); if (denied) return denied;
+          if (!dbReady) return json({ error: "Saved stories are kept in this browser only until the Cloudflare D1 binding (DB) is configured.", db_configured: false }, 503, origin);
+          await ensureNewsroomSchema(env.DB);
+          if (request.method === "DELETE") {
+            const id = url.searchParams.get("id") || "";
+            if (!id || id.length > 2048) return json({ error: "A saved story id is required." }, 400, origin);
+            await env.DB.prepare("DELETE FROM newsroom_saved_stories WHERE id = ?").bind(id).run();
+            return json({ ok: true, id }, 200, origin);
+          }
+          const body = await request.json();
+          const list = Array.isArray(body.stories) ? body.stories : [body.story];
+          const stories = list.slice(0, 200).map(cleanSavedStory).filter(Boolean);
+          if (!stories.length) return json({ error: "Provide a story with an id, title and publisher link." }, 400, origin);
+          const count = await env.DB.prepare("SELECT COUNT(*) AS n FROM newsroom_saved_stories").first();
+          if (Number(count?.n || 0) + stories.length > SAVED_STORY_LIMIT) return json({ error: "Saved stories are limited to " + SAVED_STORY_LIMIT + ". Remove some before saving more." }, 409, origin);
+          const now = new Date().toISOString();
+          await env.DB.batch(stories.map(story => env.DB.prepare("INSERT INTO newsroom_saved_stories (id, story_json, saved_at) VALUES (?, ?, ?) ON CONFLICT(id) DO UPDATE SET story_json = excluded.story_json").bind(story.id, JSON.stringify(story), now)));
+          return json({ ok: true, saved: stories.length, saved_at: now }, 201, origin);
+        }
+      }
+      if ((url.pathname === "/api/sources" || url.pathname.startsWith("/api/sources/")) && ["POST","PATCH","DELETE"].includes(request.method)) {
+        const denied = writeDenied(request, env, origin); if (denied) return denied;
+        if (env.DB && typeof env.DB.prepare === "function") await ensureNewsroomSchema(env.DB);
+      }
       if (request.method === "GET" && url.pathname === "/api/sources") {
         return json({ sources: await listSources(env.DB), db_configured: Boolean(env.DB && typeof env.DB.prepare === "function") }, 200, origin);
       }
@@ -801,7 +918,7 @@ export default {
         if(!name||name.length>100)return json({error:"Publication name is required (maximum 100 characters)."},400,origin);
         if(!validFeedUrl(feedUrl)||feedUrl.length>2048)return json({error:"Enter a valid public HTTP or HTTPS RSS/Atom URL."},400,origin);
         if(!sport||sport.length>60)return json({error:"A valid sport tag is required."},400,origin);
-        await env.DB.prepare("CREATE TABLE IF NOT EXISTS newsroom_source_edits (feed_url TEXT PRIMARY KEY, name TEXT, override_feed_url TEXT, sport TEXT, updated_at TEXT NOT NULL)").run();
+        await ensureNewsroomSchema(env.DB);
         await env.DB.prepare("INSERT INTO newsroom_source_edits (feed_url,name,override_feed_url,sport,updated_at) VALUES (?,?,?,?,?) ON CONFLICT(feed_url) DO UPDATE SET name=excluded.name,override_feed_url=excluded.override_feed_url,sport=excluded.sport,updated_at=excluded.updated_at").bind(feed.url,name,feedUrl===feed.url?null:feedUrl,sport,new Date().toISOString()).run();
         const saved=await env.DB.prepare("SELECT name,override_feed_url,sport FROM newsroom_source_edits WHERE feed_url=?").bind(feed.url).first();
         if(!saved||saved.name!==name||saved.sport!==sport||(saved.override_feed_url||feed.url)!==feedUrl)throw new Error("Source edit could not be confirmed in D1.");

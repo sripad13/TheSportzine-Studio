@@ -6,7 +6,9 @@ workers_dev = false
 [observability]
 enabled = true
 
-# Add the D1 database binding after creating the database:
+# The D1 binding (DB -> thesportzine-newsroom) is added automatically by
+# .github/workflows/deploy-newsroom-worker.yml, which finds or creates the database.
+# To pin a specific database instead, uncomment and fill in:
 # [[d1_databases]]
 # binding = "DB"
 # database_name = "thesportzine-newsroom"

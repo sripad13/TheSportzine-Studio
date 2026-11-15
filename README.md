@@ -3,23 +3,34 @@
 Studio brings Newsroom, Create, Optimize and Audit workflows together. The original **Graphics editor** remains available at `/graphics.html`.
 
 ## Newsroom interface
-The root page is the Studio landing page. The live editorial workspace remains available at `/live/` with independently scrolling, resizable columns; All Sports, Football, Formula 1 and Breaking workspaces; keyword columns; saved stories; and a right-side story inspection drawer.
+The root page is the Studio landing page. The live editorial workspace remains available at `/live/` with independently scrolling, resizable columns; All Sports, Football, Formula 1 and Breaking workspaces (buttons on desktop, a menu on mobile); keyword columns (comma-separated keywords match any); Newest/Priority sorting per column; saved stories synced through D1; and a right-side story inspection drawer.
 
 ## RSS aggregation API
 The Worker exposes:
 - `GET /api/health` — service health and D1 status.
-- `GET /api/feed` — fetches the configured football and F1 RSS/Atom feeds, extracts headlines/excerpts and source links, and groups exact/near-exact headline matches.
-- `GET /api/search?keyword=...` — searches headlines and excerpts across the configured feeds (used by Newsroom keyword columns).
+- `GET /api/feed` — fetches the configured RSS/Atom feeds, extracts headlines/excerpts and source links, and groups stories that share a URL or a near-identical headline. Feed responses are cached in the Worker for 3 minutes; `?fresh=1` (the Refresh button) reuses only results younger than 30 seconds.
+- `GET /api/search?keyword=...` — searches headlines and excerpts across the configured feeds. Separate several keywords with commas to match any of them (used by Priority Desk).
+- `GET/POST/DELETE /api/saved` — saved stories, stored in D1 with a copy of each story so they stay available after the RSS feed drops them. Without D1, saved stories stay in the browser.
 - `POST /api/ideas` — generates social post ideas via OpenAI; limited to 30 requests per IP per hour.
 
 Configured feeds: BBC Sport Football, Sky Sports Football, BBC Sport Formula 1, Sky Sports Formula 1, Autosport F1, Motorsport.com F1 and Formula1.com. Feed availability and formats can change; individual failures are returned in the `feeds` array while other sources continue to load. The initial editorial priority/breaking flags are keyword heuristics, not AI analysis or fact-checking.
 
 ### Deploy
-1. Deploy `newsroom-worker.js` as the Cloudflare Worker `thesportzine-newsroom-api`.
-2. Attach the custom domain `newsroom-api.falsewinger.com`.
-3. In the Studio header, enter `https://newsroom-api.falsewinger.com` and select **Connect**.
-4. Test `https://newsroom-api.falsewinger.com/api/health` and `/api/feed`.
-5. D1 is only required for the existing source-management endpoints. Add the binding and apply `newsroom-schema.sql` if you want to use those endpoints; RSS aggregation itself does not require D1.
+Pushing changes to `newsroom-worker.js`, `wrangler.toml` or `newsroom-schema.sql` on `main` runs `.github/workflows/deploy-newsroom-worker.yml`, which:
+1. Finds the D1 database `thesportzine-newsroom` (or any database with "newsroom" in its name), creating it if none exists, and adds it as the `DB` binding. `wrangler deploy` replaces dashboard-added bindings, so the binding must come from the deploy itself.
+2. Applies `newsroom-schema.sql` (idempotent).
+3. Deploys the Worker. If the API token lacks D1 permission, it deploys without a database and logs a warning; sources are then read-only.
+
+Check `https://newsroom-api.falsewinger.com/api/health`: `database` should be `connected`.
+
+### Write protection
+Adding, editing or deleting sources and saving stories are write actions. By default the Worker only accepts them from the Studio origins. For real protection, set a secret and enter the same value once per browser under Newsroom → Settings → **Studio write key**:
+
+```
+npx wrangler secret put STUDIO_WRITE_KEY --config wrangler.toml
+```
+
+`/api/health` reports `write_key: required` once the secret is active. Cloudflare Access can be added on top if you want sign-in protection.
 
 The API Worker's CORS allowlist includes `https://newsroom.falsewinger.com` and the GitHub Pages origin. Cloudflare Access should be used to protect the app/API if desired; CORS is not authentication.
 
