@@ -148,14 +148,14 @@ async function getConfiguredFeeds(env) {
 
 const GOOGLE_TRENDS_RPC_ID="i0OFE";
 const GOOGLE_TRENDS_BATCH_URL="https://trends.google.com/_/TrendsUi/data/batchexecute";
-const FOOTBALL_TREND_TERMS=/\b(football|soccer|premier league|champions league|europa league|conference league|fa cup|carabao cup|efl cup|la liga|serie a|bundesliga|ligue 1|fifa|uefa|world cup|euros|copa america|afcon|afc|isl|indian super league|mls|wsl|ballon d'or|transfer|striker|goalkeeper|manager|head coach|match|fixture|derby|goal|penalty|red card|yellow card|offside|hat.trick|manchester united|manchester city|real madrid|barcelona|atletico madrid|liverpool|arsenal|chelsea|tottenham|spurs|newcastle|aston villa|everton|west ham|brighton|nottingham forest|bayern|borussia dortmund|psg|paris saint.germain|inter milan|ac milan|juventus|napoli|roma|benfica|porto|sporting|ajax|celtic|rangers|al hilal|al nassr|inter miami|argentina|brazil|france|england|spain|germany|portugal|messi|ronaldo|mbappe|haaland|salah|vinicius|bellingham|kane|neymar|lewandowski|palmer|saka|odegaard|rashford|bruno fernandes|de bruyne|yamal|pedri|rodri|van dijk|gyokeres|osimhen|son heung.min)\b/i;
+const FOOTBALL_TREND_TERMS=/\b(football|soccer|premier league|champions league|europa league|conference league|fa cup|carabao cup|efl cup|la liga|serie a|bundesliga|ligue 1|fifa|uefa|world cup|euros|copa america|afcon|isl|indian super league|mls|wsl|ballon d'or|striker|goalkeeper|red card|yellow card|offside|hat.trick|manchester united|manchester city|real madrid|barcelona|atletico madrid|liverpool|arsenal|chelsea|tottenham|spurs|newcastle|aston villa|everton|west ham|brighton|nottingham forest|bayern|borussia dortmund|psg|paris saint.germain|inter milan|ac milan|juventus|napoli|benfica|porto|ajax|celtic|al hilal|al nassr|inter miami|argentina|brazil|france|england|spain|germany|portugal|messi|ronaldo|mbappe|haaland|salah|vinicius|bellingham|kane|neymar|lewandowski|palmer|saka|odegaard|rashford|bruno fernandes|de bruyne|yamal|pedri|rodri|van dijk|gyokeres|osimhen|son heung.min|nico williams|pickford|cucurella|konsa|calvin bassey|foden|wirtz|isak|gakpo|tuchel|guardiola|arteta|amorim|pochettino|maresca|postecoglou|crystal palace|bournemouth|fulham|leeds|burnley|sunderland|ipswich|southampton|sheffield united|brentford|millwall|coventry|hibernian|hull city|stoke city|norwich|watford|sheffield wednesday|blackburn|preston|champions league final|nations league|fa cup final|lamine yamal|mac allister|trafford|mainoo|alexander.arnold)\b/i;
 function parseGoogleTrendsPayload(text){
  const body=String(text||"").trim().replace(/^\)\]\}'/,"");const arrays=[];
  for(let i=0;i<body.length;i++){if(body[i]!=="[")continue;let depth=0,inString=false,escaped=false;const start=i;for(;i<body.length;i++){const ch=body[i];if(inString){if(escaped)escaped=false;else if(ch==="\\")escaped=true;else if(ch==='"')inString=false;continue;}if(ch==='"')inString=true;else if(ch==="[")depth++;else if(ch==="]"&&--depth===0){arrays.push(body.slice(start,i+1));break;}}}
  for(const chunk of arrays){let parsed;try{parsed=JSON.parse(chunk)}catch{continue}if(!Array.isArray(parsed))continue;const entry=parsed.find(x=>Array.isArray(x)&&x[0]==="wrb.fr"&&x[1]===GOOGLE_TRENDS_RPC_ID);if(entry){try{return JSON.parse(entry[2])}catch{}}}
  throw new Error("Google Trends response could not be parsed.");
 }
-const F1_TREND_TERMS=/\b(formula 1|formula one|f1|grand prix|verstappen|hamilton|leclerc|norris|piastri|russell|sainz|alonso|stroll|gasly|ocon|tsunoda|albon|antonelli|hadjar|bearman|pit stop|paddock|red bull racing|pole position)\b/i;
+const F1_TREND_TERMS=/\b(formula 1|formula one|f1|grand prix|verstappen|hamilton|leclerc|norris|piastri|russell|sainz|alonso|stroll|gasly|ocon|tsunoda|albon|antonelli|hadjar|bearman|liam lawson|pit stop|paddock|red bull racing|racing bulls|aston martin f1|haas f1|pole position|silverstone gp|monaco gp)\b/i;
 function classifyTrend(text){if(FOOTBALL_TREND_TERMS.test(text))return "football";if(F1_TREND_TERMS.test(text))return "f1";return null}
 function decodeXmlText(value){return String(value||"").replace(/^<!\[CDATA\[|\]\]>$/g,"").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,'"').replace(/&#39;|&apos;/g,"'").replace(/&amp;/g,"&").trim()}
 async function fetchGoogleTrendsBatch(windowName){
@@ -197,9 +197,10 @@ async function fetchGoogleTrendsRss(){
 async function fetchGoogleTrends(windowName){
  let trends=[],source="batch",error=null;
  try{trends=await fetchGoogleTrendsBatch(windowName)}catch(e){error=e.message}
+ const batch_error=error;
  if(!trends.length){try{trends=await fetchGoogleTrendsRss();source="rss"}catch(e){error=error?error+"; "+e.message:e.message}}
  if(!trends.length&&error)throw new Error(error);
- return {trends,source};
+ return {trends,source,batch_error};
 }
 
 
@@ -732,8 +733,8 @@ export default {
       if (request.method === "GET" && url.pathname === "/api/trends") {
         const windowName=url.searchParams.get("window")||"rising";
         if(!["rising","hot","trending"].includes(windowName))return json({error:"Window must be rising, hot or trending."},400,origin);
-        const {trends,source}=await fetchGoogleTrends(windowName);
-        return json({window:windowName,region:"GB",category:"Sports",source,trends,fetched_at:new Date().toISOString()},200,origin);
+        const {trends,source,batch_error}=await fetchGoogleTrends(windowName);
+        return json({window:windowName,region:"GB",category:"Sports",source,batch_error,trends,fetched_at:new Date().toISOString()},200,origin);
       }
       if (request.method === "GET" && url.pathname === "/api/feed") return json(await fetchStories(env,{fresh:url.searchParams.get("fresh")==="1"}),200,origin);
       if (request.method === "GET" && url.pathname === "/api/search") {
