@@ -155,28 +155,51 @@ function parseGoogleTrendsPayload(text){
  for(const chunk of arrays){let parsed;try{parsed=JSON.parse(chunk)}catch{continue}if(!Array.isArray(parsed))continue;const entry=parsed.find(x=>Array.isArray(x)&&x[0]==="wrb.fr"&&x[1]===GOOGLE_TRENDS_RPC_ID);if(entry){try{return JSON.parse(entry[2])}catch{}}}
  throw new Error("Google Trends response could not be parsed.");
 }
-async function fetchGoogleTrends(windowName){
+const F1_TREND_TERMS=/\b(formula 1|formula one|f1|grand prix|verstappen|hamilton|leclerc|norris|piastri|russell|sainz|alonso|stroll|gasly|ocon|tsunoda|albon|antonelli|hadjar|bearman|pit stop|paddock|red bull racing|pole position)\b/i;
+function classifyTrend(text){if(FOOTBALL_TREND_TERMS.test(text))return "football";if(F1_TREND_TERMS.test(text))return "f1";return null}
+function decodeXmlText(value){return String(value||"").replace(/^<!\[CDATA\[|\]\]>$/g,"").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,'"').replace(/&#39;|&apos;/g,"'").replace(/&amp;/g,"&").trim()}
+async function fetchGoogleTrendsBatch(windowName){
  const hours=windowName==="rising"?1:windowName==="hot"?12:24;
- const inner=[null,null,"IN",17,"en-IN",hours,2];
+ const inner=[null,null,"GB",17,"en-GB",hours,2];
  const requestPayload=[[[GOOGLE_TRENDS_RPC_ID,JSON.stringify(inner),null,"generic"]]];
- const query=new URLSearchParams({rpcids:GOOGLE_TRENDS_RPC_ID,"source-path":"/trending",hl:"en-IN"});
+ const query=new URLSearchParams({rpcids:GOOGLE_TRENDS_RPC_ID,"source-path":"/trending",hl:"en-GB"});
  const body=new URLSearchParams({"f.req":JSON.stringify(requestPayload)});
  const response=await fetch(GOOGLE_TRENDS_BATCH_URL+"?"+query.toString(),{method:"POST",headers:{"accept":"*/*","content-type":"application/x-www-form-urlencoded;charset=UTF-8","origin":"https://trends.google.com","referer":"https://trends.google.com/trending"},body:body.toString(),signal:AbortSignal.timeout(18000)});
  if(!response.ok)throw new Error("Google Trends returned HTTP "+response.status);
  const payload=parseGoogleTrendsPayload(await response.text());
  const rows=Array.isArray(payload)&&Array.isArray(payload[1])?payload[1]:[];
  return rows.map((row,index)=>{
-  const query=typeof row?.[0]==="string"?row[0]:"";const volume=row?.[6]??null;const growth=row?.[8]??null;
+  const title=typeof row?.[0]==="string"?row[0]:"";const volume=row?.[6]??null;const growth=row?.[8]??null;
   const breakdown=Array.isArray(row?.[9])?row[9].filter(x=>typeof x==="string"):[];
-  const categories=Array.isArray(row?.[10])?row[10]:[];
   const start=Array.isArray(row?.[3])?Number(row[3][0]):Number(row?.[3]);
-  const geo=typeof row?.[2]==="string"?row[2]:"IN";
-  const sportsCategory=categories.some(category=>Number(typeof category==="object"?(category.id??category.category_id):category)===17);
-  if(!query||!sportsCategory||!FOOTBALL_TREND_TERMS.test([query,...breakdown].join(" ")))return null;
+  const section=title?classifyTrend([title,...breakdown].join(" ")):null;
+  if(!section)return null;
   const volumeLabel=volume==null?null:(Number.isFinite(Number(volume))?Math.trunc(Number(volume))+"+":String(volume));
-  const explore=new URLSearchParams({date:hours===1?"now 1-H":hours===12?"now 12-H":"now 1-d",geo,q:query});
-  return {query,search_volume:volume,search_volume_label:volumeLabel,increase_percentage:growth,start_timestamp:Number.isFinite(start)?start:null,started_at:Number.isFinite(start)?new Date(start*1000).toISOString():null,position:index+1,explore_url:"https://trends.google.com/trends/explore?"+explore.toString()};
+  const explore=new URLSearchParams({date:hours===1?"now 1-H":hours===12?"now 12-H":"now 1-d",geo:"GB",q:title});
+  return {query:title,section,search_volume:volume,search_volume_label:volumeLabel,increase_percentage:growth,start_timestamp:Number.isFinite(start)?start:null,started_at:Number.isFinite(start)?new Date(start*1000).toISOString():null,position:index+1,explore_url:"https://trends.google.com/trends/explore?"+explore.toString()};
  }).filter(Boolean).sort((a,b)=>(Number(b.search_volume)||0)-(Number(a.search_volume)||0)).slice(0,30);
+}
+// Fallback: Google's public Trends RSS for the UK (last 24 hours, no growth figures).
+async function fetchGoogleTrendsRss(){
+ const response=await fetch("https://trends.google.com/trending/rss?geo=GB",{headers:{accept:"application/rss+xml, application/xml;q=0.9"},signal:AbortSignal.timeout(15000)});
+ if(!response.ok)throw new Error("Google Trends RSS returned HTTP "+response.status);
+ const xml=await response.text();
+ return [...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)].map((m,index)=>{
+  const block=m[1];const tag=name=>{const hit=block.match(new RegExp("<"+name+"[^>]*>([\\s\\S]*?)<\\/"+name+">"));return hit?decodeXmlText(hit[1]):""};
+  const title=tag("title");const traffic=tag("ht:approx_traffic");const started=Date.parse(tag("pubDate"));
+  const section=title?classifyTrend(title):null;
+  if(!section)return null;
+  const start=Number.isFinite(started)?Math.floor(started/1000):null;
+  const explore=new URLSearchParams({date:"now 1-d",geo:"GB",q:title});
+  return {query:title,section,search_volume:Number(traffic.replace(/[^\d]/g,""))||null,search_volume_label:traffic||null,increase_percentage:null,start_timestamp:start,started_at:start?new Date(start*1000).toISOString():null,position:index+1,explore_url:"https://trends.google.com/trends/explore?"+explore.toString()};
+ }).filter(Boolean).slice(0,30);
+}
+async function fetchGoogleTrends(windowName){
+ let trends=[],source="batch",error=null;
+ try{trends=await fetchGoogleTrendsBatch(windowName)}catch(e){error=e.message}
+ if(!trends.length){try{trends=await fetchGoogleTrendsRss();source="rss"}catch(e){error=error?error+"; "+e.message:e.message}}
+ if(!trends.length&&error)throw new Error(error);
+ return {trends,source};
 }
 
 
@@ -709,8 +732,8 @@ export default {
       if (request.method === "GET" && url.pathname === "/api/trends") {
         const windowName=url.searchParams.get("window")||"rising";
         if(!["rising","hot","trending"].includes(windowName))return json({error:"Window must be rising, hot or trending."},400,origin);
-        const trends=await fetchGoogleTrends(windowName);
-        return json({window:windowName,region:"IN",category:"Sports",trends,fetched_at:new Date().toISOString()},200,origin);
+        const {trends,source}=await fetchGoogleTrends(windowName);
+        return json({window:windowName,region:"GB",category:"Sports",source,trends,fetched_at:new Date().toISOString()},200,origin);
       }
       if (request.method === "GET" && url.pathname === "/api/feed") return json(await fetchStories(env,{fresh:url.searchParams.get("fresh")==="1"}),200,origin);
       if (request.method === "GET" && url.pathname === "/api/search") {
