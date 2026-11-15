@@ -166,6 +166,19 @@ html[data-studio-theme=dark] .tiny{color:#dce1ea}
 .sort-toggle{border:1px solid #c9ccd3;background:transparent;color:inherit;border-radius:18px;padding:7px 12px;min-height:32px;font-size:11px;white-space:nowrap;cursor:pointer}
 .sort-toggle:hover{border-color:#8a8f9a}
 .btn:disabled{opacity:.6;cursor:wait}
+/* Story popup: a centred card over a blurred page */
+html[data-studio-theme] body .drawer{background:rgba(8,10,14,.45)!important;backdrop-filter:blur(7px)!important;-webkit-backdrop-filter:blur(7px)!important}
+html[data-studio-theme] body .drawer .dhead,html[data-studio-theme] body .drawer .dcontent{background:#ffffff!important}
+html[data-studio-theme=dark] body .drawer .dhead,html[data-studio-theme=dark] body .drawer .dcontent{background:#1b1f29!important}
+.drawer{position:fixed!important;inset:0!important;background:rgba(8,10,14,.45)!important;backdrop-filter:blur(7px)!important;-webkit-backdrop-filter:blur(7px)!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:16px!important;box-shadow:none!important;border:0!important}
+.drawer .dhead,.drawer .dcontent{width:min(640px,100%)!important;background:#ffffff!important;color:#202124!important;border:1px solid #e5e7eb!important;box-sizing:border-box}
+.drawer .dhead{border-radius:14px 14px 0 0!important;border-bottom:0!important;padding:14px 18px 6px!important;margin:0!important}
+.drawer .dcontent{border-radius:0 0 14px 14px!important;border-top:0!important;max-height:min(78dvh,760px)!important;overflow-y:auto!important;padding:8px 18px 22px!important;margin:0!important;box-shadow:0 18px 50px rgba(20,22,28,.28)}
+.drawer .dcontent h2{color:#202124!important;font-size:22px!important}
+.drawer .dcontent p,.drawer .dcontent .article-body p{color:#3c4043!important}
+html[data-studio-theme=dark] .drawer .dhead,html[data-studio-theme=dark] .drawer .dcontent{background:#1b1f29!important;color:#edf1f7!important;border-color:#354154!important}
+html[data-studio-theme=dark] .drawer .dcontent h2{color:#f4f6fa!important}
+html[data-studio-theme=dark] .drawer .dcontent p,html[data-studio-theme=dark] .drawer .dcontent .article-body p{color:#c2cad6!important}
 </style><link rel="icon" href="/brand/studio-mark-light.svg" type="image/svg+xml"><link rel="stylesheet" href="/assets/studio/studio.css?v=20261114-15"><script defer src="/assets/studio/studio.js?v=20261114-14"></script>
 </head><body>
 <header class="studio-global-header"><a class="studio-global-brand" href="/" aria-label="Studio home"><img class="studio-brand-mark" alt="" src="/brand/studio-mark-light.svg"><span class="studio-brand-word">Studio</span></a><nav class="studio-global-nav" aria-label="Primary navigation"><a href="/live/">Newsroom</a><a href="/post/">Create</a><a href="/seo/">Optimize</a><a href="/ai-audit/">Audit</a></nav><div class="studio-global-actions"></div></header><div id="studio-page-controls" hidden><details class="settings-menu" id="settingsMenu"><summary class="btn icon-only" aria-label="Settings" title="Settings">⚙</summary><div class="settings-panel"><label for="apiBase">Newsroom API URL</label><input class="api" id="apiBase" value="https://newsroom-api.falsewinger.com" aria-label="Newsroom API URL"><label for="writeKey">Studio write key (optional)</label><input class="api" id="writeKey" type="password" autocomplete="off" placeholder="Only if your Worker requires one" aria-label="Studio write key"><button class="btn" id="connect">Connect</button><a class="btn" id="sourcesButton" href="/live/sources/">Sources</a><button class="btn" id="savedStoriesButton">Saved Stories</button><button class="btn" id="addColumn">＋ Column</button></div></details></div>
