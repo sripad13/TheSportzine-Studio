@@ -10,3 +10,24 @@ CREATE TABLE IF NOT EXISTS newsroom_sources (
   last_fetched_at TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_newsroom_sources_enabled_priority ON newsroom_sources(enabled, priority);
+
+-- Built-in feeds removed or edited from the Sources page.
+CREATE TABLE IF NOT EXISTS newsroom_source_overrides (
+  feed_url TEXT PRIMARY KEY,
+  deleted INTEGER NOT NULL DEFAULT 0,
+  updated_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS newsroom_source_edits (
+  feed_url TEXT PRIMARY KEY,
+  name TEXT,
+  override_feed_url TEXT,
+  sport TEXT,
+  updated_at TEXT NOT NULL
+);
+
+-- Saved stories keep a copy of the story so they survive after the RSS feed drops it.
+CREATE TABLE IF NOT EXISTS newsroom_saved_stories (
+  id TEXT PRIMARY KEY,
+  story_json TEXT NOT NULL,
+  saved_at TEXT NOT NULL
+);
