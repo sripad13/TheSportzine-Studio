@@ -2,38 +2,198 @@
 <html lang="en" data-studio-theme="light">
 <head><script>(function(){try{var v=localStorage.getItem('studio-theme')||'system';var d=v==='system'?(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):v;if(v!=='light'&&v!=='dark'&&v!=='system')d='light';document.documentElement.setAttribute('data-studio-theme',d);document.documentElement.setAttribute('data-studio-theme-choice',v)}catch(e){document.documentElement.setAttribute('data-studio-theme','light')}})();</script>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#F5F6F2">
-<meta name="description" content="Studio brings sports research, writing, publishing and search visibility into one focused workspace.">
-<title>Studio — Sports content, in one workspace</title>
+<meta name="description" content="Studio: newsroom monitoring, article creation, SEO optimisation, AI audits and short links, in one workspace.">
+<title>Studio — Sports media workspace</title>
 <link rel="icon" href="/brand/studio-mark-light.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/studio/studio.css?v=20261116-04">
+<link rel="stylesheet" href="/assets/studio/studio.css?v=20261116-05">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<script defer src="/assets/studio/studio.js?v=20261116-05"></script>
 <style>
-:root{--lime:#B7D957;--ink:#0B0B0D;--muted:#62665D;--paper:#F5F6F2;--line:#E4E6DF;--display:'Space Grotesk',Arial,sans-serif;--body:'DM Sans',Arial,sans-serif}
-*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--paper);color:var(--ink);font:15px var(--body),sans-serif}.studio-global-header{padding-inline:max(20px,calc((100vw - 1240px)/2))}.container{width:min(1240px,calc(100% - 48px));margin:auto}
-.hero{padding:108px 0 92px;display:grid;grid-template-columns:1.1fr .9fr;gap:64px;align-items:center}.eyebrow{font:700 11px var(--display);letter-spacing:2px;text-transform:uppercase;color:#62665D}.hero h1{font:600 clamp(48px,6.2vw,82px)/1.03 var(--display);letter-spacing:-5px;margin:22px 0 20px;max-width:760px}.hero h1 span{background:var(--lime);padding:0 .08em;box-decoration-break:clone;-webkit-box-decoration-break:clone}.hero p{max-width:580px;color:#62665D;line-height:1.75;font-size:17px;margin:0}.actions{display:flex;gap:10px;margin-top:30px;flex-wrap:wrap}.button{display:inline-flex;align-items:center;gap:12px;padding:13px 17px;border-radius:7px;background:var(--ink);color:#fff;text-decoration:none;font:600 12px var(--display);border:1px solid var(--ink)}.button.secondary{background:transparent;color:var(--ink);border-color:#D7DBD0}.button:hover{transform:translateY(-1px)}.preview{border:1px solid #DDE0D7;background:#fff;border-radius:12px;padding:20px;box-shadow:0 16px 45px #0b0b0d0b}.preview-top{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:14px}.preview-top b{font:700 12px var(--display)}.live{font-size:10px;color:#62665D}.live:before{content:'';display:inline-block;width:7px;height:7px;background:#B7D957;border-radius:50%;margin-right:7px}.preview-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}.preview-card{background:#F5F6F2;border:1px solid #E4E6DF;border-radius:8px;padding:14px;min-height:105px}.preview-card small{font-size:10px;color:#62665D}.preview-card strong{display:block;font:600 24px var(--display);margin-top:9px}.preview-card.wide{grid-column:1/-1;min-height:80px}.preview-line{height:6px;background:#E2E5DB;border-radius:8px;margin-top:12px}.preview-line:after{content:'';display:block;width:68%;height:100%;background:#B7D957;border-radius:8px}
-.section{padding:82px 0;border-top:1px solid var(--line)}.section-head{display:flex;justify-content:space-between;gap:24px;align-items:end;margin-bottom:28px}.section h2{font:600 clamp(30px,4vw,46px)/1.1 var(--display);letter-spacing:-2px;margin:10px 0 0}.section-head p{max-width:400px;color:#62665D;line-height:1.65;margin:0;font-size:13px}.apps{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.app-card{display:flex;flex-direction:column;min-height:235px;padding:20px;border:1px solid #DDE0D7;border-radius:9px;background:#fff;text-decoration:none;color:var(--ink);transition:border-color .18s,transform .18s}.app-card:hover{border-color:#B7D957;transform:translateY(-3px)}.app-number{font:600 11px var(--display);color:#777D70}.app-icon{width:34px;height:34px;border:1px solid #E4E6DF;border-radius:7px;display:grid;place-items:center;font-size:17px;margin:26px 0 18px}.app-card h3{font:600 20px var(--display);margin:0 0 7px}.app-card p{font-size:12px;line-height:1.55;color:#62665D;margin:0}.app-link{margin-top:auto;padding-top:18px;font:600 11px var(--display)}.workflow{background:#0B0B0D;color:#fff;padding:76px 0}.workflow .eyebrow{color:#B7D957}.workflow h2{font:600 clamp(34px,4.8vw,58px)/1.08 var(--display);letter-spacing:-2.5px;max-width:680px;margin:14px 0 18px}.workflow p{color:#B8BDB1;line-height:1.7;max-width:560px}.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:38px}.step{padding:17px 0;border-top:1px solid #3A3D36}.step b{display:block;font:600 13px var(--display);margin-bottom:7px}.step span{font-size:11px;color:#B8BDB1;line-height:1.5}.footer{padding:25px 0;display:flex;align-items:center;justify-content:space-between;color:#62665D;font-size:11px}.footer a{color:inherit;text-decoration:none;margin-left:16px}
-html[data-studio-theme=dark] body{background:#0B0B0D;color:#F5F6F2}html[data-studio-theme=dark] .hero p,html[data-studio-theme=dark] .section-head p,html[data-studio-theme=dark] .app-card p{color:#B8BDB1}html[data-studio-theme=dark] .eyebrow{color:#B8BDB1}html[data-studio-theme=dark] .button.secondary{color:#F5F6F2;border-color:#393B35}html[data-studio-theme=dark] .preview,html[data-studio-theme=dark] .app-card{background:#171916;border-color:#343831;color:#F5F6F2;box-shadow:none}html[data-studio-theme=dark] .preview-card{background:#20231D;border-color:#343831}html[data-studio-theme=dark] .preview-card small,html[data-studio-theme=dark] .live{color:#B8BDB1}html[data-studio-theme=dark] .preview-line{background:#343831}html[data-studio-theme=dark] .section{border-color:#343831}html[data-studio-theme=dark] .app-icon{border-color:#343831}html[data-studio-theme=dark] .button:not(.secondary){background:#F5F6F2;color:#0B0B0D;border-color:#F5F6F2}
-@media(max-width:900px){.hero{grid-template-columns:1fr;gap:38px;padding:72px 0}.apps{grid-template-columns:repeat(2,1fr)}.section-head{align-items:flex-start;flex-direction:column}.steps{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:560px){.container{width:calc(100% - 32px)}.hero{padding:55px 0 60px}.hero h1{font-size:46px;letter-spacing:-2.8px}.hero p{font-size:15px}.apps{grid-template-columns:1fr}.app-card{min-height:190px}.preview{padding:13px}.section{padding:58px 0}.workflow{padding:58px 0}.steps{grid-template-columns:1fr 1fr}.footer{align-items:flex-start;flex-direction:column;gap:12px}.footer a{margin:0 14px 0 0}}
+:root{--ink:#0B0B0D;--paper:#F5F6F2;--card:#FFFFFF;--muted:#6B6F66;--line:#E3E6DD;--lime:#B7D957;--soft:#EEF1E8;--display:'Space Grotesk',Arial,sans-serif;--body:'DM Sans',Arial,sans-serif}
+html[data-studio-theme=dark]{--ink:#F5F6F2;--paper:#0B0B0D;--card:#15171A;--muted:#9A9F94;--line:#262A24;--soft:#1B1E19}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.5 var(--body)}
+a{color:inherit}
+.wrap{width:min(1180px,calc(100% - 40px));margin:0 auto}
+.studio-global-header{padding-inline:max(20px,calc((100vw - 1180px)/2))}
+
+/* Hero */
+.hero{padding:96px 0 64px;text-align:left}
+.kicker{font:600 12px var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.hero h1{font:600 clamp(44px,7vw,88px)/.98 var(--display);letter-spacing:-.045em;margin:18px 0 18px;max-width:880px}
+.hero h1 em{font-style:normal;background:var(--lime);padding:0 .1em;border-radius:.12em}
+.hero p{font-size:clamp(16px,1.6vw,19px);color:var(--muted);max-width:520px;margin:0}
+.cta{display:flex;gap:10px;margin-top:32px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:13px 20px;border-radius:999px;font:600 13px var(--display);text-decoration:none;border:1px solid var(--ink);background:var(--ink);color:var(--paper);transition:transform .2s ease}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+.btn:hover{transform:translateY(-1px)}
+
+/* Page glimpses */
+.glimpses{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;padding:12px 0 96px}
+.tile{display:flex;flex-direction:column;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;text-decoration:none;transition:border-color .25s ease,transform .25s ease;overflow:hidden}
+.tile:hover{border-color:var(--ink);transform:translateY(-3px)}
+.tile.big{grid-column:span 4}
+.tile.small{grid-column:span 2}
+.shot{flex:1;min-height:200px;border-radius:12px;background:var(--soft);padding:14px;position:relative;overflow:hidden}
+.tile-title{display:flex;justify-content:space-between;align-items:baseline;margin:16px 4px 2px}
+.tile-title b{font:600 20px var(--display);letter-spacing:-.02em}
+.tile-title span{font-size:12px;color:var(--muted)}
+.tile p{margin:0 4px 4px;font-size:13px;color:var(--muted)}
+.arrow{font-size:14px;color:var(--ink);opacity:0;transition:opacity .2s ease}
+.tile:hover .arrow{opacity:1}
+
+/* Newsroom glimpse */
+.col{display:flex;flex-direction:column;gap:8px}
+.row{background:var(--card);border-radius:10px;padding:10px 12px}
+.row i{display:block;height:7px;border-radius:4px;background:var(--line);margin:6px 0}
+.row i.s{width:55%}
+.tag{display:inline-block;font:700 9px var(--display);letter-spacing:.08em;padding:3px 6px;border-radius:5px;background:var(--lime);color:#0B0B0D}
+.dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--lime);margin-right:6px}
+
+/* Share glimpse */
+.linkrow{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--card);border-radius:10px;padding:10px 12px;margin-bottom:8px;font:600 12px var(--display)}
+.linkrow small{font:500 11px var(--body);color:var(--muted)}
+.pillbtn{font:600 10px var(--display);padding:5px 9px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--ink)}
+.input{height:34px;border-radius:999px;background:var(--card);border:1px dashed var(--line);margin-top:10px;display:flex;align-items:center;padding:0 12px;font-size:11px;color:var(--muted)}
+
+/* Create glimpse */
+.doc{background:var(--card);border-radius:10px;padding:16px;height:100%}
+.doc h4{font:600 16px var(--display);margin:0 0 10px;letter-spacing:-.01em}
+.doc i{display:block;height:6px;border-radius:4px;background:var(--line);margin:8px 0}
+.doc i.s{width:70%}
+.doc i.t{width:40%;background:var(--lime)}
+
+/* Optimize glimpse */
+.score{display:flex;align-items:center;gap:16px;background:var(--card);border-radius:10px;padding:14px}
+.ring{width:72px;height:72px;border-radius:50%;background:conic-gradient(var(--lime) 0 82%,var(--line) 82% 100%);display:grid;place-items:center;flex:0 0 72px}
+.ring b{width:56px;height:56px;border-radius:50%;background:var(--card);display:grid;place-items:center;font:600 18px var(--display)}
+.bars{flex:1;display:grid;gap:9px}
+.bars i{display:block;height:6px;border-radius:4px;background:var(--line);position:relative;overflow:hidden}
+.bars i:after{content:'';position:absolute;inset:0;width:var(--w);background:var(--ink);border-radius:4px}
+
+/* Audit glimpse */
+.check{display:flex;align-items:center;gap:10px;background:var(--card);border-radius:10px;padding:10px 12px;margin-bottom:8px;font:500 12px var(--body)}
+.check span{width:18px;height:18px;border-radius:50%;display:grid;place-items:center;font-size:10px;font-weight:700;flex:0 0 18px}
+.check .ok{background:var(--lime);color:#0B0B0D}
+.check .no{background:var(--line);color:var(--muted)}
+
+/* Principles */
+.principles{border-top:1px solid var(--line);padding:72px 0;display:grid;grid-template-columns:1fr 1fr 1fr;gap:28px}
+.principles h3{font:600 17px var(--display);margin:0 0 6px}
+.principles p{margin:0;font-size:13px;color:var(--muted)}
+
+footer{border-top:1px solid var(--line);padding:24px 0 40px;font-size:12px;color:var(--muted)}
+footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+footer a{color:inherit;text-decoration:none;margin-left:16px}
+
+@media (max-width:900px){
+  .glimpses{grid-template-columns:1fr 1fr}
+  .tile.big,.tile.small{grid-column:span 1}
+  .tile.big{grid-column:1/-1}
+  .principles{grid-template-columns:1fr}
+}
+@media (max-width:560px){
+  .hero{padding:56px 0 40px}
+  .glimpses{grid-template-columns:1fr;padding-bottom:64px}
+  .tile.big{grid-column:auto}
+}
 </style>
-<script defer src="/assets/studio/studio.js?v=20261116-04"></script>
 </head>
 <body>
 <header class="studio-global-header"><a class="studio-global-brand" href="/" aria-label="Studio home"><img class="studio-brand-mark" alt="" src="/brand/studio-mark-light.svg"><span class="studio-brand-word">Studio</span></a><nav class="studio-global-nav" aria-label="Primary navigation"><a href="/live/">Newsroom</a><a href="/share/">Share</a><a href="/post/">Create</a><a href="/seo/">Optimize</a><a href="/ai-audit/">Audit</a></nav><div class="studio-global-actions"></div></header>
-<main>
-<section class="hero container">
-<div><div class="eyebrow">A focused workspace for sports media</div><h1>Research. Create.<br>Publish <span>better.</span></h1><p>Studio brings your sports content workflow together — from live editorial monitoring and article creation to search optimisation and AI visibility.</p><div class="actions"><a class="button" href="/live/">Open Studio <span aria-hidden="true">→</span></a><a class="button secondary" href="#workspace">Explore the workspace</a></div></div>
-<div class="preview" aria-label="Studio workspace preview"><div class="preview-top"><b>Studio / Workspace</b><span class="live">Your workspace</span></div><div class="preview-grid"><div class="preview-card"><small>Stories monitored</small><strong>248</strong></div><div class="preview-card"><small>Drafts in progress</small><strong>12</strong></div><div class="preview-card wide"><small>Content visibility</small><strong>SEO · AEO · GEO</strong><div class="preview-line"></div></div></div></div>
-</section>
-<section class="section container" id="workspace"><div class="section-head"><div><div class="eyebrow">One connected workflow</div><h2>Everything has its place.</h2></div><p>Four focused tools. One consistent workspace. Move from finding the story to publishing it without losing context.</p></div>
-<div class="apps">
-<a class="app-card" href="/live/"><span class="app-number">01 / MONITOR</span><span class="app-icon">◉</span><h3>Newsroom</h3><p>Follow live stories, manage sources and spot emerging topics.</p><span class="app-link">Open Newsroom →</span></a>
-<a class="app-card" href="/post/"><span class="app-number">02 / CREATE</span><span class="app-icon">✎</span><h3>Create</h3><p>Write, design and prepare content for your publishing channels.</p><span class="app-link">Start creating →</span></a>
-<a class="app-card" href="/seo/"><span class="app-number">03 / OPTIMIZE</span><span class="app-icon">↗</span><h3>Optimize</h3><p>Improve SEO, AEO and GEO signals before content goes live.</p><span class="app-link">Optimize content →</span></a>
-<a class="app-card" href="/ai-audit/"><span class="app-number">04 / AUDIT</span><span class="app-icon">⌕</span><h3>Audit</h3><p>Check how search engines and AI crawlers access your website.</p><span class="app-link">Run an audit →</span></a>
-</div></section>
-<section class="workflow"><div class="container"><div class="eyebrow">Built around the editorial process</div><h2>From the first signal to the final publish.</h2><p>Keep research, production and distribution connected. Studio is designed to support the everyday work of journalists, editors and independent sports publishers.</p><div class="steps"><div class="step"><b>01 · Find</b><span>Monitor sources, feeds and emerging stories.</span></div><div class="step"><b>02 · Create</b><span>Draft articles and prepare visual content.</span></div><div class="step"><b>03 · Optimize</b><span>Review search and answer visibility signals.</span></div><div class="step"><b>04 · Publish</b><span>Distribute and review your content workflow.</span></div></div></div></section>
+
+<main class="wrap">
+  <section class="hero">
+    <div class="kicker">Sports media workspace</div>
+    <h1>Find it. Write it.<br><em>Ship it.</em></h1>
+    <p>Monitor stories, draft and optimise content, check your site, and share the links.</p>
+    <div class="cta">
+      <a class="btn" href="/live/">Open Newsroom</a>
+      <a class="btn ghost" href="#pages">See the pages</a>
+    </div>
+  </section>
+
+  <section class="glimpses" id="pages" aria-label="Pages">
+
+    <a class="tile big" href="/live/">
+      <div class="shot">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;height:100%">
+          <div class="col">
+            <span class="kicker" style="font-size:10px">Football</span>
+            <div class="row"><i></i><i class="s"></i></div>
+            <div class="row"><i></i><i class="s"></i></div>
+          </div>
+          <div class="col">
+            <span class="kicker" style="font-size:10px">Breaking</span>
+            <div class="row"><span class="tag">HOT</span><i></i><i class="s"></i></div>
+            <div class="row"><i></i><i class="s"></i></div>
+          </div>
+          <div class="col">
+            <span class="kicker" style="font-size:10px">F1</span>
+            <div class="row"><i></i><i class="s"></i></div>
+            <div class="row"><i></i><i class="s"></i></div>
+          </div>
+        </div>
+      </div>
+      <div class="tile-title"><b>Newsroom</b><span class="arrow">→</span></div>
+      <p>Live stories from your sources, ranked by what is hot.</p>
+    </a>
+
+    <a class="tile small" href="/share/">
+      <div class="shot">
+        <div class="linkrow"><span>link.falsewinger.com/match</span><button class="pillbtn" type="button" tabindex="-1">Copy</button></div>
+        <div class="linkrow"><span>link.falsewinger.com/derby</span><small>212 clicks</small></div>
+        <div class="input">Paste an article address</div>
+      </div>
+      <div class="tile-title"><b>Share</b><span class="arrow">→</span></div>
+      <p>Short links with previews and clicks.</p>
+    </a>
+
+    <a class="tile small" href="/post/">
+      <div class="shot">
+        <div class="doc">
+          <h4>Headline</h4>
+          <i class="s"></i><i></i><i class="s"></i><i class="t"></i>
+        </div>
+      </div>
+      <div class="tile-title"><b>Create</b><span class="arrow">→</span></div>
+      <p>Write articles, posts and graphics.</p>
+    </a>
+
+    <a class="tile small" href="/seo/">
+      <div class="shot">
+        <div class="score">
+          <div class="ring"><b>82</b></div>
+          <div class="bars">
+            <i style="--w:82%"></i><i style="--w:64%"></i><i style="--w:91%"></i>
+          </div>
+        </div>
+      </div>
+      <div class="tile-title"><b>Optimize</b><span class="arrow">→</span></div>
+      <p>SEO, answer and AI visibility scores.</p>
+    </a>
+
+    <a class="tile small" href="/ai-audit/">
+      <div class="shot">
+        <div class="check"><span class="ok">✓</span>robots.txt allows crawlers</div>
+        <div class="check"><span class="ok">✓</span>Sitemap found</div>
+        <div class="check"><span class="no">!</span>Structured data missing</div>
+      </div>
+      <div class="tile-title"><b>Audit</b><span class="arrow">→</span></div>
+      <p>How search and AI crawlers see your site.</p>
+    </a>
+
+  </section>
+
+  <section class="principles" aria-label="Principles">
+    <div><h3>One workspace</h3><p>Find, write and check in one place.</p></div>
+    <div><h3>Your sources</h3><p>Bring feeds in from Feedly in one step.</p></div>
+    <div><h3>Quiet by design</h3><p>Minimal screens, nothing you do not need.</p></div>
+  </section>
 </main>
-<footer class="footer container"><span>Studio · A sports content workspace</span><span><a href="https://thesportzine.com">The Sportzine</a><a href="https://work.falsewinger.com">Portfolio</a><a href="/graphics.html">Graphics Studio</a></span></footer>
-</body></html>
+
+<footer><div class="wrap"><span>Studio</span><span><a href="https://thesportzine.com">The Sportzine</a><a href="https://work.falsewinger.com">Portfolio</a></span></div></footer>
+</body>
+</html>
