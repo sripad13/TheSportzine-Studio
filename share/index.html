@@ -1,101 +1,125 @@
 <!doctype html>
 <html lang="en"><head><script>(function(){try{var v=localStorage.getItem('studio-theme')||'system';var d=v==='system'?(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):v;if(v!=='light'&&v!=='dark'&&v!=='system')d='light';document.documentElement.setAttribute('data-studio-theme',d);document.documentElement.setAttribute('data-studio-theme-choice',v)}catch(e){document.documentElement.setAttribute('data-studio-theme','light')}})();</script><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Share links — Studio</title><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-:root{color-scheme:light;--bg:#F5F6F2;--panel:#FFFFFF;--panel2:#F0F2EC;--line:#DDE1D7;--muted:#62665D;--text:#171916;--yellow:#B7D957}
-html[data-studio-theme=dark]{color-scheme:dark;--bg:#0B0B0D;--panel:#17191D;--panel2:#1E2126;--line:#30343A;--muted:#A7ADA2;--text:#F5F6F2}
+:root{color-scheme:light;--bg:#F5F6F2;--panel:#FFFFFF;--panel2:#F1F3EE;--line:#DDE1D7;--muted:#6B7065;--text:#171916;--accent:#B7D957}
+html[data-studio-theme=dark]{color-scheme:dark;--bg:#0E0F11;--panel:#18191C;--panel2:#131416;--line:#2A2D31;--muted:#9BA1A8;--text:#F3F4F1}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font:14px Inter,Arial,sans-serif;min-height:100vh}
-main{max-width:860px;margin:0 auto;padding:28px 18px 60px}
-h1{font-size:22px;margin:0 0 6px;letter-spacing:-.4px}
-.lede{color:var(--muted);margin:0 0 22px;line-height:1.5}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:18px}
-label{display:block;font-size:12px;color:var(--muted);margin:0 0 6px}
-.row{display:grid;grid-template-columns:minmax(0,1fr) 220px auto;gap:10px;align-items:end}
-input{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:10px 12px;font:inherit}
-input:focus-visible,button:focus-visible{outline:2px solid var(--yellow);outline-offset:2px}
-button{font:600 13px Inter,Arial,sans-serif;border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:8px;padding:10px 14px;cursor:pointer;white-space:nowrap}
-button.primary{background:var(--yellow);border-color:var(--yellow);color:#0B0B0D}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 Inter,Arial,sans-serif;min-height:100vh}
+main{max-width:640px;margin:0 auto;padding:36px 18px 80px}
+h1{font-size:clamp(32px,7vw,44px);line-height:1.05;letter-spacing:-.03em;font-weight:700;margin:0 0 28px}
+h2{font-size:22px;letter-spacing:-.02em;font-weight:700;margin:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:20px}
+label{display:block;font-size:14px;font-weight:600;margin:18px 0 8px}
+label .opt{color:var(--muted);font-weight:400}
+input{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:14px 16px;font:inherit;font-size:15px}
+input::placeholder{color:var(--muted);opacity:.8}
+input:focus-visible,button:focus-visible,label.drop:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.ending{display:flex;align-items:center;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding-left:16px;overflow:hidden}
+.ending span{color:var(--muted);white-space:nowrap;font-size:15px}
+.ending input{border:0;background:transparent;padding-left:2px}
+.ending input:focus-visible{outline:none}
+.ending:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+button{font:600 15px Inter,Arial,sans-serif;border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:10px;padding:12px 16px;cursor:pointer}
+button.primary{width:100%;margin-top:14px;padding:15px;background:var(--accent);border-color:var(--accent);color:#0B0B0D;font-size:16px}
 button:disabled{opacity:.6;cursor:wait}
-.msg{font-size:13px;margin-top:10px;min-height:18px}
-.msg.bad{color:#B53A3A}
-.msg.ok{color:#247A4B}
-.result{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--panel2)}
-.result a{font-weight:700;color:var(--text);word-break:break-all}
-table{width:100%;border-collapse:collapse;font-size:13px}
-th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
-th{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
-td.target{max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)}
-.actions{display:flex;gap:6px;justify-content:flex-end}
-.actions button{padding:6px 10px;font-size:12px}
-.empty{color:var(--muted);padding:18px 0;text-align:center}
-@media(max-width:700px){.row{grid-template-columns:1fr}.hide-sm{display:none}td.target{max-width:140px}}
-</style><link rel="icon" href="/brand/studio-mark-light.svg" type="image/svg+xml"><link rel="stylesheet" href="/assets/studio/studio.css?v=20261116-02"><script defer src="/assets/studio/studio.js?v=20261116-02"></script>
+hr{border:0;border-top:1px solid var(--line);margin:24px 0 22px}
+.msg{font-size:13px;min-height:18px;margin-top:8px}
+.msg.bad{color:#D0584B}
+.msg.ok{color:#5FAE7A}
+.dropbox{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel2)}
+label.drop{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;min-height:210px;margin:0;padding:24px;cursor:pointer;background-color:var(--panel2);background-size:cover;background-position:center;transition:background-color .15s}
+label.drop.drag{box-shadow:inset 0 0 0 2px var(--accent)}
+label.drop strong{font-size:17px;font-weight:600}
+label.drop small{display:block;color:var(--muted);font-size:14px;margin-top:4px}
+label.drop.has-img .drop-copy{display:none}
+.drop-copy{display:flex;flex-direction:column;align-items:center}
+.preview{padding:14px 16px;border-top:1px solid var(--line);background:var(--panel2)}
+.preview .host{font-size:13px;color:var(--muted)}
+.preview .ttl{font-size:18px;font-weight:600;margin-top:2px;overflow-wrap:anywhere}
+.paste-img{margin-top:12px}
+.result{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--panel2)}
+.result a{font-weight:700;color:var(--text);word-break:break-all;flex:1}
+.result button{padding:8px 12px;font-size:13px}
+.list-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:44px 0 6px}
+.count{color:var(--muted);font-size:15px}
+#listMsg:empty{display:none}
+.item{display:grid;grid-template-columns:104px minmax(0,1fr) auto;gap:16px;align-items:center;padding:18px 0;border-bottom:1px solid var(--line)}
+.thumb{width:104px;aspect-ratio:16/9;border-radius:8px;border:1px solid var(--line);background:var(--panel2);overflow:hidden}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.short{font-size:17px;font-weight:700;color:var(--text);text-decoration:none;word-break:break-all}
+.short:hover{text-decoration:underline}
+.ttl{font-size:15px;margin-top:2px;overflow-wrap:anywhere}
+.dest{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.acts{display:flex;gap:16px;margin-top:8px}
+.acts button{background:none;border:0;padding:0;color:var(--muted);font-size:14px}
+.acts button:hover{color:var(--text)}
+.stat{text-align:right}
+.stat b{display:block;font-size:26px;letter-spacing:-.02em;line-height:1.1}
+.stat span{font-size:14px;color:var(--muted)}
+.empty{color:var(--muted);padding:24px 0;text-align:center}
+@media(max-width:520px){.item{grid-template-columns:76px minmax(0,1fr) auto;gap:12px}.thumb{width:76px}.stat b{font-size:22px}}
+</style><link rel="icon" href="/brand/studio-mark-light.svg" type="image/svg+xml"><link rel="stylesheet" href="/assets/studio/studio.css?v=20261116-03"><script defer src="/assets/studio/studio.js?v=20261116-03"></script>
 </head><body>
 <main>
-  <h1>Share links</h1>
-  <p class="lede">Turn a long article address into a short link on link.falsewinger.com. Links redirect to the original address and count clicks.</p>
+  <h1>Shorten a link,<br>choose how it looks.</h1>
 
-  <section class="card" aria-labelledby="create-heading">
-    <h2 id="create-heading" style="font-size:15px;margin:0 0 14px">Create a short link</h2>
-    <form id="createForm" class="row" autocomplete="off">
-      <div>
-        <label for="targetUrl">Web address</label>
-        <input id="targetUrl" type="url" placeholder="https://www.example.com/story" required>
-      </div>
-      <div>
-        <label for="customCode">Custom code (optional)</label>
-        <input id="customCode" placeholder="e.g. derby-result" maxlength="40">
-      </div>
-      <button class="primary" id="createButton" type="submit">Create link</button>
+  <section class="card" aria-label="Create a short link">
+    <form id="createForm" autocomplete="off">
+      <input id="targetUrl" type="url" placeholder="Paste a long link" aria-label="Paste a long link" required>
+      <button class="primary" id="createButton" type="submit">Shorten</button>
     </form>
-    <details class="preview-opts" style="margin-top:12px">
-      <summary style="cursor:pointer;font-size:13px;color:var(--muted)">Add a preview image (shown when the link is shared)</summary>
-      <div class="row" style="margin-top:12px;grid-template-columns:minmax(0,1fr) minmax(0,1fr)">
-        <div>
-          <label for="previewFile">Upload an image (JPG, PNG, WebP or GIF, up to 3 MB)</label>
-          <input id="previewFile" type="file" accept="image/jpeg,image/png,image/webp,image/gif" style="padding:8px">
-          <div class="msg" id="uploadMsg" role="status" aria-live="polite" style="margin-top:6px"></div>
-        </div>
-        <div>
-          <label for="previewImage">Or paste an image address</label>
-          <input id="previewImage" type="url" placeholder="https://www.example.com/photo.jpg">
-        </div>
-        <div>
-          <label for="previewTitle">Preview title (optional)</label>
-          <input id="previewTitle" placeholder="Shown under the image" maxlength="200">
-        </div>
-      </div>
-      <p class="lede" style="margin:10px 0 0;font-size:12px">Chat apps show the image when the short link is shared; visitors still reach the article.</p>
-    </details>
     <div class="msg" id="createMsg" role="status" aria-live="polite"></div>
     <div id="result"></div>
+
+    <hr>
+
+    <label for="previewTitle">Title</label>
+    <input id="previewTitle" placeholder="Headline shown on the share card" maxlength="200">
+
+    <label for="customCode">Short link ending <span class="opt">(optional)</span></label>
+    <div class="ending">
+      <span id="hostPrefix">link.falsewinger.com/</span>
+      <input id="customCode" placeholder="random" maxlength="40" aria-label="Custom short link ending" form="createForm">
+    </div>
+
+    <label>Share image</label>
+    <div class="dropbox">
+      <label class="drop" id="drop" for="previewFile" tabindex="0">
+        <span class="drop-copy">
+          <strong>Choose an image</strong>
+          <small>or drop one here. 1200 × 630 works best.</small>
+        </span>
+      </label>
+      <div class="preview" aria-live="polite">
+        <div class="host" id="pvHost">link.falsewinger.com</div>
+        <div class="ttl" id="pvTitle">Your title</div>
+      </div>
+    </div>
+    <input id="previewFile" type="file" accept="image/jpeg,image/png,image/webp,image/gif" hidden>
+    <div class="paste-img">
+      <input id="previewImage" type="url" placeholder="or paste an image link" aria-label="Or paste an image link">
+    </div>
+    <div class="msg" id="uploadMsg" role="status" aria-live="polite"></div>
   </section>
 
-  <section class="card" aria-labelledby="list-heading">
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px">
-      <h2 id="list-heading" style="font-size:15px;margin:0">Your links</h2>
-      <button id="refreshButton" type="button">Refresh</button>
-    </div>
-    <div id="listMsg" class="msg" role="status" aria-live="polite"></div>
-    <div style="overflow-x:auto">
-      <table>
-        <thead><tr><th>Short link</th><th class="hide-sm">Destination</th><th>Clicks</th><th class="hide-sm">Created</th><th></th></tr></thead>
-        <tbody id="linkRows"><tr><td colspan="5" class="empty">Loading…</td></tr></tbody>
-      </table>
-    </div>
-  </section>
+  <div class="list-head">
+    <h2 id="list-heading">Your links</h2>
+    <span class="count" id="countLabel">Loading…</span>
+  </div>
+  <div class="msg" id="listMsg" role="status" aria-live="polite"></div>
+  <div id="linkRows"><p class="empty">Loading…</p></div>
 </main>
 <script>
 const API=(localStorage.getItem('tsz_newsroom_api')||'https://newsroom-api.falsewinger.com').replace(/\/$/,'');
 const WRITE_KEY='tsz_studio_write_key';
-let shortBase='https://link.falsewinger.com';
 const LINK_HOST='https://link.falsewinger.com';
+let shortBase=LINK_HOST;
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const hostOf=u=>String(u||'').replace(/^https?:\/\//,'').replace(/\/$/,'');
 function writeHeaders(){const h={'Content-Type':'application/json'};const k=localStorage.getItem(WRITE_KEY);if(k)h['X-Studio-Key']=k;return h}
 function setMsg(el,text,kind=''){el.textContent=text;el.className='msg '+kind}
-function when(iso){if(!iso)return '—';const d=new Date(iso);return isNaN(d)?'—':d.toLocaleDateString(undefined,{day:'numeric',month:'short'})}
-async function copy(text,button){try{await navigator.clipboard.writeText(text);const old=button.textContent;button.textContent='Copied';setTimeout(()=>button.textContent=old,1400)}catch{button.textContent='Copy failed'}}
+async function copy(text,button){const old=button.textContent;try{await navigator.clipboard.writeText(text);button.textContent='Copied';setTimeout(()=>button.textContent=old,1400)}catch{button.textContent='Copy failed'}}
 
 function renderResult(link){
   $('#result').innerHTML='<div class="result"><a href="'+esc(link.short_url)+'" target="_blank" rel="noopener">'+esc(link.short_url)+'</a><button type="button" id="copyNew">Copy link</button></div>';
@@ -103,11 +127,27 @@ function renderResult(link){
 }
 
 function renderRows(links){
-  const tbody=$('#linkRows');
-  if(!links.length){tbody.innerHTML='<tr><td colspan="5" class="empty">No short links yet.</td></tr>';return}
-  tbody.innerHTML=links.map(l=>{const short=shortBase+'/'+l.code;return '<tr data-code="'+esc(l.code)+'"><td><a href="'+esc(short)+'" target="_blank" rel="noopener" style="color:var(--text);font-weight:600">'+esc(l.code)+'</a></td><td class="target hide-sm" title="'+esc(l.target)+'">'+esc(l.target)+'</td><td>'+(Number(l.clicks)||0)+'</td><td class="hide-sm">'+esc(when(l.created_at))+'</td><td><div class="actions"><button type="button" data-copy="'+esc(short)+'">Copy</button><button type="button" data-delete="'+esc(l.code)+'">Delete</button></div></td></tr>'}).join('');
-  tbody.querySelectorAll('[data-copy]').forEach(b=>b.onclick=()=>copy(b.dataset.copy,b));
-  tbody.querySelectorAll('[data-delete]').forEach(b=>b.onclick=()=>removeLink(b.dataset.delete,b));
+  const total=links.reduce((a,l)=>a+(Number(l.clicks)||0),0);
+  $('#countLabel').textContent=links.length+' link'+(links.length===1?'':'s')+', '+total+' click'+(total===1?'':'s');
+  const box=$('#linkRows');
+  if(!links.length){box.innerHTML='<p class="empty">No short links yet.</p>';return}
+  box.innerHTML=links.map(l=>{
+    const short=shortBase+'/'+l.code;
+    const thumb=l.image_url?'<img src="'+esc(l.image_url)+'" alt="" loading="lazy">':'';
+    const title=l.title?'<div class="ttl">'+esc(l.title)+'</div>':'';
+    return '<article class="item" data-code="'+esc(l.code)+'">'
+      +'<div class="thumb">'+thumb+'</div>'
+      +'<div style="min-width:0">'
+        +'<a class="short" href="'+esc(short)+'" target="_blank" rel="noopener">'+esc(hostOf(shortBase)+'/'+l.code)+'</a>'
+        +title
+        +'<div class="dest" title="'+esc(l.target)+'">'+esc(l.target)+'</div>'
+        +'<div class="acts"><button type="button" data-copy="'+esc(short)+'">Copy</button><button type="button" data-delete="'+esc(l.code)+'">Delete</button></div>'
+      +'</div>'
+      +'<div class="stat"><b>'+(Number(l.clicks)||0)+'</b><span>clicks</span></div>'
+      +'</article>';
+  }).join('');
+  box.querySelectorAll('[data-copy]').forEach(b=>b.onclick=()=>copy(b.dataset.copy,b));
+  box.querySelectorAll('[data-delete]').forEach(b=>b.onclick=()=>removeLink(b.dataset.delete,b));
 }
 
 async function loadLinks(){
@@ -115,10 +155,19 @@ async function loadLinks(){
   try{
     const r=await fetch(API+'/api/links');const d=await r.json();
     if(!r.ok) throw new Error(d.error||'Could not load links (HTTP '+r.status+').');
-    if(d.short_base) shortBase=d.short_base;
+    if(d.short_base){shortBase=d.short_base;$('#hostPrefix').textContent=hostOf(shortBase)+'/';$('#pvHost').textContent=hostOf(shortBase)}
     if(!d.db_configured) setMsg($('#listMsg'),d.error||'Short links are not available until the database is connected.','bad');
     renderRows(d.links||[]);
-  }catch(e){setMsg($('#listMsg'),e.message,'bad');$('#linkRows').innerHTML='<tr><td colspan="5" class="empty">Links could not be loaded.</td></tr>'}
+  }catch(e){setMsg($('#listMsg'),e.message,'bad');$('#linkRows').innerHTML='<p class="empty">Links could not be loaded.</p>';$('#countLabel').textContent=''}
+}
+
+function setPreview(){
+  const url=$('#previewImage').value.trim();
+  const ok=/^https?:\/\//i.test(url);
+  const drop=$('#drop');
+  drop.style.backgroundImage=ok?'url("'+url.replace(/"/g,'%22')+'")':'';
+  drop.classList.toggle('has-img',ok);
+  $('#pvTitle').textContent=$('#previewTitle').value.trim()||'Your title';
 }
 
 $('#createForm').addEventListener('submit',async e=>{
@@ -130,6 +179,7 @@ $('#createForm').addEventListener('submit',async e=>{
     if(!r.ok) throw new Error(d.error||'Could not create the link (HTTP '+r.status+').');
     renderResult(d);setMsg($('#createMsg'),'Link created.','ok');
     $('#targetUrl').value='';$('#customCode').value='';$('#previewImage').value='';$('#previewTitle').value='';$('#previewFile').value='';setMsg($('#uploadMsg'),'');
+    setPreview();
     loadLinks();
   }catch(err){setMsg($('#createMsg'),err.message,'bad')}
   finally{btn.disabled=false}
@@ -146,21 +196,31 @@ async function removeLink(code,button){
   }catch(err){setMsg($('#listMsg'),err.message,'bad');button.disabled=false}
 }
 
-$('#previewFile').addEventListener('change',async e=>{
-  const file=e.target.files&&e.target.files[0];
-  if(!file) return;
-  const msg=$('#uploadMsg');setMsg(msg,'Uploading…');
-  if(file.size>3*1024*1024){setMsg(msg,'Images must be 3 MB or smaller.','bad');e.target.value='';return}
+async function uploadFile(file){
+  const msg=$('#uploadMsg');
+  if(!/^image\/(jpeg|png|webp|gif)$/.test(file.type)){setMsg(msg,'Use a JPG, PNG, WebP or GIF image.','bad');return}
+  if(file.size>3*1024*1024){setMsg(msg,'Images must be 3 MB or smaller.','bad');return}
+  setMsg(msg,'Uploading…');
   try{
     const r=await fetch(LINK_HOST+'/api/upload',{method:'POST',headers:{'content-type':file.type},body:file});
     const d=await r.json().catch(()=>({}));
     if(!r.ok) throw new Error(d.error||'Upload failed (HTTP '+r.status+').');
     $('#previewImage').value=d.image_url;
+    setPreview();
     setMsg(msg,'Image uploaded.','ok');
-  }catch(err){setMsg(msg,err.message,'bad');e.target.value=''}
-});
+  }catch(err){setMsg(msg,err.message,'bad')}
+}
 
-$('#refreshButton').onclick=loadLinks;
+$('#previewFile').addEventListener('change',e=>{const f=e.target.files&&e.target.files[0];if(f)uploadFile(f);e.target.value=''});
+
+const drop=$('#drop');
+['dragenter','dragover'].forEach(t=>drop.addEventListener(t,e=>{e.preventDefault();drop.classList.add('drag')}));
+['dragleave','drop'].forEach(t=>drop.addEventListener(t,e=>{e.preventDefault();drop.classList.remove('drag')}));
+drop.addEventListener('drop',e=>{const f=e.dataTransfer&&e.dataTransfer.files[0];if(f)uploadFile(f)});
+
+$('#previewImage').addEventListener('input',setPreview);
+$('#previewTitle').addEventListener('input',setPreview);
+setPreview();
 loadLinks();
 </script>
 </body></html>
