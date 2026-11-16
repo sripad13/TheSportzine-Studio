@@ -18,8 +18,10 @@ bucket_name = "thesportzine-studio-media"
 [[routes]]
 pattern = "read.thesportzine.com"
 custom_domain = true
+zone_name = "thesportzine.com"
 
 # Legacy host: links created before the move keep working.
 [[routes]]
 pattern = "link.falsewinger.com"
 custom_domain = true
+zone_name = "falsewinger.com"
