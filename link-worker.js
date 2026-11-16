@@ -2,9 +2,9 @@
 // Links with a preview image serve a small page carrying Open Graph tags, so chat apps show the image,
 // then send visitors on to the article. Plain links get a 302 redirect.
 const CODE_PATTERN = /^[A-Za-z0-9_-]{3,40}$/;
-const HOME = "https://studio.thesportzine.com/share/";
+const HOME = "https://studio.falsewinger.com/share/";
 
-const UPLOAD_ORIGINS = new Set(["https://studio.thesportzine.com", "https://newsroom.falsewinger.com"]);
+const UPLOAD_ORIGINS = new Set(["https://studio.falsewinger.com", "https://newsroom.falsewinger.com"]);
 const IMAGE_TYPES = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/gif": "gif" };
 const MAX_IMAGE_BYTES = 3 * 1024 * 1024;
 const IMAGE_NAME_PATTERN = /^[a-f0-9]{24}\.(jpg|png|webp|gif)$/;

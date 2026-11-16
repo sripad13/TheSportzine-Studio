@@ -7,7 +7,7 @@ The landing page (`/`) is public. Every other Studio page requires a Cloudflare 
 
 1. **Login method:** Settings → Authentication → add *One-time PIN*. Sign-in is by a code emailed to the allowed address, so there is no password to manage.
 2. **Policy:** one reusable policy, *Allow*, Include → Emails → the owner's address only.
-3. **Application (Studio pages):** Access → Applications → Self-hosted. Domain `studio.thesportzine.com`, with these paths added as separate destinations:
+3. **Application (Studio pages):** Access → Applications → Self-hosted. Domain `studio.falsewinger.com`, with these paths added as separate destinations:
    - `/letzgo`
    - `/newsroom` and `/newsroom/*`
    - `/share` and `/share/*`
@@ -21,4 +21,4 @@ The landing page (`/`) is public. Every other Studio page requires a Cloudflare 
 
 - **Read access to `/api/links` is currently public.** `GET /api/links` returns every short link and its destination, with no sign-in check. Protecting the pages does not protect this data. Options: an Access application on the API host (the browser calls the API cross-origin, so that needs testing), or a read key checked by the Worker.
 - The API host (`newsroom-api`) is not behind Access yet. Writes are only blocked by the Studio write key, so `STUDIO_WRITE_KEY` should also be set on the Worker.
-- `studio.thesportzine.com` is not live yet. Until the Pages cutover, the same rules apply to `newsroom.falsewinger.com`.
+- `studio.falsewinger.com` is not live yet. Until the Pages cutover, the same rules apply to `newsroom.falsewinger.com`.
