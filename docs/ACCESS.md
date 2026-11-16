@@ -9,13 +9,13 @@ The landing page (`/`) is public. Every other Studio page requires a Cloudflare 
 2. **Policy:** one reusable policy, *Allow*, Include → Emails → the owner's address only.
 3. **Application (Studio pages):** Access → Applications → Self-hosted. Domain `studio.thesportzine.com`, with these paths added as separate destinations:
    - `/letzgo`
-   - `/live` and `/live/*`
+   - `/newsroom` and `/newsroom/*`
    - `/share` and `/share/*`
-   - `/post`, `/seo`, `/ai-audit` (and their `/*` paths), or the new names once the route rename is merged
+   - `/create`, `/optimize`, `/audit` (and their `/*` paths), or the new names once the route rename is merged
    - Leave `/`, `/brand/*`, `/assets/*` and `/demo/*` out, so they stay public.
    Attach the policy above. Session duration: one month is reasonable.
 4. The Studio host must be proxied (orange cloud) through Cloudflare for path rules to apply.
-5. Test in a private window: `/` loads without a prompt, and `/live/` and `/letzgo` prompt for the PIN.
+5. Test in a private window: `/` loads without a prompt, and `/newsroom/` and `/letzgo` prompt for the PIN.
 
 ## Open items
 

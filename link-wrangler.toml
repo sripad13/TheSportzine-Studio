@@ -14,7 +14,12 @@ enabled = true
 binding = "MEDIA_BUCKET"
 bucket_name = "thesportzine-studio-media"
 
-# link.falsewinger.com serves the short-link redirects.
+# read.thesportzine.com serves the short-link redirects.
+[[routes]]
+pattern = "read.thesportzine.com"
+custom_domain = true
+
+# Legacy host: links created before the move keep working.
 [[routes]]
 pattern = "link.falsewinger.com"
 custom_domain = true

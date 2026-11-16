@@ -3,7 +3,7 @@
 Studio brings Newsroom, Create, Optimize and Audit workflows together. The original **Graphics editor** remains available at `/graphics.html`.
 
 ## Newsroom interface
-The root page is the Studio landing page. The live editorial workspace remains available at `/live/` with independently scrolling, resizable columns; All Sports, Football, Formula 1 and Breaking workspaces (buttons on desktop, a menu on mobile); keyword columns (comma-separated keywords match any); Newest/Priority sorting per column; saved stories synced through D1; and a right-side story inspection drawer.
+The root page is the Studio landing page. The live editorial workspace remains available at `/newsroom/` with independently scrolling, resizable columns; All Sports, Football, Formula 1 and Breaking workspaces (buttons on desktop, a menu on mobile); keyword columns (comma-separated keywords match any); Newest/Priority sorting per column; saved stories synced through D1; and a right-side story inspection drawer.
 
 ## RSS aggregation API
 The Worker exposes:
@@ -38,7 +38,7 @@ The API Worker's CORS allowlist includes `https://newsroom.falsewinger.com` and 
 Formula1.com is included as requested. Personal use does not by itself establish permission under a publisher's feed terms, so confirm the current terms and keep use within the permitted scope. Feed access is not permission to republish full articles or images. The interface displays headlines and short feed excerpts with links to the publisher. Review each publisher's terms before any wider distribution.
 
 ## AI Crawler Audit
-Studio includes an AI Search Visibility Audit at `/ai-audit/` (legacy `/ai-visibility.html` redirects). It accepts any public HTTP/HTTPS website and runs 35 weighted checks across eight categories, including 17 representative AI/search crawler User-Agent probes, readable HTML, JSON-LD, discovery files, Answer Engine Optimisation (AEO) and Generative Engine Optimisation (GEO) signals. AEO checks cover question-led headings, concise answer blocks, FAQ structure, definitions and optional speakable hints. GEO checks cover author/publisher identity, publication dates, source citations, publisher transparency and entity context. These are page-level heuristics, not guarantees of AI citations or rankings.
+Studio includes an AI Search Visibility Audit at `/audit/` (legacy `/ai-visibility.html` redirects). It accepts any public HTTP/HTTPS website and runs 35 weighted checks across eight categories, including 17 representative AI/search crawler User-Agent probes, readable HTML, JSON-LD, discovery files, Answer Engine Optimisation (AEO) and Generative Engine Optimisation (GEO) signals. AEO checks cover question-led headings, concise answer blocks, FAQ structure, definitions and optional speakable hints. GEO checks cover author/publisher identity, publication dates, source citations, publisher transparency and entity context. These are page-level heuristics, not guarantees of AI citations or rankings.
 
 The Worker exposes:
 - `POST /api/ai-audit` with JSON body `{"url":"https://example.com"}`.
@@ -57,8 +57,8 @@ The original graphics editor remains preserved at `graphics.html`. Its Buffer in
 
 The AI Audit suite now includes two additional workflows:
 
-- `/ai-audit/site/` — sitemap-based site audit. Discovers same-origin URLs from up to five sitemap files (including sitemap indexes), respects matching robots.txt rules when selecting pages, and audits up to 30 pages per run. The root page receives the 17 crawler probes and discovery-file checks; other pages receive content, metadata, structured-data, AEO and GEO checks. Results include aggregate category scores, page-level scores, skipped URLs and JSON export. This is a bounded sitemap sample, not an unrestricted website crawler.
-- `/ai-audit/prepublish/` — article draft checker. Accepts pasted plain text, Markdown or HTML plus headline, byline, publisher, canonical URL, publication date, source URLs and key entities. It checks headline length, opening clarity, headings, paragraph length, FAQ/question structure, entity coverage, author/publisher identity and source/date signals. It returns a suggested `NewsArticle` JSON-LD object and downloadable report. The draft is processed for the request and is not persisted by this endpoint; the checker does not verify facts or whether citations support individual claims.
+- `/audit/site/` — sitemap-based site audit. Discovers same-origin URLs from up to five sitemap files (including sitemap indexes), respects matching robots.txt rules when selecting pages, and audits up to 30 pages per run. The root page receives the 17 crawler probes and discovery-file checks; other pages receive content, metadata, structured-data, AEO and GEO checks. Results include aggregate category scores, page-level scores, skipped URLs and JSON export. This is a bounded sitemap sample, not an unrestricted website crawler.
+- `/audit/prepublish/` — article draft checker. Accepts pasted plain text, Markdown or HTML plus headline, byline, publisher, canonical URL, publication date, source URLs and key entities. It checks headline length, opening clarity, headings, paragraph length, FAQ/question structure, entity coverage, author/publisher identity and source/date signals. It returns a suggested `NewsArticle` JSON-LD object and downloadable report. The draft is processed for the request and is not persisted by this endpoint; the checker does not verify facts or whether citations support individual claims.
 
 Additional API endpoints:
 - `POST /api/ai-audit/site` with `{"url":"https://example.com","max_pages":20}`. Maximum 30 pages; five site scans per IP per hour when D1 rate limiting is configured.

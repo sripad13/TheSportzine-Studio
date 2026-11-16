@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS newsroom_saved_stories (
   saved_at TEXT NOT NULL
 );
 
--- Short links created from the Share page and served by the link Worker (link.falsewinger.com).
+-- Short links created from the Share page and served by the link Worker (read.thesportzine.com).
 CREATE TABLE IF NOT EXISTS newsroom_links (
   code TEXT PRIMARY KEY,
   target TEXT NOT NULL,

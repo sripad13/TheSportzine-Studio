@@ -21,13 +21,13 @@ Production branch: main (unchanged; do not deploy or merge before acceptance)
 | Existing route | Purpose |
 |---|---|
 | / | Studio landing page |
-| /live/ | Newsroom workspace |
-| /live/sources/ | Newsroom source management |
-| /post/ | Create / graphics and publishing workspace |
-| /seo/ | Optimize |
-| /ai-audit/ | AI visibility audit |
-| /ai-audit/site/ | Full-site audit |
-| /ai-audit/prepublish/ | Pre-publish checker |
+| /newsroom/ | Newsroom workspace |
+| /newsroom/sources/ | Newsroom source management |
+| /create/ | Create / graphics and publishing workspace |
+| /optimize/ | Optimize |
+| /audit/ | AI visibility audit |
+| /audit/site/ | Full-site audit |
+| /audit/prepublish/ | Pre-publish checker |
 | /graphics.html | Original graphics editor |
 
 Do not introduce redirects, change canonical hosts or rename paths in this phase.

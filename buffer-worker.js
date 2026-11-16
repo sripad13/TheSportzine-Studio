@@ -1,4 +1,5 @@
 const ALLOWED_ORIGINS = new Set([
+  "https://studio.thesportzine.com",
   "https://newsroom.falsewinger.com",
   "https://canvas.thesportzine.com",
   "https://sripad13.github.io"
