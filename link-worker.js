@@ -1,4 +1,4 @@
-// Short-link redirects for read.thesportzine.com/<code>. Codes are created from the Newsroom Share page.
+// Short-link redirects for link.falsewinger.com/<code>. Codes are created from the Newsroom Share page.
 // Links with a preview image serve a small page carrying Open Graph tags, so chat apps show the image,
 // then send visitors on to the article. Plain links get a 302 redirect.
 const CODE_PATTERN = /^[A-Za-z0-9_-]{3,40}$/;
@@ -41,7 +41,7 @@ async function handleUpload(request, env) {
   if (!looksLikeImage(bytes, ext)) return jsonResponse({ error: "That file is not a valid " + ext.toUpperCase() + " image." }, 415, cors);
   const name = Array.from(crypto.getRandomValues(new Uint8Array(12)), b => b.toString(16).padStart(2, "0")).join("") + "." + ext;
   await env.MEDIA_BUCKET.put("links/" + name, bytes, { httpMetadata: { contentType: type, cacheControl: "public, max-age=31536000, immutable" } });
-  return jsonResponse({ ok: true, image_url: "https://read.thesportzine.com/img/" + name }, 201, cors);
+  return jsonResponse({ ok: true, image_url: "https://link.falsewinger.com/img/" + name }, 201, cors);
 }
 async function handleImage(name, env) {
   if (!IMAGE_NAME_PATTERN.test(name) || !env.MEDIA_BUCKET) return notFound();
@@ -62,7 +62,7 @@ function previewPage(code, row) {
   try { host = new URL(target).hostname; } catch {}
   const title = row.title || host || "Article";
   const image = row.image_url || "";
-  const shortUrl = "https://read.thesportzine.com/" + code;
+  const shortUrl = "https://link.falsewinger.com/" + code;
   const scriptTarget = JSON.stringify(target).replace(/</g, "\\u003c");
   const body = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>${escapeHtml(title)}</title><meta property="og:type" content="website"><meta property="og:title" content="${escapeHtml(title)}"><meta property="og:url" content="${escapeHtml(shortUrl)}">${image ? `<meta property="og:image" content="${escapeHtml(image)}"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="${escapeHtml(image)}">` : ""}<meta name="twitter:title" content="${escapeHtml(title)}"><meta http-equiv="refresh" content="0;url=${escapeHtml(target)}"><link rel="canonical" href="${escapeHtml(target)}"></head><body><p>Opening <a href="${escapeHtml(target)}">${escapeHtml(host || target)}</a>…</p><script>location.replace(${scriptTarget});</script></body></html>`;
   return new Response(body, { status: 200, headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "x-robots-tag": "noindex", "referrer-policy": "strict-origin-when-cross-origin" } });

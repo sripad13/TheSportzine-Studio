@@ -573,7 +573,7 @@ function writeDenied(request, env, origin) {
   if (!ALLOWED_ORIGINS.has(origin)) return json({ error: "Changes are only accepted from the Studio app." }, 403, origin);
   return null;
 }
-const LINK_BASE = "https://read.thesportzine.com";
+const LINK_BASE = "https://link.falsewinger.com";
 const LINK_CODE_PATTERN = /^[A-Za-z0-9_-]{3,40}$/;
 const LINK_LIST_LIMIT = 500;
 const LINK_ALPHABET = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
