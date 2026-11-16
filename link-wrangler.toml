@@ -9,6 +9,11 @@ enabled = true
 # The D1 binding (DB) is added at deploy time by .github/workflows/deploy-link-worker.yml,
 # using the same Newsroom database as the API Worker.
 
+# Uploaded preview images live in the Studio media bucket (same one the Buffer Worker uses), under links/.
+[[r2_buckets]]
+binding = "MEDIA_BUCKET"
+bucket_name = "thesportzine-studio-media"
+
 # link.falsewinger.com serves the short-link redirects.
 [[routes]]
 pattern = "link.falsewinger.com"
