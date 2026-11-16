@@ -71,11 +71,12 @@
     const footer=document.createElement('footer');
     footer.className='studio-mobile-footer';
     footer.setAttribute('aria-label','Settings and theme');
-    footer.innerHTML='<div class="studio-theme-switch" role="group" aria-label="Colour theme"><span class="studio-footer-label">Theme</span><button type="button" data-theme-choice="system">System</button><button type="button" data-theme-choice="light">Light</button><button type="button" data-theme-choice="dark">Dark</button></div><div class="studio-footer-settings"></div>';
+    footer.innerHTML='<div class="studio-footer-row"><button class="studio-footer-theme" type="button"></button><div class="studio-footer-settings"></div></div>';
     document.body.appendChild(footer);
-    const syncThemeButtons=()=>{const choice=getChoice();footer.querySelectorAll('[data-theme-choice]').forEach(btn=>btn.setAttribute('aria-pressed',String(btn.dataset.themeChoice===choice)))};
-    footer.querySelectorAll('[data-theme-choice]').forEach(btn=>btn.addEventListener('click',()=>{setChoice(btn.dataset.themeChoice);apply(btn.dataset.themeChoice);syncThemeButtons()}));
-    syncThemeButtons();
+    const themeButton=footer.querySelector('.studio-footer-theme');
+    const syncThemeButton=()=>{const mode=root.getAttribute('data-studio-theme')==='dark'?'dark':'light';const next=mode==='dark'?'light':'dark';themeButton.textContent=mode==='dark'?'Dark':'Light';themeButton.setAttribute('aria-label','Switch to '+next+' theme')};
+    themeButton.addEventListener('click',()=>{const next=root.getAttribute('data-studio-theme')==='dark'?'light':'dark';setChoice(next);apply(next);syncThemeButton()});
+    syncThemeButton();
     const mobileQuery=window.matchMedia?window.matchMedia('(max-width: 760px)'):null;
     const placeSettings=()=>{
       if(!settings) return;
