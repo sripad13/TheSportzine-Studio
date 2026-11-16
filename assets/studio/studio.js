@@ -2,12 +2,12 @@
   const init=()=>{
     const root=document.documentElement;
     if(!document.body) return;
-    const links=[['Newsroom','/live/'],['Share','/share/'],['Create','/post/'],['Optimize','/seo/'],['Audit','/ai-audit/']];
+    const links=[['Newsroom','/newsroom/'],['Share','/share/'],['Create','/create/'],['Optimize','/optimize/'],['Audit','/audit/']];
     const routeForLocation=()=>{
       const hash=location.hash.replace(/^#\/?/,'');
       if(location.pathname==='/workspace/'&&hash) return ({live:'Newsroom',post:'Create',seo:'Optimize',audit:'Audit'})[hash]||'Newsroom';
       const path=location.pathname;
-      return path.startsWith('/live')?'Newsroom':path.startsWith('/share')?'Share':path.startsWith('/post')?'Create':path.startsWith('/seo')?'Optimize':path.startsWith('/ai-audit')?'Audit':'';
+      return path.startsWith('/newsroom')?'Newsroom':path.startsWith('/share')?'Share':path.startsWith('/create')?'Create':path.startsWith('/optimize')?'Optimize':path.startsWith('/audit')?'Audit':'';
     };
     const active=routeForLocation();
     const header=document.querySelector('.studio-global-header')||document.createElement('header');

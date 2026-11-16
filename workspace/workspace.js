@@ -9,7 +9,7 @@
   audit:{label:'Audit',title:'Audit',description:'Your website diagnostics workspace.',cards:[['Crawler access','Technical visibility','Understand how crawlers can access public pages.'],['AEO readiness','Answer engine checks','Review the signals that support clear answers.'],['GEO signals','Generative search checks','Inspect source and entity signals across your site.']]}
  };
  const links=[...nav.querySelectorAll('a')];
- const routeByPath={'/live/':'live','/post/':'post','/seo/':'seo','/ai-audit/':'audit'};
+ const routeByPath={'/newsroom/':'live','/create/':'post','/optimize/':'seo','/audit/':'audit'};
  links.forEach(link=>{const key=routeByPath[new URL(link.href).pathname];if(key)link.dataset.workspace=key;link.href='#/'+(key||'live')});
  let active='live';
  function render(key){

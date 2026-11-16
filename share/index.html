@@ -78,7 +78,7 @@ label.drop.has-img .drop-copy{display:none}
 
     <label for="customCode">Short link ending <span class="opt">(optional)</span></label>
     <div class="ending">
-      <span id="hostPrefix">link.falsewinger.com/</span>
+      <span id="hostPrefix">read.thesportzine.com/</span>
       <input id="customCode" placeholder="random" maxlength="40" aria-label="Custom short link ending" form="createForm">
     </div>
 
@@ -91,7 +91,7 @@ label.drop.has-img .drop-copy{display:none}
         </span>
       </label>
       <div class="preview" aria-live="polite">
-        <div class="host" id="pvHost">link.falsewinger.com</div>
+        <div class="host" id="pvHost">read.thesportzine.com</div>
         <div class="ttl" id="pvTitle">Your title</div>
       </div>
     </div>
@@ -112,7 +112,7 @@ label.drop.has-img .drop-copy{display:none}
 <script>
 const API=(localStorage.getItem('tsz_newsroom_api')||'https://newsroom-api.falsewinger.com').replace(/\/$/,'');
 const WRITE_KEY='tsz_studio_write_key';
-const LINK_HOST='https://link.falsewinger.com';
+const LINK_HOST='https://read.thesportzine.com';
 let shortBase=LINK_HOST;
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
