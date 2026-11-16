@@ -67,6 +67,23 @@
       settings.style.top='auto';
       settings.style.right='auto';
     }
+    // Mobile footer: theme switch plus settings. Header actions are hidden on phones, so these live at the bottom instead.
+    const footer=document.createElement('footer');
+    footer.className='studio-mobile-footer';
+    footer.setAttribute('aria-label','Settings and theme');
+    footer.innerHTML='<div class="studio-theme-switch" role="group" aria-label="Colour theme"><span class="studio-footer-label">Theme</span><button type="button" data-theme-choice="system">System</button><button type="button" data-theme-choice="light">Light</button><button type="button" data-theme-choice="dark">Dark</button></div><div class="studio-footer-settings"></div>';
+    document.body.appendChild(footer);
+    const syncThemeButtons=()=>{const choice=getChoice();footer.querySelectorAll('[data-theme-choice]').forEach(btn=>btn.setAttribute('aria-pressed',String(btn.dataset.themeChoice===choice)))};
+    footer.querySelectorAll('[data-theme-choice]').forEach(btn=>btn.addEventListener('click',()=>{setChoice(btn.dataset.themeChoice);apply(btn.dataset.themeChoice);syncThemeButtons()}));
+    syncThemeButtons();
+    const mobileQuery=window.matchMedia?window.matchMedia('(max-width: 760px)'):null;
+    const placeSettings=()=>{
+      if(!settings) return;
+      const target=mobileQuery&&mobileQuery.matches?footer.querySelector('.studio-footer-settings'):actions;
+      if(target&&settings.parentElement!==target) target.appendChild(settings);
+    };
+    placeSettings();
+    mobileQuery?.addEventListener?.('change',placeSettings);
     window.matchMedia?.('(prefers-color-scheme: dark)').addEventListener?.('change',()=>{if(getChoice()==='system') apply('system')});
   };
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init,{once:true});
