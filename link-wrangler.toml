@@ -1,0 +1,15 @@
+name = "thesportzine-link"
+main = "link-worker.js"
+compatibility_date = "2026-11-10"
+workers_dev = false
+
+[observability]
+enabled = true
+
+# The D1 binding (DB) is added at deploy time by .github/workflows/deploy-link-worker.yml,
+# using the same Newsroom database as the API Worker.
+
+# link.falsewinger.com serves the short-link redirects.
+[[routes]]
+pattern = "link.falsewinger.com"
+custom_domain = true
