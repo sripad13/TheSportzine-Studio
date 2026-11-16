@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en"><head><script>(function(){try{var v=localStorage.getItem('studio-theme')||'system';var d=v==='system'?(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):v;if(v!=='light'&&v!=='dark'&&v!=='system')d='light';document.documentElement.setAttribute('data-studio-theme',d);document.documentElement.setAttribute('data-studio-theme-choice',v)}catch(e){document.documentElement.setAttribute('data-studio-theme','light')}})();</script><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Share links — Studio</title><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:light;--bg:#F5F6F2;--panel:#FFFFFF;--panel2:#F0F2EC;--line:#DDE1D7;--muted:#62665D;--text:#171916;--yellow:#B7D957}
+html[data-studio-theme=dark]{color-scheme:dark;--bg:#0B0B0D;--panel:#17191D;--panel2:#1E2126;--line:#30343A;--muted:#A7ADA2;--text:#F5F6F2}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px Inter,Arial,sans-serif;min-height:100vh}
+main{max-width:860px;margin:0 auto;padding:28px 18px 60px}
+h1{font-size:22px;margin:0 0 6px;letter-spacing:-.4px}
+.lede{color:var(--muted);margin:0 0 22px;line-height:1.5}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:18px}
+label{display:block;font-size:12px;color:var(--muted);margin:0 0 6px}
+.row{display:grid;grid-template-columns:minmax(0,1fr) 220px auto;gap:10px;align-items:end}
+input{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:10px 12px;font:inherit}
+input:focus-visible,button:focus-visible{outline:2px solid var(--yellow);outline-offset:2px}
+button{font:600 13px Inter,Arial,sans-serif;border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:8px;padding:10px 14px;cursor:pointer;white-space:nowrap}
+button.primary{background:var(--yellow);border-color:var(--yellow);color:#0B0B0D}
+button:disabled{opacity:.6;cursor:wait}
+.msg{font-size:13px;margin-top:10px;min-height:18px}
+.msg.bad{color:#B53A3A}
+.msg.ok{color:#247A4B}
+.result{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--panel2)}
+.result a{font-weight:700;color:var(--text);word-break:break-all}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+th{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+td.target{max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)}
+.actions{display:flex;gap:6px;justify-content:flex-end}
+.actions button{padding:6px 10px;font-size:12px}
+.empty{color:var(--muted);padding:18px 0;text-align:center}
+@media(max-width:700px){.row{grid-template-columns:1fr}.hide-sm{display:none}td.target{max-width:140px}}
+</style><link rel="icon" href="/brand/studio-mark-light.svg" type="image/svg+xml"><link rel="stylesheet" href="/assets/studio/studio.css?v=20261116-02"><script defer src="/assets/studio/studio.js?v=20261116-02"></script>
+</head><body>
+<main>
+  <h1>Share links</h1>
+  <p class="lede">Turn a long article address into a short link on link.falsewinger.com. Links redirect to the original address and count clicks.</p>
+
+  <section class="card" aria-labelledby="create-heading">
+    <h2 id="create-heading" style="font-size:15px;margin:0 0 14px">Create a short link</h2>
+    <form id="createForm" class="row" autocomplete="off">
+      <div>
+        <label for="targetUrl">Web address</label>
+        <input id="targetUrl" type="url" placeholder="https://www.example.com/story" required>
+      </div>
+      <div>
+        <label for="customCode">Custom code (optional)</label>
+        <input id="customCode" placeholder="e.g. derby-result" maxlength="40">
+      </div>
+      <button class="primary" id="createButton" type="submit">Create link</button>
+    </form>
+    <div class="msg" id="createMsg" role="status" aria-live="polite"></div>
+    <div id="result"></div>
+  </section>
+
+  <section class="card" aria-labelledby="list-heading">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px">
+      <h2 id="list-heading" style="font-size:15px;margin:0">Your links</h2>
+      <button id="refreshButton" type="button">Refresh</button>
+    </div>
+    <div id="listMsg" class="msg" role="status" aria-live="polite"></div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr><th>Short link</th><th class="hide-sm">Destination</th><th>Clicks</th><th class="hide-sm">Created</th><th></th></tr></thead>
+        <tbody id="linkRows"><tr><td colspan="5" class="empty">Loading…</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+<script>
+const API=(localStorage.getItem('tsz_newsroom_api')||'https://newsroom-api.falsewinger.com').replace(/\/$/,'');
+const WRITE_KEY='tsz_studio_write_key';
+let shortBase='https://link.falsewinger.com';
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function writeHeaders(){const h={'Content-Type':'application/json'};const k=localStorage.getItem(WRITE_KEY);if(k)h['X-Studio-Key']=k;return h}
+function setMsg(el,text,kind=''){el.textContent=text;el.className='msg '+kind}
+function when(iso){if(!iso)return '—';const d=new Date(iso);return isNaN(d)?'—':d.toLocaleDateString(undefined,{day:'numeric',month:'short'})}
+async function copy(text,button){try{await navigator.clipboard.writeText(text);const old=button.textContent;button.textContent='Copied';setTimeout(()=>button.textContent=old,1400)}catch{button.textContent='Copy failed'}}
+
+function renderResult(link){
+  $('#result').innerHTML='<div class="result"><a href="'+esc(link.short_url)+'" target="_blank" rel="noopener">'+esc(link.short_url)+'</a><button type="button" id="copyNew">Copy link</button></div>';
+  $('#copyNew').onclick=e=>copy(link.short_url,e.currentTarget);
+}
+
+function renderRows(links){
+  const tbody=$('#linkRows');
+  if(!links.length){tbody.innerHTML='<tr><td colspan="5" class="empty">No short links yet.</td></tr>';return}
+  tbody.innerHTML=links.map(l=>{const short=shortBase+'/'+l.code;return '<tr data-code="'+esc(l.code)+'"><td><a href="'+esc(short)+'" target="_blank" rel="noopener" style="color:var(--text);font-weight:600">'+esc(l.code)+'</a></td><td class="target hide-sm" title="'+esc(l.target)+'">'+esc(l.target)+'</td><td>'+(Number(l.clicks)||0)+'</td><td class="hide-sm">'+esc(when(l.created_at))+'</td><td><div class="actions"><button type="button" data-copy="'+esc(short)+'">Copy</button><button type="button" data-delete="'+esc(l.code)+'">Delete</button></div></td></tr>'}).join('');
+  tbody.querySelectorAll('[data-copy]').forEach(b=>b.onclick=()=>copy(b.dataset.copy,b));
+  tbody.querySelectorAll('[data-delete]').forEach(b=>b.onclick=()=>removeLink(b.dataset.delete,b));
+}
+
+async function loadLinks(){
+  setMsg($('#listMsg'),'');
+  try{
+    const r=await fetch(API+'/api/links');const d=await r.json();
+    if(!r.ok) throw new Error(d.error||'Could not load links (HTTP '+r.status+').');
+    if(d.short_base) shortBase=d.short_base;
+    if(!d.db_configured) setMsg($('#listMsg'),d.error||'Short links are not available until the database is connected.','bad');
+    renderRows(d.links||[]);
+  }catch(e){setMsg($('#listMsg'),e.message,'bad');$('#linkRows').innerHTML='<tr><td colspan="5" class="empty">Links could not be loaded.</td></tr>'}
+}
+
+$('#createForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const btn=$('#createButton');btn.disabled=true;setMsg($('#createMsg'),'');$('#result').innerHTML='';
+  try{
+    const r=await fetch(API+'/api/links',{method:'POST',headers:writeHeaders(),body:JSON.stringify({url:$('#targetUrl').value.trim(),code:$('#customCode').value.trim()})});
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(d.error||'Could not create the link (HTTP '+r.status+').');
+    renderResult(d);setMsg($('#createMsg'),'Link created.','ok');
+    $('#targetUrl').value='';$('#customCode').value='';
+    loadLinks();
+  }catch(err){setMsg($('#createMsg'),err.message,'bad')}
+  finally{btn.disabled=false}
+});
+
+async function removeLink(code,button){
+  if(!confirm('Delete the short link '+shortBase+'/'+code+'? It will stop working.')) return;
+  button.disabled=true;
+  try{
+    const r=await fetch(API+'/api/links?code='+encodeURIComponent(code),{method:'DELETE',headers:writeHeaders()});
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(d.error||'Could not delete the link (HTTP '+r.status+').');
+    loadLinks();
+  }catch(err){setMsg($('#listMsg'),err.message,'bad');button.disabled=false}
+}
+
+$('#refreshButton').onclick=loadLinks;
+loadLinks();
+</script>
+</body></html>

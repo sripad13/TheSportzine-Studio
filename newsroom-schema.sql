@@ -31,3 +31,12 @@ CREATE TABLE IF NOT EXISTS newsroom_saved_stories (
   story_json TEXT NOT NULL,
   saved_at TEXT NOT NULL
 );
+
+-- Short links created from the Share page and served by the link Worker (link.falsewinger.com).
+CREATE TABLE IF NOT EXISTS newsroom_links (
+  code TEXT PRIMARY KEY,
+  target TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  clicks INTEGER NOT NULL DEFAULT 0,
+  last_clicked_at TEXT
+);

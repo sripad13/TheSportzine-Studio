@@ -123,7 +123,8 @@ async function ensureNewsroomSchema(db) {
       db.prepare("CREATE TABLE IF NOT EXISTS newsroom_sources (id TEXT PRIMARY KEY, name TEXT NOT NULL, feed_url TEXT NOT NULL UNIQUE, sport TEXT NOT NULL DEFAULT 'General sports', priority INTEGER NOT NULL DEFAULT 2 CHECK (priority BETWEEN 1 AND 3), enabled INTEGER NOT NULL DEFAULT 1, created_at TEXT NOT NULL, updated_at TEXT NOT NULL, last_fetched_at TEXT)"),
       db.prepare("CREATE TABLE IF NOT EXISTS newsroom_source_overrides (feed_url TEXT PRIMARY KEY, deleted INTEGER NOT NULL DEFAULT 0, updated_at TEXT NOT NULL)"),
       db.prepare("CREATE TABLE IF NOT EXISTS newsroom_source_edits (feed_url TEXT PRIMARY KEY, name TEXT, override_feed_url TEXT, sport TEXT, updated_at TEXT NOT NULL)"),
-      db.prepare("CREATE TABLE IF NOT EXISTS newsroom_saved_stories (id TEXT PRIMARY KEY, story_json TEXT NOT NULL, saved_at TEXT NOT NULL)")
+      db.prepare("CREATE TABLE IF NOT EXISTS newsroom_saved_stories (id TEXT PRIMARY KEY, story_json TEXT NOT NULL, saved_at TEXT NOT NULL)"),
+      db.prepare("CREATE TABLE IF NOT EXISTS newsroom_links (code TEXT PRIMARY KEY, target TEXT NOT NULL, created_at TEXT NOT NULL, clicks INTEGER NOT NULL DEFAULT 0, last_clicked_at TEXT)")
     ]).catch(error => { schemaReady = null; throw error; });
   }
   await schemaReady;
@@ -558,6 +559,23 @@ function writeDenied(request, env, origin) {
   if (!ALLOWED_ORIGINS.has(origin)) return json({ error: "Changes are only accepted from the Studio app." }, 403, origin);
   return null;
 }
+const LINK_BASE = "https://link.falsewinger.com";
+const LINK_CODE_PATTERN = /^[A-Za-z0-9_-]{3,40}$/;
+const LINK_LIST_LIMIT = 500;
+const LINK_ALPHABET = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+function randomLinkCode() {
+  const bytes = crypto.getRandomValues(new Uint8Array(7));
+  return Array.from(bytes, b => LINK_ALPHABET[b % LINK_ALPHABET.length]).join("");
+}
+function cleanLinkTarget(value) {
+  const raw = String(value || "").trim();
+  if (!raw || raw.length > 2048) return "";
+  try {
+    const parsed = new URL(raw);
+    if (parsed.protocol !== "https:" && parsed.protocol !== "http:") return "";
+    return parsed.href;
+  } catch { return ""; }
+}
 const SAVED_STORY_LIMIT = 1000;
 function cleanSavedStory(input) {
   if (!input || typeof input !== "object") return null;
@@ -873,6 +891,41 @@ export default {
         return json({ title: shortTitle, words: wordCount }, 200, origin);
       }
 
+      if (url.pathname === "/api/links") {
+        const dbReady = env.DB && typeof env.DB.prepare === "function";
+        if (request.method === "GET") {
+          if (!dbReady) return json({ db_configured: false, links: [], short_base: LINK_BASE }, 200, origin);
+          await ensureNewsroomSchema(env.DB);
+          const rows = await env.DB.prepare("SELECT code, target, created_at, clicks, last_clicked_at FROM newsroom_links ORDER BY created_at DESC LIMIT ?").bind(LINK_LIST_LIMIT).all();
+          return json({ db_configured: true, short_base: LINK_BASE, links: rows.results || [] }, 200, origin);
+        }
+        if (request.method === "POST" || request.method === "DELETE") {
+          const denied = writeDenied(request, env, origin); if (denied) return denied;
+          if (!dbReady) return json({ error: "Short links need the Cloudflare D1 binding (DB). Check the Newsroom deploy.", db_configured: false }, 503, origin);
+          await ensureNewsroomSchema(env.DB);
+          if (request.method === "DELETE") {
+            const code = url.searchParams.get("code") || "";
+            if (!LINK_CODE_PATTERN.test(code)) return json({ error: "A valid short code is required." }, 400, origin);
+            await env.DB.prepare("DELETE FROM newsroom_links WHERE code = ?").bind(code).run();
+            return json({ ok: true, code }, 200, origin);
+          }
+          const body = await request.json().catch(() => ({}));
+          const target = cleanLinkTarget(body.url);
+          if (!target) return json({ error: "Enter a full web address starting with https:// or http://." }, 400, origin);
+          const requested = String(body.code || "").trim();
+          if (requested && !LINK_CODE_PATTERN.test(requested)) return json({ error: "Custom codes use 3 to 40 letters, numbers, dashes or underscores." }, 400, origin);
+          const now = new Date().toISOString();
+          for (let attempt = 0; attempt < 4; attempt++) {
+            const code = requested || randomLinkCode();
+            const exists = await env.DB.prepare("SELECT code FROM newsroom_links WHERE code = ?").bind(code).first();
+            if (exists) { if (requested) return json({ error: "That short code is already in use." }, 409, origin); continue; }
+            await env.DB.prepare("INSERT INTO newsroom_links (code, target, created_at, clicks) VALUES (?, ?, ?, 0)").bind(code, target, now).run();
+            return json({ ok: true, code, target, short_url: LINK_BASE + "/" + code, created_at: now }, 201, origin);
+          }
+          return json({ error: "Could not find a free short code. Try again." }, 503, origin);
+        }
+        return json({ error: "Method not allowed." }, 405, origin);
+      }
       if (url.pathname === "/api/saved") {
         const dbReady = env.DB && typeof env.DB.prepare === "function";
         if (request.method === "GET") {
