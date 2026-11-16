@@ -48,6 +48,20 @@ td.target{max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:now
       </div>
       <button class="primary" id="createButton" type="submit">Create link</button>
     </form>
+    <details class="preview-opts" style="margin-top:12px">
+      <summary style="cursor:pointer;font-size:13px;color:var(--muted)">Add a preview image (shown when the link is shared)</summary>
+      <div class="row" style="margin-top:12px;grid-template-columns:minmax(0,1fr) minmax(0,1fr)">
+        <div>
+          <label for="previewImage">Image address</label>
+          <input id="previewImage" type="url" placeholder="https://www.example.com/photo.jpg">
+        </div>
+        <div>
+          <label for="previewTitle">Preview title (optional)</label>
+          <input id="previewTitle" placeholder="Shown under the image" maxlength="200">
+        </div>
+      </div>
+      <p class="lede" style="margin:10px 0 0;font-size:12px">Use a direct link to a JPG or PNG. Chat apps show it when the short link is shared; visitors still reach the article.</p>
+    </details>
     <div class="msg" id="createMsg" role="status" aria-live="polite"></div>
     <div id="result"></div>
   </section>
@@ -105,11 +119,11 @@ $('#createForm').addEventListener('submit',async e=>{
   e.preventDefault();
   const btn=$('#createButton');btn.disabled=true;setMsg($('#createMsg'),'');$('#result').innerHTML='';
   try{
-    const r=await fetch(API+'/api/links',{method:'POST',headers:writeHeaders(),body:JSON.stringify({url:$('#targetUrl').value.trim(),code:$('#customCode').value.trim()})});
+    const r=await fetch(API+'/api/links',{method:'POST',headers:writeHeaders(),body:JSON.stringify({url:$('#targetUrl').value.trim(),code:$('#customCode').value.trim(),image_url:$('#previewImage').value.trim(),title:$('#previewTitle').value.trim()})});
     const d=await r.json().catch(()=>({}));
     if(!r.ok) throw new Error(d.error||'Could not create the link (HTTP '+r.status+').');
     renderResult(d);setMsg($('#createMsg'),'Link created.','ok');
-    $('#targetUrl').value='';$('#customCode').value='';
+    $('#targetUrl').value='';$('#customCode').value='';$('#previewImage').value='';$('#previewTitle').value='';
     loadLinks();
   }catch(err){setMsg($('#createMsg'),err.message,'bad')}
   finally{btn.disabled=false}

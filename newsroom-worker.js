@@ -128,6 +128,19 @@ async function ensureNewsroomSchema(db) {
     ]).catch(error => { schemaReady = null; throw error; });
   }
   await schemaReady;
+  await ensureLinkColumns(db);
+}
+let linkColumnsReady = null;
+async function ensureLinkColumns(db) {
+  if (!linkColumnsReady) {
+    linkColumnsReady = (async () => {
+      const info = await db.prepare("PRAGMA table_info(newsroom_links)").all();
+      const names = new Set((info.results || []).map(c => c.name));
+      if (!names.has("image_url")) await db.prepare("ALTER TABLE newsroom_links ADD COLUMN image_url TEXT").run();
+      if (!names.has("title")) await db.prepare("ALTER TABLE newsroom_links ADD COLUMN title TEXT").run();
+    })().catch(error => { linkColumnsReady = null; throw error; });
+  }
+  await linkColumnsReady;
 }
 async function getConfiguredFeeds(env) {
   let custom = [], deleted = [], edits = [];
@@ -576,6 +589,16 @@ function cleanLinkTarget(value) {
     return parsed.href;
   } catch { return ""; }
 }
+function cleanPreviewImage(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return null;
+  if (raw.length > 2048) return undefined;
+  try {
+    const parsed = new URL(raw);
+    if (parsed.protocol !== "https:" && parsed.protocol !== "http:") return undefined;
+    return parsed.href;
+  } catch { return undefined; }
+}
 const SAVED_STORY_LIMIT = 1000;
 function cleanSavedStory(input) {
   if (!input || typeof input !== "object") return null;
@@ -896,7 +919,7 @@ export default {
         if (request.method === "GET") {
           if (!dbReady) return json({ db_configured: false, links: [], short_base: LINK_BASE }, 200, origin);
           await ensureNewsroomSchema(env.DB);
-          const rows = await env.DB.prepare("SELECT code, target, created_at, clicks, last_clicked_at FROM newsroom_links ORDER BY created_at DESC LIMIT ?").bind(LINK_LIST_LIMIT).all();
+          const rows = await env.DB.prepare("SELECT code, target, created_at, clicks, last_clicked_at, image_url, title FROM newsroom_links ORDER BY created_at DESC LIMIT ?").bind(LINK_LIST_LIMIT).all();
           return json({ db_configured: true, short_base: LINK_BASE, links: rows.results || [] }, 200, origin);
         }
         if (request.method === "POST" || request.method === "DELETE") {
@@ -912,6 +935,9 @@ export default {
           const body = await request.json().catch(() => ({}));
           const target = cleanLinkTarget(body.url);
           if (!target) return json({ error: "Enter a full web address starting with https:// or http://." }, 400, origin);
+          const previewImage = cleanPreviewImage(body.image_url);
+          if (previewImage === undefined) return json({ error: "The preview image must be a web address starting with https:// or http://." }, 400, origin);
+          const previewTitle = String(body.title || "").trim().slice(0, 200) || null;
           const requested = String(body.code || "").trim();
           if (requested && !LINK_CODE_PATTERN.test(requested)) return json({ error: "Custom codes use 3 to 40 letters, numbers, dashes or underscores." }, 400, origin);
           const now = new Date().toISOString();
@@ -919,8 +945,8 @@ export default {
             const code = requested || randomLinkCode();
             const exists = await env.DB.prepare("SELECT code FROM newsroom_links WHERE code = ?").bind(code).first();
             if (exists) { if (requested) return json({ error: "That short code is already in use." }, 409, origin); continue; }
-            await env.DB.prepare("INSERT INTO newsroom_links (code, target, created_at, clicks) VALUES (?, ?, ?, 0)").bind(code, target, now).run();
-            return json({ ok: true, code, target, short_url: LINK_BASE + "/" + code, created_at: now }, 201, origin);
+            await env.DB.prepare("INSERT INTO newsroom_links (code, target, created_at, clicks, image_url, title) VALUES (?, ?, ?, 0, ?, ?)").bind(code, target, now, previewImage, previewTitle).run();
+            return json({ ok: true, code, target, short_url: LINK_BASE + "/" + code, created_at: now, image_url: previewImage, title: previewTitle }, 201, origin);
           }
           return json({ error: "Could not find a free short code. Try again." }, 503, origin);
         }
