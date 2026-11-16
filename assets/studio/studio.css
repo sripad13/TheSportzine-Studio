@@ -96,3 +96,12 @@ html[data-studio-theme] .studio-theme-toggle{background:var(--panel2)!important;
   .studio-footer-settings .settings-panel{position:absolute!important;bottom:calc(100% + 10px)!important;right:0!important;top:auto!important;left:auto!important;width:min(300px,calc(100vw - 28px))!important;max-height:calc(100dvh - 120px)!important;overflow-y:auto;margin:0}
   .studio-footer-settings .settings-menu:not([open]) .settings-panel{display:none!important}
 }
+
+/* Mobile header: the brand sits on the first row and all five pages share a full-width second row. */
+:root{--studio-header-mobile:106px}
+@media (max-width:760px){
+  .studio-global-header{flex-wrap:wrap!important;height:auto!important;min-height:0!important;row-gap:8px!important;padding:10px 12px!important;align-items:center!important}
+  .studio-global-brand{flex:1 1 auto!important;min-width:0!important}
+  .studio-global-nav{order:3;flex:0 0 100%!important;width:100%!important;max-width:none!important;height:auto!important;display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:4px!important;padding:3px!important;margin:0!important;overflow:visible!important;border-radius:12px!important}
+  .studio-global-nav a{display:flex!important;align-items:center!important;justify-content:center!important;min-width:0!important;min-height:36px!important;padding:0 2px!important;font-size:clamp(10px,3.1vw,12px)!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+}
