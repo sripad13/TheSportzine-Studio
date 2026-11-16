@@ -83,18 +83,16 @@ html[data-studio-theme] .studio-theme-toggle{background:var(--panel2)!important;
   .studio-global-nav a{padding-inline:4px!important;font-size:9px!important}
 }
 
-/* Mobile footer: theme switch and settings at the bottom of every Studio page. */
+/* Mobile footer: one row with a Light/Dark toggle and the settings menu. */
 .studio-mobile-footer{display:none}
 @media (max-width:760px){
-  .studio-mobile-footer{display:flex;flex-direction:column;gap:12px;padding:16px 14px calc(16px + env(safe-area-inset-bottom));border-top:1px solid var(--studio-border);background:var(--studio-header-bg);color:var(--studio-header-ink);font:13px Inter,Arial,sans-serif;position:relative;z-index:2}
-  .studio-theme-switch{display:flex;align-items:center;flex-wrap:wrap;gap:6px}
-  .studio-footer-label{font-size:12px;color:var(--muted);margin-right:4px}
-  .studio-theme-switch button{min-height:36px;padding:0 13px;border:1px solid var(--studio-control-border);border-radius:8px;background:var(--panel2);color:var(--text);font:600 12px Inter,Arial,sans-serif;cursor:pointer}
-  .studio-theme-switch button[aria-pressed=true]{background:#B7D957;border-color:#B7D957;color:#0B0B0D}
-  .studio-footer-settings{display:block;min-width:0}
-  .studio-footer-settings .settings-menu{position:static!important}
+  .studio-mobile-footer{display:block;padding:12px 14px calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--studio-border);background:var(--studio-header-bg);color:var(--studio-header-ink);font:13px Inter,Arial,sans-serif;position:relative;z-index:2}
+  .studio-footer-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .studio-footer-theme{min-height:36px;padding:0 14px;border:1px solid var(--studio-control-border);border-radius:8px;background:var(--panel2);color:var(--text);font:600 12px Inter,Arial,sans-serif;cursor:pointer}
+  .studio-footer-settings{position:relative;min-width:0}
+  .studio-footer-settings .settings-menu{position:relative!important}
   .studio-footer-settings .settings-menu summary{width:auto!important;min-height:36px;padding:0 14px!important;font-size:0!important;display:inline-flex!important;align-items:center}
   .studio-footer-settings .settings-menu summary::after{content:'Settings';font-size:12px;font-weight:600}
-  .studio-footer-settings .settings-panel{position:static!important;top:auto!important;right:auto!important;left:auto!important;width:100%!important;max-height:none!important;margin-top:10px;overflow:visible}
+  .studio-footer-settings .settings-panel{position:absolute!important;bottom:calc(100% + 10px)!important;right:0!important;top:auto!important;left:auto!important;width:min(300px,calc(100vw - 28px))!important;max-height:calc(100dvh - 120px)!important;overflow-y:auto;margin:0}
   .studio-footer-settings .settings-menu:not([open]) .settings-panel{display:none!important}
 }
