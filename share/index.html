@@ -52,7 +52,12 @@ td.target{max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:now
       <summary style="cursor:pointer;font-size:13px;color:var(--muted)">Add a preview image (shown when the link is shared)</summary>
       <div class="row" style="margin-top:12px;grid-template-columns:minmax(0,1fr) minmax(0,1fr)">
         <div>
-          <label for="previewImage">Image address</label>
+          <label for="previewFile">Upload an image (JPG, PNG, WebP or GIF, up to 3 MB)</label>
+          <input id="previewFile" type="file" accept="image/jpeg,image/png,image/webp,image/gif" style="padding:8px">
+          <div class="msg" id="uploadMsg" role="status" aria-live="polite" style="margin-top:6px"></div>
+        </div>
+        <div>
+          <label for="previewImage">Or paste an image address</label>
           <input id="previewImage" type="url" placeholder="https://www.example.com/photo.jpg">
         </div>
         <div>
@@ -60,7 +65,7 @@ td.target{max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:now
           <input id="previewTitle" placeholder="Shown under the image" maxlength="200">
         </div>
       </div>
-      <p class="lede" style="margin:10px 0 0;font-size:12px">Use a direct link to a JPG or PNG. Chat apps show it when the short link is shared; visitors still reach the article.</p>
+      <p class="lede" style="margin:10px 0 0;font-size:12px">Chat apps show the image when the short link is shared; visitors still reach the article.</p>
     </details>
     <div class="msg" id="createMsg" role="status" aria-live="polite"></div>
     <div id="result"></div>
@@ -84,6 +89,7 @@ td.target{max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:now
 const API=(localStorage.getItem('tsz_newsroom_api')||'https://newsroom-api.falsewinger.com').replace(/\/$/,'');
 const WRITE_KEY='tsz_studio_write_key';
 let shortBase='https://link.falsewinger.com';
+const LINK_HOST='https://link.falsewinger.com';
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function writeHeaders(){const h={'Content-Type':'application/json'};const k=localStorage.getItem(WRITE_KEY);if(k)h['X-Studio-Key']=k;return h}
@@ -123,7 +129,7 @@ $('#createForm').addEventListener('submit',async e=>{
     const d=await r.json().catch(()=>({}));
     if(!r.ok) throw new Error(d.error||'Could not create the link (HTTP '+r.status+').');
     renderResult(d);setMsg($('#createMsg'),'Link created.','ok');
-    $('#targetUrl').value='';$('#customCode').value='';$('#previewImage').value='';$('#previewTitle').value='';
+    $('#targetUrl').value='';$('#customCode').value='';$('#previewImage').value='';$('#previewTitle').value='';$('#previewFile').value='';setMsg($('#uploadMsg'),'');
     loadLinks();
   }catch(err){setMsg($('#createMsg'),err.message,'bad')}
   finally{btn.disabled=false}
@@ -139,6 +145,20 @@ async function removeLink(code,button){
     loadLinks();
   }catch(err){setMsg($('#listMsg'),err.message,'bad');button.disabled=false}
 }
+
+$('#previewFile').addEventListener('change',async e=>{
+  const file=e.target.files&&e.target.files[0];
+  if(!file) return;
+  const msg=$('#uploadMsg');setMsg(msg,'Uploading…');
+  if(file.size>3*1024*1024){setMsg(msg,'Images must be 3 MB or smaller.','bad');e.target.value='';return}
+  try{
+    const r=await fetch(LINK_HOST+'/api/upload',{method:'POST',headers:{'content-type':file.type},body:file});
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(d.error||'Upload failed (HTTP '+r.status+').');
+    $('#previewImage').value=d.image_url;
+    setMsg(msg,'Image uploaded.','ok');
+  }catch(err){setMsg(msg,err.message,'bad');e.target.value=''}
+});
 
 $('#refreshButton').onclick=loadLinks;
 loadLinks();

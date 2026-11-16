@@ -4,6 +4,52 @@
 const CODE_PATTERN = /^[A-Za-z0-9_-]{3,40}$/;
 const HOME = "https://newsroom.falsewinger.com/share/";
 
+const UPLOAD_ORIGINS = new Set(["https://newsroom.falsewinger.com"]);
+const IMAGE_TYPES = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/gif": "gif" };
+const MAX_IMAGE_BYTES = 3 * 1024 * 1024;
+const IMAGE_NAME_PATTERN = /^[a-f0-9]{24}\.(jpg|png|webp|gif)$/;
+
+function corsHeaders(origin) {
+  if (!UPLOAD_ORIGINS.has(origin)) return {};
+  return { "access-control-allow-origin": origin, "access-control-allow-methods": "POST, OPTIONS", "access-control-allow-headers": "content-type", vary: "origin" };
+}
+function jsonResponse(data, status, extra = {}) {
+  return new Response(JSON.stringify(data), { status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", ...extra } });
+}
+// Checks the file's leading bytes so only real images are stored, whatever the declared type.
+function looksLikeImage(bytes, ext) {
+  const b = bytes;
+  if (ext === "jpg") return b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff;
+  if (ext === "png") return b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47;
+  if (ext === "gif") return b[0] === 0x47 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x38;
+  if (ext === "webp") return b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46 && b[8] === 0x57 && b[9] === 0x45 && b[10] === 0x42 && b[11] === 0x50;
+  return false;
+}
+async function handleUpload(request, env) {
+  const origin = request.headers.get("origin") || "";
+  const cors = corsHeaders(origin);
+  if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
+  if (request.method !== "POST") return jsonResponse({ error: "Method not allowed." }, 405, cors);
+  if (!UPLOAD_ORIGINS.has(origin)) return jsonResponse({ error: "Uploads are only accepted from the Studio app." }, 403);
+  if (!env.MEDIA_BUCKET) return jsonResponse({ error: "Image storage is not configured yet." }, 503, cors);
+  const type = (request.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
+  const ext = IMAGE_TYPES[type];
+  if (!ext) return jsonResponse({ error: "Use a JPG, PNG, WebP or GIF image." }, 415, cors);
+  const bytes = new Uint8Array(await request.arrayBuffer());
+  if (!bytes.byteLength) return jsonResponse({ error: "The image is empty." }, 400, cors);
+  if (bytes.byteLength > MAX_IMAGE_BYTES) return jsonResponse({ error: "Images must be 3 MB or smaller." }, 413, cors);
+  if (!looksLikeImage(bytes, ext)) return jsonResponse({ error: "That file is not a valid " + ext.toUpperCase() + " image." }, 415, cors);
+  const name = Array.from(crypto.getRandomValues(new Uint8Array(12)), b => b.toString(16).padStart(2, "0")).join("") + "." + ext;
+  await env.MEDIA_BUCKET.put("links/" + name, bytes, { httpMetadata: { contentType: type, cacheControl: "public, max-age=31536000, immutable" } });
+  return jsonResponse({ ok: true, image_url: "https://link.falsewinger.com/img/" + name }, 201, cors);
+}
+async function handleImage(name, env) {
+  if (!IMAGE_NAME_PATTERN.test(name) || !env.MEDIA_BUCKET) return notFound();
+  const object = await env.MEDIA_BUCKET.get("links/" + name);
+  if (!object) return notFound();
+  return new Response(object.body, { status: 200, headers: { "content-type": object.httpMetadata?.contentType || "application/octet-stream", "cache-control": "public, max-age=31536000, immutable", "x-content-type-options": "nosniff" } });
+}
+
 function notFound() {
   return new Response("Link not found.", { status: 404, headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" } });
 }
@@ -24,10 +70,16 @@ function previewPage(code, row) {
 
 export default {
   async fetch(request, env, ctx) {
+    const pathname = new URL(request.url).pathname;
+    if (pathname === "/api/upload") return handleUpload(request, env);
+    if (pathname.startsWith("/img/")) {
+      if (request.method !== "GET" && request.method !== "HEAD") return new Response("Method not allowed.", { status: 405, headers: { allow: "GET, HEAD" } });
+      return handleImage(pathname.slice(5), env);
+    }
     if (request.method !== "GET" && request.method !== "HEAD") {
       return new Response("Method not allowed.", { status: 405, headers: { allow: "GET, HEAD" } });
     }
-    const code = decodeURIComponent(new URL(request.url).pathname).replace(/^\/+|\/+$/g, "");
+    const code = decodeURIComponent(pathname).replace(/^\/+|\/+$/g, "");
     if (!code) return Response.redirect(HOME, 302);
     if (!CODE_PATTERN.test(code) || !env.DB) return notFound();
     try {
