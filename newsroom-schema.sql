@@ -38,5 +38,7 @@ CREATE TABLE IF NOT EXISTS newsroom_links (
   target TEXT NOT NULL,
   created_at TEXT NOT NULL,
   clicks INTEGER NOT NULL DEFAULT 0,
-  last_clicked_at TEXT
+  last_clicked_at TEXT,
+  image_url TEXT,
+  title TEXT
 );
