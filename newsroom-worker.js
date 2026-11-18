@@ -770,6 +770,51 @@ function dataForSeoDomain(value) {
     if (!ALLOWED_ORIGINS.has(origin) && origin !== "") return json({ error: "Origin not allowed." }, 403, origin);
     try {
 
+      if (request.method === "POST" && url.pathname.startsWith("/api/analyze/")) {
+        if (!await allowAuditRequest(request, env, 12, "dataforseo")) return json({ error: "Analyze usage limit reached. Maximum 12 requests per hour per IP." }, 429, origin);
+        const body = await request.json().catch(() => ({}));
+        const location = dataForSeoLocation(body);
+        let endpoint = "", payload = {};
+        if (url.pathname === "/api/analyze/keywords") {
+          const keywords = [...new Set((Array.isArray(body.keywords) ? body.keywords : String(body.keyword || "").split(/[\n,]/)).map(x => String(x).trim()).filter(Boolean))].slice(0, 5);
+          if (!keywords.length || keywords.some(x => x.length > 120)) return json({ error: "Enter between 1 and 5 keywords (maximum 120 characters each)." }, 400, origin);
+          endpoint = "dataforseo_labs/google/keyword_ideas/live";
+          payload = { keywords, ...location, limit: 50, include_serp_info: false };
+        } else if (url.pathname === "/api/analyze/domain") {
+          const target = dataForSeoDomain(String(body.domain || ""));
+          if (!target) return json({ error: "Enter a valid public domain, such as example.com." }, 400, origin);
+          endpoint = "dataforseo_labs/google/domain_rank_overview/live";
+          payload = { target, ...location, limit: 1 };
+        } else if (url.pathname === "/api/analyze/serp") {
+          const keyword = String(body.keyword || "").trim();
+          if (!keyword || keyword.length > 200) return json({ error: "Enter a search query (maximum 200 characters)." }, 400, origin);
+          endpoint = "serp/google/organic/live/advanced";
+          payload = { keyword, ...location, device: body.device === "mobile" ? "mobile" : "desktop", depth: 20 };
+        } else return json({ error: "Analyze endpoint not found." }, 404, origin);
+        const upstream = await dataForSeoRequest(env, endpoint, payload);
+        if (upstream.error) return json({ error: upstream.error }, upstream.status || 502, origin);
+        const task = upstream.data.tasks?.[0];
+        const result = task?.result?.[0] || {};
+        const items = Array.isArray(result.items) ? result.items : [];
+        const data = url.pathname.endsWith("/keywords") ? items.map(item => ({
+          keyword: item.keyword,
+          search_volume: item.keyword_info?.search_volume ?? null,
+          cpc: item.keyword_info?.cpc ?? null,
+          competition: item.keyword_info?.competition ?? null,
+          competition_level: item.keyword_info?.competition_level ?? null,
+          monthly_searches: item.keyword_info?.monthly_searches ?? [],
+          intent: item.search_intent_info?.main_intent ?? null,
+          keyword_difficulty: item.keyword_properties?.keyword_difficulty ?? null
+        })) : url.pathname.endsWith("/domain") ? (items[0] || null) : {
+          search_information: result,
+          organic: items.filter(item => item.type === "organic").map(item => ({
+            position: item.rank_absolute ?? item.rank_group ?? null,
+            title: item.title || "", domain: item.domain || "", url: item.url || "", description: item.description || ""
+          })),
+          features: [...new Set(items.filter(item => item.type !== "organic").map(item => item.type))]
+        };
+        return json({ ok: true, endpoint, location: body.country || "GLOBAL", cost_usd: Number(task?.cost ?? upstream.data.cost ?? 0), cached: upstream.cached, fetched_at: new Date().toISOString(), data }, 200, origin);
+      }
       if(request.method==="POST"&&url.pathname==="/api/seo/url-audit"){
         if(!await allowAuditRequest(request,env,5,"seo-url"))return json({error:"URL analysis rate limit reached. Maximum 5 scans per hour per IP."},429,origin);
         const body=await request.json();
