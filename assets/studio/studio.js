@@ -101,7 +101,6 @@ window.StudioWave = window.StudioWave || {
     const node=typeof target==='string'?document.querySelector(target):target;
     if(!node)return;
     node.innerHTML=this.markup(label,compact);
-    node.setAttribute('aria-busy','true');
   },
   clear(target){
     const node=typeof target==='string'?document.querySelector(target):target;
