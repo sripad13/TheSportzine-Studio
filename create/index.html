@@ -278,7 +278,7 @@ function renderBufferInsights(data){
 async function loadBufferInsights(force=false){
  const status=$('insightsStatus'),button=$('refreshInsights');
  if(!force){try{const cached=JSON.parse(localStorage.getItem(INSIGHTS_CACHE_KEY)||'null');if(cached&&Date.now()-cached.savedAt<12*60*60*1000&&cached.data){renderBufferInsights(cached.data);return}}catch{}}
- status.innerHTML=window.StudioWave.markup('Loading Buffer insights');if(button)button.disabled=true;
+ ['kpiReactions','kpiComments','kpiEngagement'].forEach(id=>{const node=$(id);if(node)node.innerHTML=window.StudioWave.markup('Loading Buffer insights',true)});status.innerHTML=window.StudioWave.markup('Loading Buffer insights');if(button)button.disabled=true;
  try{const r=await fetch(BUFFER_API+'/insights');const data=await r.json();if(!r.ok)throw new Error(data.error||'Could not load Buffer insights');renderBufferInsights(data);try{localStorage.setItem(INSIGHTS_CACHE_KEY,JSON.stringify({savedAt:Date.now(),data}))}catch{}}
  catch(e){status.textContent=e.message.includes('insightsRead')?'Buffer insights permission is unavailable. Check that the Worker uses a personal API key with insightsRead access.':e.message+' · Check the Buffer API key and insightsRead permission.'}
  finally{if(button)button.disabled=false}
