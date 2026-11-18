@@ -90,3 +90,20 @@
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init,{once:true});
   else init();
 })();
+
+/* Shared loading UI for values and data panels. */
+window.StudioWave = window.StudioWave || {
+  markup(label='Loading data', compact=false){
+    const safe=String(label).replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+    return '<span class="studio-wave'+(compact?' studio-wave--compact':'')+'" role="status" aria-label="'+safe+'"><span></span><span></span><span></span><span></span><span></span></span>';
+  },
+  show(target,label='Loading data',compact=false){
+    const node=typeof target==='string'?document.querySelector(target):target;
+    if(!node)return;
+    node.innerHTML=this.markup(label,compact);
+  },
+  clear(target){
+    const node=typeof target==='string'?document.querySelector(target):target;
+    if(node)node.removeAttribute('aria-busy');
+  }
+};

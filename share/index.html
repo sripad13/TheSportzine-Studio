@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en"><head><script>(function(){try{var v=localStorage.getItem('studio-theme')||'system';var d=v==='system'?(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):v;if(v!=='light'&&v!=='dark'&&v!=='system')d='light';document.documentElement.setAttribute('data-studio-theme',d);document.documentElement.setAttribute('data-studio-theme-choice',v)}catch(e){document.documentElement.setAttribute('data-studio-theme','light')}})();</script><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Share links — Studio</title><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<html lang="en"><head><script>window.StudioWave=window.StudioWave||{markup:function(label,compact){var safe=String(label||'Loading data').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]});return '<span class="studio-wave'+(compact?' studio-wave--compact':'')+'" role="status" aria-label="'+safe+'"><span></span><span></span><span></span><span></span><span></span></span>'},show:function(target,label,compact){var node=typeof target==='string'?document.querySelector(target):target;if(node)node.innerHTML=this.markup(label,compact)}};</script><script>(function(){try{var v=localStorage.getItem('studio-theme')||'system';var d=v==='system'?(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):v;if(v!=='light'&&v!=='dark'&&v!=='system')d='light';document.documentElement.setAttribute('data-studio-theme',d);document.documentElement.setAttribute('data-studio-theme-choice',v)}catch(e){document.documentElement.setAttribute('data-studio-theme','light')}})();</script><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Share links — Studio</title><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{color-scheme:light;--bg:#F5F6F2;--panel:#FFFFFF;--panel2:#F1F3EE;--line:#DDE1D7;--muted:#6B7065;--text:#171916;--accent:#B7D957}
 html[data-studio-theme=dark]{color-scheme:dark;--bg:#0E0F11;--panel:#18191C;--panel2:#131416;--line:#2A2D31;--muted:#9BA1A8;--text:#F3F4F1}
@@ -58,7 +58,7 @@ label.drop.has-img .drop-copy{display:none}
 .stat span{font-size:14px;color:var(--muted)}
 .empty{color:var(--muted);padding:24px 0;text-align:center}
 @media(max-width:520px){.item{grid-template-columns:76px minmax(0,1fr) auto;gap:12px}.thumb{width:76px}.stat b{font-size:22px}}
-</style><link rel="icon" href="/brand/studio-mark-light.svg" type="image/svg+xml"><link rel="stylesheet" href="/assets/studio/studio.css?v=20261116-03"><script defer src="/assets/studio/studio.js?v=20261116-03"></script>
+</style><link rel="icon" href="/brand/studio-mark-light.svg" type="image/svg+xml"><link rel="stylesheet" href="/assets/studio/studio.css?v=20261118-01"><script defer src="/assets/studio/studio.js?v=20261118-01"></script>
 </head><body>
 <main>
   <h1>Shorten a link,<br>choose how it looks.</h1>
@@ -104,10 +104,10 @@ label.drop.has-img .drop-copy{display:none}
 
   <div class="list-head">
     <h2 id="list-heading">Your links</h2>
-    <span class="count" id="countLabel">Loading…</span>
+    <span class="count" id="countLabel"><span class="studio-wave studio-wave--compact" role="status" aria-label="Loading share links"><span></span><span></span><span></span><span></span><span></span></span></span>
   </div>
   <div class="msg" id="listMsg" role="status" aria-live="polite"></div>
-  <div id="linkRows"><p class="empty">Loading…</p></div>
+  <div id="linkRows"><p class="empty"><span class="studio-wave studio-wave--compact" role="status" aria-label="Loading share links"><span></span><span></span><span></span><span></span><span></span></span></p></div>
 </main>
 <script>
 const API=(localStorage.getItem('tsz_newsroom_api')||'https://newsroom-api.falsewinger.com').replace(/\/$/,'');
@@ -151,6 +151,8 @@ function renderRows(links){
 }
 
 async function loadLinks(){
+  $('#countLabel').innerHTML=window.StudioWave.markup('Loading share links',true);
+  $('#linkRows').innerHTML='<p class="empty">'+window.StudioWave.markup('Loading share links',true)+'</p>';
   setMsg($('#listMsg'),'');
   try{
     const r=await fetch(API+'/api/links');const d=await r.json();
@@ -200,7 +202,7 @@ async function uploadFile(file){
   const msg=$('#uploadMsg');
   if(!/^image\/(jpeg|png|webp|gif)$/.test(file.type)){setMsg(msg,'Use a JPG, PNG, WebP or GIF image.','bad');return}
   if(file.size>3*1024*1024){setMsg(msg,'Images must be 3 MB or smaller.','bad');return}
-  setMsg(msg,'Uploading…');
+  window.StudioWave.show($('#uploadMsg'),'Uploading');
   try{
     const r=await fetch(LINK_HOST+'/api/upload',{method:'POST',headers:{'content-type':file.type},body:file});
     const d=await r.json().catch(()=>({}));
