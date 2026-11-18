@@ -105,3 +105,22 @@ html[data-studio-theme] .studio-theme-toggle{background:var(--panel2)!important;
   .studio-global-nav{order:3;flex:0 0 100%!important;width:100%!important;max-width:none!important;height:auto!important;display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:4px!important;padding:3px!important;margin:0!important;overflow:visible!important;border-radius:12px!important}
   .studio-global-nav a{display:flex!important;align-items:center!important;justify-content:center!important;min-width:0!important;min-height:36px!important;padding:0 2px!important;font-size:clamp(10px,3.1vw,12px)!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
 }
+
+
+/* Shared Wave loading indicator — vanilla implementation for the static Studio pages. */
+.studio-wave{
+  width:96px;height:48px;display:inline-flex;align-items:center;justify-content:center;
+  gap:5px;vertical-align:middle;color:var(--yellow,#B7D957);
+}
+.studio-wave span{
+  display:block;width:5px;height:12px;border-radius:999px;background:currentColor;
+  transform-origin:center;animation:studio-wave-pulse 900ms ease-in-out infinite;
+}
+.studio-wave span:nth-child(2){animation-delay:100ms}
+.studio-wave span:nth-child(3){animation-delay:200ms}
+.studio-wave span:nth-child(4){animation-delay:300ms}
+.studio-wave span:nth-child(5){animation-delay:400ms}
+.studio-wave--compact{width:42px;height:22px;gap:3px}
+.studio-wave--compact span{width:3px;height:8px}
+@keyframes studio-wave-pulse{0%,100%{transform:scaleY(.45);opacity:.55}50%{transform:scaleY(2.4);opacity:1}}
+@media(prefers-reduced-motion:reduce){.studio-wave span{animation:none;transform:scaleY(1);opacity:.8}}
