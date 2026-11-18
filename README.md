@@ -1,6 +1,6 @@
 # Studio — Sports content workspace
 
-Studio brings Newsroom, Create, Optimize and Audit workflows together. The original **Graphics editor** remains available at `/graphics.html`.
+Studio brings Newsroom, Create, Optimize, Analyze and Audit workflows together. Analyze is the website-level SEO intelligence workspace at `/analyze/`; Optimize remains focused on article-level improvements. The original **Graphics editor** remains available at `/graphics.html`.
 
 ## Newsroom interface
 The root page is the Studio landing page. The live editorial workspace remains available at `/newsroom/` with independently scrolling, resizable columns; All Sports, Football, Formula 1 and Breaking workspaces (buttons on desktop, a menu on mobile); keyword columns (comma-separated keywords match any); Newest/Priority sorting per column; saved stories synced through D1; and a right-side story inspection drawer.
@@ -72,7 +72,7 @@ All scores are heuristic diagnostics. They do not represent measured AI citation
 - Product name: **Studio**.
 - Official brand assets are in `/brand/`.
 - Shared navigation and theme styles are in `/assets/studio/`.
-- The header is shared across the landing page and application pages. Navigation order: Newsroom, Create, Optimize, Audit.
+- The header is shared across the landing page and application pages. Navigation order: Newsroom, Share, Create, Optimize, Analyze, Audit.
 - Theme choices: System, Light and Dark. The selection persists in the browser.
 - Brand palette: lime `#B7D957`, near-black `#0B0B0D`, white `#FFFFFF`, warm light canvas `#F5F6F2`.
 - The redesign does not change the current hostname, API hostname, route paths, Workers or D1 configuration. URL migration is a separate future phase.
