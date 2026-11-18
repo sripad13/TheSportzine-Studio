@@ -104,10 +104,10 @@ label.drop.has-img .drop-copy{display:none}
 
   <div class="list-head">
     <h2 id="list-heading">Your links</h2>
-    <span class="count" id="countLabel">Loading…</span>
+    <span class="count" id="countLabel"><span class="studio-wave studio-wave--compact" role="status" aria-label="Loading data"><span></span><span></span><span></span><span></span><span></span></span></span>
   </div>
   <div class="msg" id="listMsg" role="status" aria-live="polite"></div>
-  <div id="linkRows"><p class="empty">Loading…</p></div>
+  <div id="linkRows"><p class="empty"><span class="studio-wave studio-wave--compact" role="status" aria-label="Loading data"><span></span><span></span><span></span><span></span><span></span></span></p></div>
 </main>
 <script>
 const API=(localStorage.getItem('tsz_newsroom_api')||'https://newsroom-api.falsewinger.com').replace(/\/$/,'');
@@ -200,7 +200,7 @@ async function uploadFile(file){
   const msg=$('#uploadMsg');
   if(!/^image\/(jpeg|png|webp|gif)$/.test(file.type)){setMsg(msg,'Use a JPG, PNG, WebP or GIF image.','bad');return}
   if(file.size>3*1024*1024){setMsg(msg,'Images must be 3 MB or smaller.','bad');return}
-  setMsg(msg,'Uploading…');
+  window.StudioWave.show($('#message'),'Uploading');
   try{
     const r=await fetch(LINK_HOST+'/api/upload',{method:'POST',headers:{'content-type':file.type},body:file});
     const d=await r.json().catch(()=>({}));
