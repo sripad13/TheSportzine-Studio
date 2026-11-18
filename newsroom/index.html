@@ -337,7 +337,7 @@ function updatedLabel(){if(!lastRefreshAt)return '';const m=Math.floor((Date.now
 function refreshUpdatedLabel(){$('#updated').textContent=updatedLabel()}
 async function refresh(fresh=false){
  if(refreshing)return;
- const refreshButton=$('#refresh');refreshButton.disabled=true;refreshButton.textContent='↻ Refreshing…';
+ const refreshButton=$('#refresh');refreshButton.disabled=true;refreshButton.innerHTML=window.StudioWave.markup('Refreshing feeds',true);
  const base=$('#apiBase').value.trim().replace(/\/$/,'');if(!base){setStatus('API not configured');return}
  refreshing=true;stories=[];trendsStories=[];localStorage.setItem(API_KEY,base);setStatus('');window.StudioWave.show($('#status'),'Fetching feeds');render();
  try{
