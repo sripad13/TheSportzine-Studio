@@ -322,7 +322,7 @@ async function loadTrends(windowName=trendsWindow,force=false){
  trendsWindow=windowName;
  if(!force&&trendsCache.has(windowName)){trendsStories=trendsCache.get(windowName);render();return}
  if(trendsLoading)return;
- trendsLoading=true;trendsErrors=[];render();
+ trendsLoading=true;trendsStories=[];trendsErrors=[];render();
  try{
   const base=$('#apiBase').value.trim().replace(/\/$/,'');
   const response=await fetch(base+'/api/trends?window='+encodeURIComponent(windowName));
