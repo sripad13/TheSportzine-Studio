@@ -260,7 +260,7 @@ function storyCard(s,col){const keyword=String(col?.keyword||'').trim().toLowerC
 async function createPostFromStory(id){
  const s=findStory(id);if(!s)return;
  const postTab=window.open('/create/','_blank');
- const button=$('#createPostFromStory');if(button){button.disabled=true;button.textContent='Preparing…'}
+ const button=$('#createPostFromStory');if(button){button.disabled=true;button.innerHTML=window.StudioWave.markup('Preparing post',true)}
  const error=$('#createPostError');if(error)error.textContent='';
  try{
   let item=generatedTitles.get(id);
