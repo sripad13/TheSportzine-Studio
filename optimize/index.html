@@ -115,7 +115,7 @@ async function analysePublicUrl(){
  const input=$('#pageUrl').value.trim(),status=$('#urlStatus'),results=$('#urlResults'),button=$('#analyseUrl');
  let target;try{target=new URL(input)}catch{status.innerHTML='<div class="url-error">Enter a valid public URL, including https://.</div>';return}
  if(!['http:','https:'].includes(target.protocol)||target.username||target.password){status.innerHTML='<div class="url-error">Only public HTTP or HTTPS URLs are supported.</div>';return}
- button.disabled=true;button.textContent='Analysing…';status.innerHTML='<div class="url-loading">Fetching page and evaluating its SEO, AEO and GEO signals…</div>';results.innerHTML='';
+ button.disabled=true;button.textContent='Analysing…';status.innerHTML=window.StudioWave.markup('Fetching page and evaluating SEO, AEO and GEO');results.innerHTML='';
  try{
   const response=await fetch('https://newsroom-api.falsewinger.com/api/seo/url-audit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:target.href})});
   const raw=await response.text();let data;try{data=JSON.parse(raw)}catch{throw new Error('The Studio API returned a non-JSON response (HTTP '+response.status+'). Confirm that the API Worker has deployed the URL audit endpoint.')}if(!response.ok)throw new Error(data.error||'Could not analyse this page.');
