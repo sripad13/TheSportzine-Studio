@@ -200,7 +200,7 @@ async function uploadFile(file){
   const msg=$('#uploadMsg');
   if(!/^image\/(jpeg|png|webp|gif)$/.test(file.type)){setMsg(msg,'Use a JPG, PNG, WebP or GIF image.','bad');return}
   if(file.size>3*1024*1024){setMsg(msg,'Images must be 3 MB or smaller.','bad');return}
-  window.StudioWave.show($('#message'),'Uploading');
+  window.StudioWave.show($('#uploadMsg'),'Uploading');
   try{
     const r=await fetch(LINK_HOST+'/api/upload',{method:'POST',headers:{'content-type':file.type},body:file});
     const d=await r.json().catch(()=>({}));
