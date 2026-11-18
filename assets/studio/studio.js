@@ -2,12 +2,12 @@
   const init=()=>{
     const root=document.documentElement;
     if(!document.body) return;
-    const links=[['Newsroom','/newsroom/'],['Share','/share/'],['Create','/create/'],['Optimize','/optimize/'],['Audit','/audit/']];
+    const links=[['Newsroom','/newsroom/'],['Share','/share/'],['Create','/create/'],['Optimize','/optimize/'],['Analyze','/analyze/'],['Audit','/audit/']];
     const routeForLocation=()=>{
       const hash=location.hash.replace(/^#\/?/,'');
       if(location.pathname==='/workspace/'&&hash) return ({live:'Newsroom',post:'Create',seo:'Optimize',audit:'Audit'})[hash]||'Newsroom';
       const path=location.pathname;
-      return path.startsWith('/newsroom')?'Newsroom':path.startsWith('/share')?'Share':path.startsWith('/create')?'Create':path.startsWith('/optimize')?'Optimize':path.startsWith('/audit')?'Audit':'';
+      return path.startsWith('/newsroom')?'Newsroom':path.startsWith('/share')?'Share':path.startsWith('/create')?'Create':path.startsWith('/optimize')?'Optimize':path.startsWith('/analyze')?'Analyze':path.startsWith('/audit')?'Audit':'';
     };
     const active=routeForLocation();
     const header=document.querySelector('.studio-global-header')||document.createElement('header');
@@ -21,6 +21,14 @@
     const nav=header.querySelector('.studio-global-nav');
     if(!nav) return;
     const navLinks=[...nav.querySelectorAll('a')];
+    if(!navLinks.some(link=>link.textContent.trim()==='Analyze')){
+      const analyzeLink=document.createElement('a');
+      analyzeLink.href='/analyze/';
+      analyzeLink.textContent='Analyze';
+      const auditLink=navLinks.find(link=>link.textContent.trim()==='Audit');
+      nav.insertBefore(analyzeLink,auditLink||null);
+      navLinks.push(analyzeLink);
+    }
     const syncActive=()=>{
       const current=routeForLocation();
       navLinks.forEach(link=>{
