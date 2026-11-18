@@ -43,7 +43,7 @@
    <article class="insight-card"><div class="insight-label">Comments</div><div class="insight-value-row"><span class="insight-value" id="kpiComments">—</span><span class="insight-change neutral" id="kpiCommentsChange">—</span></div></article>
    <article class="insight-card"><div class="insight-label">Eng. Rate</div><div class="insight-value-row"><span class="insight-value" id="kpiEngagement">—</span><span class="insight-change neutral" id="kpiEngagementChange">—</span></div></article>
   </div>
-  <div class="insight-foot" id="insightsStatus" aria-live="polite">Loading Buffer insights…</div>
+  <div class="insight-foot" id="insightsStatus" aria-live="polite"><span class="studio-wave" role="status" aria-label="Loading Buffer insights"><span></span><span></span><span></span><span></span><span></span></span></div>
  </section>
  <section class="dashboard hidden" id="homeView">
   <h2 style="margin-top:0">Templates</h2><div class="grid" id="categoryTiles"></div>
@@ -64,7 +64,7 @@
     <section class="panel buffer-panel" style="grid-column:1/-1">
       <h3>Social post · Buffer</h3>
       <div class="field" style="margin-top:10px"><textarea id="socialCaption" maxlength="280" rows="4" placeholder="Write your social media caption…"></textarea><div class="counter" id="captionCount">0 / 280</div></div>
-      <div class="field"><div class="buffer-channels" id="bufferChannels"><span class="hint">Loading Buffer channels…</span></div></div>
+      <div class="field"><div class="buffer-channels" id="bufferChannels"><span class="studio-wave studio-wave--compact" role="status" aria-label="Loading Buffer channels"><span></span><span></span><span></span><span></span><span></span></span></div></div>
       <div class="buffer-actions"><button class="btn primary" id="bufferPublishNow" type="button">Publish Now</button><button class="btn" id="bufferSchedule" type="button">Schedule via Buffer</button><button class="btn" id="bufferDraft" type="button">Save as draft</button><button class="btn" id="refreshBuffer" type="button">↻ Refresh channels</button></div>
       <div class="status" id="bufferStatus">Buffer connection needs setup. Your API key will be stored securely in a Cloudflare Worker, never in this page.</div>
     </section>
@@ -248,7 +248,7 @@ async function prepareSubjectMask(){
   console.error('Subject segmentation failed:',err);
  }
 }
-$('autoFace').onclick=async()=>{if(!img){$('faceStatus').textContent='Upload a photograph first.';return}$('faceStatus').textContent='Loading face detector…';try{const vision=await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/+esm');const fileset=await vision.FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');faceDetector=await vision.FaceDetector.createFromOptions(fileset,{baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite'},runningMode:'IMAGE'});const result=faceDetector.detect(img);if(!result.detections?.length){$('faceStatus').textContent='No face detected. Drag the image manually or try another photograph.';return}const box=result.detections[0].boundingBox,cx=box.originX+box.width/2,cy=box.originY+box.height/2,geo=imageGeometry();const sx=geo.w/img.width,sy=geo.h/img.height;facePoint={x:geo.x+cx*sx,y:geo.y+cy*sy};const targetY=H*Number($('faceTarget').value);offsetX+=W/2-facePoint.x;offsetY+=targetY-facePoint.y;$('posX').value=Math.max(-500,Math.min(500,offsetX));$('posY').value=Math.max(-500,Math.min(500,offsetY));draw();$('faceStatus').textContent=`Face detected (${Math.round(result.detections[0].categories?.[0]?.score*100||0)}% confidence). Image positioned for the headline-safe area. You can still drag it manually.`}catch(err){$('faceStatus').textContent='Face detection could not load. Check your internet connection; manual positioning remains available.';console.error(err)}};
+$('autoFace').onclick=async()=>{if(!img){$('faceStatus').textContent='Upload a photograph first.';return}$('faceStatus').innerHTML=window.StudioWave.markup('Loading face detector');try{const vision=await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/+esm');const fileset=await vision.FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');faceDetector=await vision.FaceDetector.createFromOptions(fileset,{baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite'},runningMode:'IMAGE'});const result=faceDetector.detect(img);if(!result.detections?.length){$('faceStatus').textContent='No face detected. Drag the image manually or try another photograph.';return}const box=result.detections[0].boundingBox,cx=box.originX+box.width/2,cy=box.originY+box.height/2,geo=imageGeometry();const sx=geo.w/img.width,sy=geo.h/img.height;facePoint={x:geo.x+cx*sx,y:geo.y+cy*sy};const targetY=H*Number($('faceTarget').value);offsetX+=W/2-facePoint.x;offsetY+=targetY-facePoint.y;$('posX').value=Math.max(-500,Math.min(500,offsetX));$('posY').value=Math.max(-500,Math.min(500,offsetY));draw();$('faceStatus').textContent=`Face detected (${Math.round(result.detections[0].categories?.[0]?.score*100||0)}% confidence). Image positioned for the headline-safe area. You can still drag it manually.`}catch(err){$('faceStatus').textContent='Face detection could not load. Check your internet connection; manual positioning remains available.';console.error(err)}};
 function exportGraphic(fmt){document.fonts.ready.then(()=>{const mime=fmt==='jpeg'?'image/jpeg':fmt==='webp'?'image/webp':'image/png',ext=fmt==='jpeg'?'jpg':fmt,a=document.createElement('a');a.download=`thesportzine-${W}x${H}.${ext}`;a.href=canvas.toDataURL(mime,fmt==='png'?undefined:.92);a.click();$('downloadModal').classList.add('hidden')})}
 $('downloadBtn').onclick=()=>$('downloadModal').classList.remove('hidden');
 document.querySelectorAll('[data-format]').forEach(b=>b.onclick=()=>exportGraphic(b.dataset.format));
@@ -278,7 +278,7 @@ function renderBufferInsights(data){
 async function loadBufferInsights(force=false){
  const status=$('insightsStatus'),button=$('refreshInsights');
  if(!force){try{const cached=JSON.parse(localStorage.getItem(INSIGHTS_CACHE_KEY)||'null');if(cached&&Date.now()-cached.savedAt<12*60*60*1000&&cached.data){renderBufferInsights(cached.data);return}}catch{}}
- status.textContent='Loading Buffer insights…';if(button)button.disabled=true;
+ status.textContent='<span class="studio-wave" role="status" aria-label="Loading Buffer insights"><span></span><span></span><span></span><span></span><span></span></span>';if(button)button.disabled=true;
  try{const r=await fetch(BUFFER_API+'/insights');const data=await r.json();if(!r.ok)throw new Error(data.error||'Could not load Buffer insights');renderBufferInsights(data);try{localStorage.setItem(INSIGHTS_CACHE_KEY,JSON.stringify({savedAt:Date.now(),data}))}catch{}}
  catch(e){status.textContent=e.message.includes('insightsRead')?'Buffer insights permission is unavailable. Check that the Worker uses a personal API key with insightsRead access.':e.message+' · Check the Buffer API key and insightsRead permission.'}
  finally{if(button)button.disabled=false}
@@ -293,7 +293,7 @@ caption.addEventListener('input',updateCaptionCount);
 async function loadBufferChannels(force=false){
  const cacheKey='tsz-buffer-channels-v1';
  if(!force){try{const cached=JSON.parse(localStorage.getItem(cacheKey)||'null');if(cached&&Date.now()-cached.savedAt<12*60*60*1000&&Array.isArray(cached.channels)&&cached.channels.length){renderBufferChannels(cached.channels);bufferStatus.textContent=`Connected · ${cached.channels.length} Buffer channel(s) loaded from cache. Checking connection…`;}}catch{}}
- bufferStatus.textContent='Connecting to Buffer…';$('bufferChannels').innerHTML='<span class="hint">Connecting to Buffer…</span>';
+ bufferStatus.innerHTML=window.StudioWave.markup('Connecting to Buffer');$('bufferChannels').innerHTML=window.StudioWave.markup('Connecting to Buffer',true);
  const controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),15000);
  try{
   const r=await fetch(BUFFER_API+'/channels',{method:'GET',headers:{'Accept':'application/json'},cache:'no-store',signal:controller.signal});
