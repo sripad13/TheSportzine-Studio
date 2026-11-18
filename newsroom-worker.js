@@ -714,7 +714,52 @@ async function auditSeoPublicUrl(raw) {
   return {url:target.href,status:response.status,auditedAt:new Date().toISOString(),title,metaDescription:description,canonical,wordCount,headingCount:headings.length,headings,schemaTypes:uniqueSchemas,scores:{seo:score(checks.seo),aeo:score(checks.aeo),geo:score(checks.geo)},checks};
 }
 
-export default {
+
+const DATAFORSEO_CACHE = new Map();
+async function dataForSeoRequest(env, endpoint, payload) {
+  const login = env.DATAFORSEO_LOGIN;
+  const password = env.DATAFORSEO_PASSWORD;
+  if (!login || !password) return { error: "DataForSEO is not configured. Add DATAFORSEO_LOGIN and DATAFORSEO_PASSWORD as Cloudflare Worker secrets." , status: 503 };
+  const cacheKey = endpoint + ":" + JSON.stringify(payload);
+  const cached = DATAFORSEO_CACHE.get(cacheKey);
+  if (cached && Date.now() - cached.at < 10 * 60 * 1000) return { data: cached.data, cached: true };
+  const auth = btoa(login + ":" + password);
+  let response;
+  try {
+    response = await fetch("https://api.dataforseo.com/v3/" + endpoint, {
+      method: "POST",
+      headers: { "Authorization": "Basic " + auth, "Content-Type": "application/json" },
+      body: JSON.stringify([payload]),
+      signal: AbortSignal.timeout(25000)
+    });
+  } catch (error) {
+    return { error: error?.name === "TimeoutError" ? "DataForSEO request timed out. Try again." : "Could not reach DataForSEO. Try again.", status: 504 };
+  }
+  const raw = await response.text();
+  let data;
+  try { data = JSON.parse(raw); } catch { return { error: "DataForSEO returned an unreadable response.", status: 502 }; }
+  if (!response.ok || data.status_code !== 20000 || Number(data.tasks_error || 0) > 0) {
+    const task = data.tasks?.[0];
+    return { error: String(task?.status_message || data.status_message || "DataForSEO request failed.").slice(0, 260), status: response.status === 429 ? 429 : 502 };
+  }
+  const result = { data, cached: false };
+  DATAFORSEO_CACHE.set(cacheKey, { at: Date.now(), data });
+  if (DATAFORSEO_CACHE.size > 250) DATAFORSEO_CACHE.delete(DATAFORSEO_CACHE.keys().next().value);
+  return result;
+}
+function dataForSeoLocation(body) {
+  const locations = { US: 2840, GB: 2826, IN: 2356, AU: 2036, CA: 2124, DE: 2276, FR: 2250, ES: 2724, IT: 2380, BR: 2076, JP: 2392, SG: 2702, ZA: 2710, AE: 2784 };
+  const country = String(body.country || "GLOBAL").toUpperCase();
+  return locations[country] ? { location_code: locations[country], language_code: String(body.language || "en").slice(0, 5) } : {};
+}
+function dataForSeoDomain(value) {
+  let host = "";
+  try { host = new URL(/^https?:\/\//i.test(value) ? value : "https://" + value).hostname.toLowerCase(); } catch {}
+  host = host.replace(/^www\./, "");
+  if (!host || host.length > 253 || !/^(?=.{1,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/i.test(host)) return "";
+  return host;
+}
+\nexport default {
   async fetch(request, env) {
     const origin = request.headers.get("Origin") || "";
     const url = new URL(request.url);
