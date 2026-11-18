@@ -339,7 +339,7 @@ async function refresh(fresh=false){
  if(refreshing)return;
  const refreshButton=$('#refresh');refreshButton.disabled=true;refreshButton.textContent='↻ Refreshing…';
  const base=$('#apiBase').value.trim().replace(/\/$/,'');if(!base){setStatus('API not configured');return}
- refreshing=true;localStorage.setItem(API_KEY,base);setStatus('');window.StudioWave.show($('#status'),'Fetching feeds');
+ refreshing=true;stories=[];trendsStories=[];localStorage.setItem(API_KEY,base);setStatus('');window.StudioWave.show($('#status'),'Fetching feeds');render();
  try{
   const r=await fetch(base+'/api/feed'+(fresh?'?fresh=1':''));if(!r.ok)throw new Error('API returned '+r.status);
   const data=await r.json();stories=(data.stories||[]).map((x,i)=>({...x,id:x.id||x.link||String(i),sport:x.sport||'football',timeLabel:x.timeLabel||'RSS'})).filter(isArticleFresh);
