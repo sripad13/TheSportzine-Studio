@@ -151,6 +151,8 @@ function renderRows(links){
 }
 
 async function loadLinks(){
+  $('#countLabel').innerHTML=window.StudioWave.markup('Loading share links',true);
+  $('#linkRows').innerHTML='<p class="empty">'+window.StudioWave.markup('Loading share links',true)+'</p>';
   setMsg($('#listMsg'),'');
   try{
     const r=await fetch(API+'/api/links');const d=await r.json();
