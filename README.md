@@ -1,6 +1,6 @@
 # Studio — Sports content workspace
 
-Studio brings Newsroom, Create, Optimize and Audit workflows together. The original **Graphics editor** remains available at `/graphics.html`.
+Studio brings Newsroom, Create, Optimize, Analyze and Audit workflows together. Analyze is the website-level SEO intelligence workspace at `/analyze/`; Optimize remains focused on article-level improvements. The original **Graphics editor** remains available at `/graphics.html`.
 
 ## Newsroom interface
 The root page is the Studio landing page. The live editorial workspace remains available at `/newsroom/` with independently scrolling, resizable columns; All Sports, Football, Formula 1 and Breaking workspaces (buttons on desktop, a menu on mobile); keyword columns (comma-separated keywords match any); Newest/Priority sorting per column; saved stories synced through D1; and a right-side story inspection drawer.
@@ -72,7 +72,32 @@ All scores are heuristic diagnostics. They do not represent measured AI citation
 - Product name: **Studio**.
 - Official brand assets are in `/brand/`.
 - Shared navigation and theme styles are in `/assets/studio/`.
-- The header is shared across the landing page and application pages. Navigation order: Newsroom, Create, Optimize, Audit.
+- The header is shared across the landing page and application pages. Navigation order: Newsroom, Share, Create, Optimize, Analyze, Audit.
 - Theme choices: System, Light and Dark. The selection persists in the browser.
 - Brand palette: lime `#B7D957`, near-black `#0B0B0D`, white `#FFFFFF`, warm light canvas `#F5F6F2`.
 - The redesign does not change the current hostname, API hostname, route paths, Workers or D1 configuration. URL migration is a separate future phase.
+
+## Analyze — DataForSEO integration
+
+The Analyze workspace uses the existing Newsroom Cloudflare Worker as a secure DataForSEO proxy. The browser never receives DataForSEO credentials.
+
+### Configure provider credentials
+
+Add the API login and password from DataForSEO's API Access page as Worker secrets:
+
+```sh
+npx wrangler secret put DATAFORSEO_LOGIN --config wrangler.toml
+npx wrangler secret put DATAFORSEO_PASSWORD --config wrangler.toml
+```
+
+Set each value when prompted. Do not put credentials in frontend files, GitHub commits, D1 rows or public environment variables. The Worker deployment workflow deploys the proxy when `newsroom-worker.js` changes; secrets remain configured in Cloudflare across deployments.
+
+### Available endpoints
+
+- `POST /api/analyze/keywords` — up to five seed keywords; returns related keyword ideas, search volume, CPC, competition and available intent/difficulty fields.
+- `POST /api/analyze/domain` — domain ranking distribution and estimated organic traffic.
+- `POST /api/analyze/serp` — live Google organic results for a keyword, market and device.
+
+Request bodies accept a `country` code. `GLOBAL` (default) omits country targeting; supported codes include US, GB, IN, AU, CA, DE, FR, ES, IT, BR, JP, SG, ZA and AE. English is the default language for country-specific requests. Provider requests are rate-limited to 12 per IP per hour and successful results are cached in Worker memory for 10 minutes where the isolate remains warm. Responses expose the provider-reported task cost when available and indicate cache hits.
+
+This is a lean, on-demand integration: it does not yet store historical keyword positions, run scheduled rank tracking, connect Google Search Console, or provide backlink/AI citation analytics. DataForSEO's estimated traffic and ranking metrics are third-party estimates, not first-party Search Console data. Actual API charges depend on the endpoint and request parameters.
