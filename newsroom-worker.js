@@ -864,13 +864,32 @@ export default {
     if (!ALLOWED_ORIGINS.has(origin) && origin !== "") return json({ error: "Origin not allowed." }, 403, origin);
     try {
 
+      if(request.method==="GET"&&url.pathname==="/api/seo/site-audit/history"){
+        if(!env.DB||typeof env.DB.prepare!=="function")return json({history_available:false,history:[]},200,origin);
+        const target=String(url.searchParams.get("url")||"");
+        if(!target)return json({error:"Provide a site URL."},400,origin);
+        const host=new URL(target).hostname.toLowerCase();
+        await env.DB.prepare("CREATE TABLE IF NOT EXISTS seo_audit_history (id TEXT PRIMARY KEY, hostname TEXT NOT NULL, url TEXT NOT NULL, score INTEGER NOT NULL, report_json TEXT NOT NULL, audited_at TEXT NOT NULL)").run();
+        const rows=await env.DB.prepare("SELECT id,url,score,audited_at FROM seo_audit_history WHERE hostname=? ORDER BY audited_at DESC LIMIT 10").bind(host).all();
+        return json({history_available:true,history:rows.results||[]},200,origin);
+      }
       if(request.method==="POST"&&url.pathname==="/api/seo/site-audit"){
         if(!await allowAuditRequest(request,env,3,"seo-site"))return json({error:"SEO site audit rate limit reached. Maximum 3 site scans per hour per IP."},429,origin);
         const body=await request.json(),raw=String(body?.url||""),requested=Number(body?.max_pages||10);
         const maxPages=Math.min(30,Math.max(1,Number.isFinite(requested)?Math.floor(requested):10));
         const result=await auditSeoWholeSite(raw,maxPages);
         if(result.error)return json({error:result.error},400,origin);
-        return json(result,200,origin);
+        let history={available:false,previous:null};
+        if(env.DB&&typeof env.DB.prepare==="function"){
+          await env.DB.prepare("CREATE TABLE IF NOT EXISTS seo_audit_history (id TEXT PRIMARY KEY, hostname TEXT NOT NULL, url TEXT NOT NULL, score INTEGER NOT NULL, report_json TEXT NOT NULL, audited_at TEXT NOT NULL)").run();
+          const host=new URL(result.url).hostname.toLowerCase();
+          const previous=await env.DB.prepare("SELECT id,score,audited_at FROM seo_audit_history WHERE hostname=? ORDER BY audited_at DESC LIMIT 1").bind(host).first();
+          const id=crypto.randomUUID(),auditedAt=result.audited_at||new Date().toISOString();
+          const serialized=JSON.stringify(result);
+          if(serialized.length<=350000)await env.DB.prepare("INSERT INTO seo_audit_history (id,hostname,url,score,report_json,audited_at) VALUES (?,?,?,?,?,?)").bind(id,host,result.url,result.score,serialized,auditedAt).run();
+          history={available:true,id,previous:previous?{id:previous.id,score:previous.score,audited_at:previous.audited_at}:null};
+        }
+        return json({...result,history},200,origin);
       }
       if(request.method==="POST"&&url.pathname==="/api/seo/url-audit"){
         if(!await allowAuditRequest(request,env,5,"seo-url"))return json({error:"URL analysis rate limit reached. Maximum 5 scans per hour per IP."},429,origin);
