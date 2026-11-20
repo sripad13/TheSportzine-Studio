@@ -54,6 +54,7 @@ The Article Optimiser keeps one SEO score plus separate AEO and GEO scores. URL 
 API endpoints:
 - `POST /api/seo/url-audit` with `{"url":"https://example.com/article/"}` — extended single-page checks.
 - `POST /api/seo/site-audit` with `{"url":"https://example.com/","max_pages":10}` — sitemap-led multi-page audit, maximum 30 pages; rate limited to three runs per IP per hour when D1 rate limiting is available.
+- `GET /api/seo/site-audit/history?url=https://example.com/` — the latest 10 saved site-audit runs for a hostname. Each new site audit stores its report in D1 and returns the previous score for comparison.
 
 Limitations: this is a focused native implementation inspired by SEOmator's audit categories, not a port of its complete 398-rule engine. Checks inspect server-delivered HTML and do not execute JavaScript. Link presence/anchor quality is measured, but destination availability is not tested. Core Web Vitals, browser rendering, accessibility tree checks, mobile parity and render-time asset diagnostics are deliberately deferred. Scores are diagnostic heuristics, not search ranking or AI citation predictions.
 
