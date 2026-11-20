@@ -694,6 +694,7 @@ async function auditSeoPublicUrl(raw,options={}) {
   const robotsText=robotsResponse?.ok?await readResponseText(robotsResponse,200000).catch(()=>""):"";
   const sitemapText=effectiveSitemapResponse?.ok?await readResponseText(effectiveSitemapResponse,300000).catch(()=>""):"";
   const llmsText=llmsResponse?.ok?await readResponseText(llmsResponse,100000).catch(()=>""):"";
+  const robotsPolicy=robotsResponse?.ok?robotsDecision(parseRobots(robotsText),"Googlebot",target.pathname+target.search):{allowed:true,rule:"robots.txt unavailable; policy could not be checked."};
   const propertyMeta=(property)=>{for(const tag of html.match(/<meta\b[^>]*>/gi)||[])if(extractHtmlAttribute(tag,"property").toLowerCase()===property.toLowerCase())return extractHtmlAttribute(tag,"content");return "";};
   const ogTitle=propertyMeta("og:title"),ogDescription=propertyMeta("og:description"),ogImage=propertyMeta("og:image");
   const twitterCard=meta("twitter:card")||propertyMeta("twitter:card");
@@ -759,11 +760,12 @@ async function auditSeoPublicUrl(raw,options={}) {
     technical:[
       {ok:!!robotsResponse?.ok,name:"robots.txt availability",detail:robotsResponse?.ok?"robots.txt is reachable.":"robots.txt could not be fetched successfully."},
       {ok:!!sitemapResponse?.ok,name:"XML sitemap availability",detail:sitemapResponse?.ok?"sitemap.xml is reachable.":"No accessible /sitemap.xml was found; verify the sitemap URL in robots.txt."},
-      {ok:!robots.includes("noindex")&&!/\\bnoindex\\b/i.test(robotsText),name:"Indexing directives",detail:robots.includes("noindex")?"A noindex directive appears in page metadata.":/\\bnoindex\\b/i.test(robotsText)?"A noindex directive appears in robots.txt.":"No noindex directive detected in page metadata or robots.txt."},
+      {ok:!robots.includes("noindex")&&!/\bnoindex\b/i.test(robotsText),name:"Indexing directives",detail:robots.includes("noindex")?"A noindex directive appears in page metadata.":/\bnoindex\b/i.test(robotsText)?"A noindex directive appears in robots.txt.":"No noindex directive detected in page metadata or robots.txt."},
+      {ok:robotsPolicy.allowed,name:"Googlebot robots.txt access",detail:robotsPolicy.rule},
       {ok:!!canonicalResolved,name:"Canonical URL validity",detail:canonicalResolved?"Canonical resolves to "+canonicalResolved: "Canonical URL is missing or invalid."},
       {ok:canonicalMatches,name:"Canonical consistency",detail:canonicalMatches?"Canonical points to this page.":canonicalResolved?"Canonical points to a different URL; verify that this is intentional.":"A valid canonical URL was not detected."},
-      {ok:/name\\s*=\\s*["']viewport["']/i.test(html),name:"Mobile viewport",detail:/name\\s*=\\s*["']viewport["']/i.test(html)?"Viewport meta tag is present.":"Add a responsive viewport meta tag."},
-      {ok:!/<meta\\b[^>]*http-equiv=["']refresh["']/i.test(html),name:"HTML redirect usage",detail:/<meta\\b[^>]*http-equiv=["']refresh["']/i.test(html)?"Meta refresh redirect detected; use a server-side redirect where appropriate.":"No meta refresh redirect detected."},
+      {ok:/name\s*=\s*["']viewport["']/i.test(html),name:"Mobile viewport",detail:/name\s*=\s*["']viewport["']/i.test(html)?"Viewport meta tag is present.":"Add a responsive viewport meta tag."},
+      {ok:!/<meta\b[^>]*http-equiv=["']refresh["']/i.test(html),name:"HTML redirect usage",detail:/<meta\b[^>]*http-equiv=["']refresh["']/i.test(html)?"Meta refresh redirect detected; use a server-side redirect where appropriate.":"No meta refresh redirect detected."},
       {ok:!!response.headers.get("content-type")?.toLowerCase().includes("charset=utf-8")||/charset=["']?utf-8/i.test(html.slice(0,2000)),name:"Character encoding",detail:"Content-Type: "+(response.headers.get("content-type")||"not supplied")+". Check that UTF-8 is declared."},
       {ok:!!response.headers.get("strict-transport-security"),name:"HSTS response header",detail:response.headers.get("strict-transport-security")?"Strict-Transport-Security header is present.":"HSTS header not observed; configure it at the HTTPS edge if appropriate."}
     ],
@@ -782,16 +784,16 @@ async function auditSeoPublicUrl(raw,options={}) {
       {ok:wordCount>=250,name:"Readable content volume",detail:wordCount+" visible words extracted; use editorial judgement rather than padding to a target."},
       {ok:h1===1,name:"Single primary heading",detail:h1+" H1 heading(s) found."},
       {ok:headings.every((h,i)=>i===0||h.level<=headings[i-1].level+1),name:"Heading hierarchy",detail:"Detected "+headings.length+" headings; avoid skipping heading levels."},
-      {ok:!/(.)\\1{7,}/i.test(text),name:"Repeated-character noise",detail:"Check the article body for accidental repeated characters or formatting debris."},
+      {ok:!/(.)\1{7,}/i.test(text),name:"Repeated-character noise",detail:"Check the article body for accidental repeated characters or formatting debris."},
       {ok:paragraphs.length>0,name:"Paragraph structure",detail:paragraphs.length+" paragraph blocks detected in the article body."},
-      {ok:!/<title[^>]*>\\s*untitled/i.test(html),name:"Placeholder content",detail:"Check for placeholder or template text before publication."}
+      {ok:!/<title[^>]*>\s*untitled/i.test(html),name:"Placeholder content",detail:"Check for placeholder or template text before publication."}
     ],
     images:[
       {ok:images.length===0||imageAltMissing===0,name:"Image alt attributes",detail:imageAltMissing+" of "+images.length+" images are missing alt attributes."},
       {ok:imageAltEmpty===0,name:"Non-empty image descriptions",detail:imageAltEmpty+" images have empty alt attributes; use empty alt only for decorative images."},
       {ok:images.length===0||imageWithoutDimensions===0,name:"Image dimensions",detail:imageWithoutDimensions+" of "+images.length+" images lack width or height attributes."},
       {ok:images.length===0||lazyImages>0,name:"Lazy loading",detail:lazyImages+" of "+images.length+" images use loading=lazy. Keep the likely LCP/hero image eager."},
-      {ok:images.every(tag=>!/(?:src|srcset)\\s*=\\s*["'][^"']+\\.(?:bmp|tiff?)(?:[?#][^"']*)?["']/i.test(tag),name:"Modern image formats",detail:"Review large images and prefer AVIF or WebP where supported."}
+      {ok:images.every(tag=>!/(?:src|srcset)\s*=\s*["'][^"']+\.(?:bmp|tiff?)(?:[?#][^"']*)?["']/i.test(tag),name:"Modern image formats",detail:"Review large images and prefer AVIF or WebP where supported."}
     ],
     links:[
       {ok:internalLinks.length>0,name:"Internal linking",detail:internalLinks.length+" same-origin links detected."},
