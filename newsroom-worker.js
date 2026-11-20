@@ -362,7 +362,7 @@ async function auditSiteUrl(raw,options={}){
  add("html","HTML structure and JavaScript dependency",wordCount>=120&&(!hasNoscript||wordCount>=250),"Detected "+scripts+" script tags; "+(hasNoscript?"noscript fallback exists.":"no noscript fallback detected.")+" This is a source-HTML heuristic, not a browser rendering test.",{script_count:scripts});
  add("structured","Valid JSON-LD structured data",validJsonLd>0,validJsonLd+" valid JSON-LD block(s) found.",{valid_jsonld_blocks:validJsonLd});
  add("structured","Recognised schema types",schemaTypes.length>0,"Schema types: "+(schemaTypes.length?[...new Set(schemaTypes)].join(", "):"none detected")+".",{schema_types:[...new Set(schemaTypes)]});
- if(!options.skipSiteFiles)add("files","AI and search discovery files",robotsAvailable&&sitemapResponse?.ok===true,"robots.txt: "+(robotsAvailable?"available":"not found")+". sitemap.xml: "+(sitemapResponse?.ok?"available":"not found")+". llms.txt: "+(llmsResponse?.ok?"available":"not found")+".",{robots_available:robotsAvailable,sitemap_available:!!sitemapResponse?.ok,llms_available:!!llmsResponse?.ok,llms_excerpt:llmsText.slice(0,1200),sitemap_excerpt:sitemapText.slice(0,500)});
+ if(!options.skipSiteFiles)add("files","AI and search discovery files",robotsAvailable&&effectiveSitemapResponse?.ok===true,"robots.txt: "+(robotsAvailable?"available":"not found")+". sitemap.xml: "+(effectiveSitemapResponse?.ok?"available":"not found")+". llms.txt: "+(llmsResponse?.ok?"available":"not found")+".",{robots_available:robotsAvailable,sitemap_available:!!effectiveSitemapResponse?.ok,llms_available:!!llmsResponse?.ok,llms_excerpt:llmsText.slice(0,1200),sitemap_excerpt:sitemapText.slice(0,500)});
  add("metadata","SEO and social metadata",!!title&&!!description&&!!canonical,"Title: "+(title?"present":"missing")+". Description: "+(description?"present":"missing")+". Canonical: "+(canonical?"present":"missing")+".",{title,meta_description:description,canonical});
  add("trust","Secure delivery and index directives",target.protocol==="https:"&&!/noindex/i.test(robotsMeta),"HTTPS: "+(target.protocol==="https:"?"yes":"no")+". Robots meta: "+(robotsMeta||"not specified")+".",{robots_meta:robotsMeta});
  add("trust","Accessible image descriptions",images.length===0||missingAlt===0,missingAlt+" of "+images.length+" images lack alt attributes.",{image_count:images.length,images_missing_alt:missingAlt});
@@ -684,9 +684,19 @@ async function auditSeoPublicUrl(raw,options={}) {
     publicFetch(new URL("/sitemap.xml",originUrl),{"User-Agent":"Studio-SEO-Audit/1.0","Accept":"application/xml,text/xml"},5000).catch(()=>null),
     publicFetch(new URL("/llms.txt",originUrl),{"User-Agent":"Studio-SEO-Audit/1.0","Accept":"text/plain"},5000).catch(()=>null)
   ]);
+  let effectiveSitemapResponse=sitemapResponse;
+  if(!effectiveSitemapResponse?.ok){
+    for(const path of ["/sitemap_index.xml","/wp-sitemap.xml"]){
+      const candidate=await publicFetch(new URL(path,originUrl),{"User-Agent":"Studio-SEO-Audit/1.0","Accept":"application/xml,text/xml"},4000).catch(()=>null);
+      if(candidate?.ok){effectiveSitemapResponse=candidate;break;}
+    }
+  }
   const robotsText=robotsResponse?.ok?await readResponseText(robotsResponse,200000).catch(()=>""):"";
-  const sitemapText=sitemapResponse?.ok?await readResponseText(sitemapResponse,300000).catch(()=>""):"";
+  const sitemapText=effectiveSitemapResponse?.ok?await readResponseText(effectiveSitemapResponse,300000).catch(()=>""):"";
   const llmsText=llmsResponse?.ok?await readResponseText(llmsResponse,100000).catch(()=>""):"";
+  const propertyMeta=(property)=>{for(const tag of html.match(/<meta\\b[^>]*>/gi)||[])if(extractHtmlAttribute(tag,"property").toLowerCase()===property.toLowerCase())return extractHtmlAttribute(tag,"content");return "";};
+  const ogTitle=propertyMeta("og:title"),ogDescription=propertyMeta("og:description"),ogImage=propertyMeta("og:image");
+  const twitterCard=meta("twitter:card")||propertyMeta("twitter:card");
   const imageAltMissing=images.filter(tag=>! /\balt\s*=/i.test(tag)).length;
   const imageAltEmpty=images.filter(tag=>/\balt\s*=\s*["']\s*["']/i.test(tag)).length;
   const imageWithoutDimensions=images.filter(tag=>! /\bwidth\s*=/i.test(tag)||! /\bheight\s*=/i.test(tag)).length;
@@ -724,7 +734,9 @@ async function auditSeoPublicUrl(raw,options={}) {
       {ok:/name\s*=\s*["']viewport["']/i.test(html),name:"Mobile viewport",detail:/name\s*=\s*["']viewport["']/i.test(html)?"Viewport metadata is present.":"Add a responsive viewport meta tag."},
       {ok:images.every(tag=>/\balt\s*=/i.test(tag)),name:"Image alt attributes",detail:images.filter(tag=>!/\balt\s*=/i.test(tag)).length+" of "+images.length+" images have missing alt text."},
       {ok:linksCount>0,name:"Links",detail:linksCount+" links detected in the HTML."},
-      {ok:wordCount>=300,name:"Main content depth",detail:wordCount+" visible words extracted; context matters more than a fixed length."}
+      {ok:wordCount>=300,name:"Main content depth",detail:wordCount+" visible words extracted; context matters more than a fixed length."},
+      {ok:!!ogTitle&&!!ogDescription&&!!ogImage,name:"Open Graph metadata",detail:"og:title: "+(ogTitle?"present":"missing")+". og:description: "+(ogDescription?"present":"missing")+". og:image: "+(ogImage?"present":"missing")+". This improves social sharing previews."},
+      {ok:!!twitterCard,name:"X/Twitter card metadata",detail:twitterCard?"twitter:card is set to "+twitterCard+".":"Add a twitter:card meta tag, typically summary_large_image for article pages."}
     ],
     aeo:[
       {ok:wordCount>=120,name:"Answer context",detail:wordCount+" visible words extracted."},
@@ -753,7 +765,7 @@ async function auditSeoPublicUrl(raw,options={}) {
       {ok:/name\\s*=\\s*["']viewport["']/i.test(html),name:"Mobile viewport",detail:/name\\s*=\\s*["']viewport["']/i.test(html)?"Viewport meta tag is present.":"Add a responsive viewport meta tag."},
       {ok:!/<meta\\b[^>]*http-equiv=["']refresh["']/i.test(html),name:"HTML redirect usage",detail:/<meta\\b[^>]*http-equiv=["']refresh["']/i.test(html)?"Meta refresh redirect detected; use a server-side redirect where appropriate.":"No meta refresh redirect detected."},
       {ok:!!response.headers.get("content-type")?.toLowerCase().includes("charset=utf-8")||/charset=["']?utf-8/i.test(html.slice(0,2000)),name:"Character encoding",detail:"Content-Type: "+(response.headers.get("content-type")||"not supplied")+". Check that UTF-8 is declared."},
-      {ok:!!response.headers.get("strict-transport-security")||target.protocol!=="https:",name:"HSTS response header",detail:response.headers.get("strict-transport-security")?"Strict-Transport-Security header is present.":"HSTS header not observed; configure it at the HTTPS edge if appropriate."}
+      {ok:!!response.headers.get("strict-transport-security"),name:"HSTS response header",detail:response.headers.get("strict-transport-security")?"Strict-Transport-Security header is present.":"HSTS header not observed; configure it at the HTTPS edge if appropriate."}
     ],
     structured:[
       {ok:validSchemaBlocks>0,name:"Valid JSON-LD syntax",detail:validSchemaBlocks+" valid JSON-LD block(s); "+invalidSchemaBlocks+" invalid block(s)."},
