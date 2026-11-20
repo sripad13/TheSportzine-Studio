@@ -678,6 +678,41 @@ async function auditSeoPublicUrl(raw) {
   const robots=(meta("robots")+" "+meta("googlebot")).toLowerCase();
   const questions=(text.match(/\?/g)||[]).length,faq=/frequently asked questions|\bfaqs?\b/i.test(text)||uniqueSchemas.some(x=>["FAQPage","QAPage"].includes(x));
   const answerParagraph=paragraphs.some(p=>{const n=p.split(/\s+/).length;return n>=20&&n<=90;});
+  const originUrl=new URL(target.origin);
+  const [robotsResponse,sitemapResponse,llmsResponse]=await Promise.all([
+    publicFetch(new URL("/robots.txt",originUrl),{"User-Agent":"Studio-SEO-Audit/1.0","Accept":"text/plain"},5000).catch(()=>null),
+    publicFetch(new URL("/sitemap.xml",originUrl),{"User-Agent":"Studio-SEO-Audit/1.0","Accept":"application/xml,text/xml"},5000).catch(()=>null),
+    publicFetch(new URL("/llms.txt",originUrl),{"User-Agent":"Studio-SEO-Audit/1.0","Accept":"text/plain"},5000).catch(()=>null)
+  ]);
+  const robotsText=robotsResponse?.ok?await readResponseText(robotsResponse,200000).catch(()=>""):"";
+  const sitemapText=sitemapResponse?.ok?await readResponseText(sitemapResponse,300000).catch(()=>""):"";
+  const llmsText=llmsResponse?.ok?await readResponseText(llmsResponse,100000).catch(()=>""):"";
+  const imageAltMissing=images.filter(tag=>! /\\balt\\s*=/i.test(tag)).length;
+  const imageAltEmpty=images.filter(tag=>/\\balt\\s*=\\s*["']\\s*["']/i.test(tag)).length;
+  const imageWithoutDimensions=images.filter(tag=>! /\\bwidth\\s*=/i.test(tag)||! /\\bheight\\s*=/i.test(tag)).length;
+  const lazyImages=images.filter(tag=>/\\bloading\\s*=\\s*["']lazy["']/i.test(tag)).length;
+  const anchorTags=html.match(/<a\\b[^>]*>[\\s\\S]*?<\\/a\\s*>/gi)||[];
+  const emptyAnchors=anchorTags.filter(tag=>!decodeHtml(tag.replace(/<[^>]+>/g," ").trim())&&!/\\baria-label\\s*=/i.test(tag)&&!/<img\\b[^>]*\\balt\\s*=\\s*["'][^"']+["']/i.test(tag)).length;
+  const anchorsWithoutHref=anchorTags.filter(tag=>! /\\bhref\\s*=/i.test(tag)).length;
+  const hrefs=[...html.matchAll(/<a\\b[^>]*\\bhref\\s*=\\s*(["'])(.*?)\\1/gi)].map(m=>m[2]).filter(Boolean);
+  const resolvedLinks=hrefs.map(href=>{try{return new URL(href,target)}catch{return null}}).filter(Boolean);
+  const internalLinks=resolvedLinks.filter(link=>link.origin===target.origin);
+  const externalLinks=resolvedLinks.filter(link=>link.origin!==target.origin&&/^https?:$/.test(link.protocol));
+  const schemaBlocks=[...html.matchAll(/<script\\b[^>]*type=["']application\\/ld\\+json["'][^>]*>([\\s\\S]*?)<\\/script\\s*>/gi)].map(m=>m[1]);
+  let validSchemaBlocks=0,invalidSchemaBlocks=0,schemaObjects=[];
+  for(const rawSchema of schemaBlocks){try{const parsed=JSON.parse(rawSchema);validSchemaBlocks++;const walk=value=>{if(!value||typeof value!=="object")return;if(Array.isArray(value))return value.forEach(walk);schemaObjects.push(value);Object.values(value).forEach(walk)};walk(parsed);}catch{invalidSchemaBlocks++;}}
+  const articleSchema=schemaObjects.find(obj=>{const t=Array.isArray(obj["@type"])?obj["@type"]:[obj["@type"]];return t.some(x=>["Article","NewsArticle","BlogPosting"].includes(String(x)))});
+  const organizationSchema=schemaObjects.find(obj=>{const t=Array.isArray(obj["@type"])?obj["@type"]:[obj["@type"]];return t.includes("Organization")||t.includes("NewsMediaOrganization")});
+  const authorSchema=articleSchema?.author;
+  const hasAuthor=!!(authorSchema&&(typeof authorSchema==="string"||authorSchema.name||authorSchema["@id"]));
+  const hasPublisher=!!(articleSchema?.publisher&&(typeof articleSchema.publisher==="string"||articleSchema.publisher.name||articleSchema.publisher["@id"]))||!!organizationSchema;
+  const hasPublishedDate=!!(articleSchema?.datePublished);
+  const hasModifiedDate=!!(articleSchema?.dateModified);
+  const hasArticleHeadline=!!(articleSchema?.headline);
+  const hasMainEntity=!!(articleSchema?.mainEntityOfPage);
+  const canonicalResolved=canonical?(()=>{try{return new URL(canonical,target).href}catch{return ""}})():"";
+  const canonicalMatches=!!canonicalResolved&&new URL(canonicalResolved).origin===target.origin&&new URL(canonicalResolved).pathname.replace(/\\/$/,"")===target.pathname.replace(/\\/$/,"");
+  const hasAboutContact=/\\b(about|contact|editorial|standards|corrections)\\b/i.test(hrefs.map(h=>{try{return new URL(h,target).pathname}catch{return h}}).join(" "));
   const checks={
     seo:[
       {ok:title.length>=30&&title.length<=60,name:"Title tag",detail:title?title.length+" characters; aim for around 30–60.":"No title tag found."},
@@ -710,8 +745,66 @@ async function auditSeoPublicUrl(raw) {
       {ok:!!title&&!!description,name:"Clear page framing",detail:title&&description?"Title and description are both present.":"Title or description is missing."}
     ]
   };
+    technical:[
+      {ok:!!robotsResponse?.ok,name:"robots.txt availability",detail:robotsResponse?.ok?"robots.txt is reachable.":"robots.txt could not be fetched successfully."},
+      {ok:!!sitemapResponse?.ok,name:"XML sitemap availability",detail:sitemapResponse?.ok?"sitemap.xml is reachable.":"No accessible /sitemap.xml was found; verify the sitemap URL in robots.txt."},
+      {ok:!robots.includes("noindex")&&!/\\bnoindex\\b/i.test(robotsText),name:"Indexing directives",detail:robots.includes("noindex")?"A noindex directive appears in page metadata.":/\\bnoindex\\b/i.test(robotsText)?"A noindex directive appears in robots.txt.":"No noindex directive detected in page metadata or robots.txt."},
+      {ok:!!canonicalResolved,name:"Canonical URL validity",detail:canonicalResolved?"Canonical resolves to "+canonicalResolved: "Canonical URL is missing or invalid."},
+      {ok:canonicalMatches,name:"Canonical consistency",detail:canonicalMatches?"Canonical points to this page.":canonicalResolved?"Canonical points to a different URL; verify that this is intentional.":"A valid canonical URL was not detected."},
+      {ok:/name\\s*=\\s*["']viewport["']/i.test(html),name:"Mobile viewport",detail:/name\\s*=\\s*["']viewport["']/i.test(html)?"Viewport meta tag is present.":"Add a responsive viewport meta tag."},
+      {ok:!/<meta\\b[^>]*http-equiv=["']refresh["']/i.test(html),name:"HTML redirect usage",detail:/<meta\\b[^>]*http-equiv=["']refresh["']/i.test(html)?"Meta refresh redirect detected; use a server-side redirect where appropriate.":"No meta refresh redirect detected."},
+      {ok:!!response.headers.get("content-type")?.toLowerCase().includes("charset=utf-8")||/charset=["']?utf-8/i.test(html.slice(0,2000)),name:"Character encoding",detail:"Content-Type: "+(response.headers.get("content-type")||"not supplied")+". Check that UTF-8 is declared."},
+      {ok:!!response.headers.get("strict-transport-security")||target.protocol!=="https:",name:"HSTS response header",detail:response.headers.get("strict-transport-security")?"Strict-Transport-Security header is present.":"HSTS header not observed; configure it at the HTTPS edge if appropriate."}
+    ],
+    structured:[
+      {ok:validSchemaBlocks>0,name:"Valid JSON-LD syntax",detail:validSchemaBlocks+" valid JSON-LD block(s); "+invalidSchemaBlocks+" invalid block(s)."},
+      {ok:invalidSchemaBlocks===0,name:"JSON-LD parse errors",detail:invalidSchemaBlocks+" invalid JSON-LD block(s) detected."},
+      {ok:!!articleSchema,name:"Article / NewsArticle schema",detail:articleSchema?"Article-type schema detected.":"Add accurate Article or NewsArticle schema for editorial content."},
+      {ok:hasArticleHeadline,name:"Schema headline",detail:hasArticleHeadline?"Article schema contains a headline.":"Article schema headline is missing."},
+      {ok:hasAuthor,name:"Schema author identity",detail:hasAuthor?"Article author is identified in structured data.":"Add a named Person or Organization author to Article schema."},
+      {ok:hasPublisher,name:"Schema publisher identity",detail:hasPublisher?"Publisher or Organization schema detected.":"Add publisher identity to Article schema and site-wide Organization schema."},
+      {ok:hasPublishedDate,name:"Schema publication date",detail:hasPublishedDate?"datePublished is present.":"Add an accurate datePublished value."},
+      {ok:hasModifiedDate,name:"Schema modification date",detail:hasModifiedDate?"dateModified is present.":"Add dateModified when the article is materially updated."},
+      {ok:hasMainEntity,name:"Schema canonical entity",detail:hasMainEntity?"mainEntityOfPage is present.":"Connect the Article entity to its canonical page using mainEntityOfPage."}
+    ],
+    content:[
+      {ok:wordCount>=250,name:"Readable content volume",detail:wordCount+" visible words extracted; use editorial judgement rather than padding to a target."},
+      {ok:h1===1,name:"Single primary heading",detail:h1+" H1 heading(s) found."},
+      {ok:headings.every((h,i)=>i===0||h.level<=headings[i-1].level+1),name:"Heading hierarchy",detail:"Detected "+headings.length+" headings; avoid skipping heading levels."},
+      {ok:!/(.)\\1{7,}/i.test(text),name:"Repeated-character noise",detail:"Check the article body for accidental repeated characters or formatting debris."},
+      {ok:paragraphs.length>0,name:"Paragraph structure",detail:paragraphs.length+" paragraph blocks detected in the article body."},
+      {ok:!/<title[^>]*>\\s*untitled/i.test(html),name:"Placeholder content",detail:"Check for placeholder or template text before publication."}
+    ],
+    images:[
+      {ok:images.length===0||imageAltMissing===0,name:"Image alt attributes",detail:imageAltMissing+" of "+images.length+" images are missing alt attributes."},
+      {ok:imageAltEmpty===0,name:"Non-empty image descriptions",detail:imageAltEmpty+" images have empty alt attributes; use empty alt only for decorative images."},
+      {ok:images.length===0||imageWithoutDimensions===0,name:"Image dimensions",detail:imageWithoutDimensions+" of "+images.length+" images lack width or height attributes."},
+      {ok:images.length===0||lazyImages>0,name:"Lazy loading",detail:lazyImages+" of "+images.length+" images use loading=lazy. Keep the likely LCP/hero image eager."},
+      {ok:images.every(tag=>!/(?:src|srcset)\\s*=\\s*["'][^"']+\\.(?:bmp|tiff?)(?:[?#][^"']*)?["']/i.test(tag),name:"Modern image formats",detail:"Review large images and prefer AVIF or WebP where supported."}
+    ],
+    links:[
+      {ok:internalLinks.length>0,name:"Internal linking",detail:internalLinks.length+" same-origin links detected."},
+      {ok:externalLinks.length>0,name:"External references",detail:externalLinks.length+" external HTTP(S) links detected."},
+      {ok:emptyAnchors===0,name:"Descriptive link names",detail:emptyAnchors+" links have no readable anchor text, aria-label or image alt text."},
+      {ok:anchorsWithoutHref===0,name:"Anchor destinations",detail:anchorsWithoutHref+" anchor elements have no href attribute."}
+    ],
+    trust:[
+      {ok:hasAuthor,name:"Author attribution",detail:hasAuthor?"A named author is present in Article schema.":"No structured author identity detected; make the byline visible and add author schema."},
+      {ok:hasPublisher,name:"Publisher identity",detail:hasPublisher?"Publisher or organisation identity is present.":"Add a clear publisher identity in structured data."},
+      {ok:hasPublishedDate,name:"Publication date transparency",detail:hasPublishedDate?"datePublished is present in Article schema.":"Provide a visible publication date and matching schema datePublished."},
+      {ok:hasModifiedDate,name:"Update transparency",detail:hasModifiedDate?"dateModified is present.":"Add dateModified when the article is updated."},
+      {ok:hasAboutContact,name:"Publisher transparency links",detail:hasAboutContact?"About, contact or editorial policy links detected.":"Link to About, Contact and editorial standards pages where available."}
+    ],
+    discovery:[
+      {ok:!!robotsResponse?.ok,name:"robots.txt",detail:robotsResponse?.ok?"robots.txt is available.":"robots.txt was not found at the site root."},
+      {ok:!!sitemapResponse?.ok,name:"XML sitemap",detail:sitemapResponse?.ok?"sitemap.xml is available.":"sitemap.xml was not found at the site root."},
+      {ok:!!llmsResponse?.ok,name:"llms.txt",detail:llmsResponse?.ok?"llms.txt is available.":"llms.txt was not found at the site root; it is optional and not a search-engine requirement."},
+      {ok:!!llmsText.trim(),name:"llms.txt content",detail:llmsText.trim()?"llms.txt contains "+llmsText.trim().length+" characters.":"No readable llms.txt content found."}
+    ],
   const score=items=>Math.round(items.filter(x=>x.ok).length/Math.max(1,items.length)*100);
-  return {url:target.href,status:response.status,auditedAt:new Date().toISOString(),title,metaDescription:description,canonical,wordCount,headingCount:headings.length,headings,schemaTypes:uniqueSchemas,scores:{seo:score(checks.seo),aeo:score(checks.aeo),geo:score(checks.geo)},checks};
+  const categoryScores=Object.fromEntries(Object.entries(checks).map(([key,items])=>[key,score(items)]));
+  const priorityFixes=Object.entries(checks).flatMap(([category,items])=>items.filter(item=>!item.ok).map(item=>({category,name:item.name,detail:item.detail,priority:["technical","structured"].includes(category)?"high":["images","links","trust"].includes(category)?"medium":"normal"}))).sort((a,b)=>({high:0,medium:1,normal:2}[a.priority]-{high:0,medium:1,normal:2}[b.priority]));
+  return {url:target.href,status:response.status,auditedAt:new Date().toISOString(),title,metaDescription:description,canonical,wordCount,headingCount:headings.length,headings,schemaTypes:uniqueSchemas,metrics:{images:images.length,imagesMissingAlt:imageAltMissing,internalLinks:internalLinks.length,externalLinks:externalLinks.length,validJsonLdBlocks:validSchemaBlocks,invalidJsonLdBlocks:invalidSchemaBlocks},scores:{seo:score(checks.seo),aeo:score(checks.aeo),geo:score(checks.geo)},categoryScores,priorityFixes,checks};
 }
 
 export default {
