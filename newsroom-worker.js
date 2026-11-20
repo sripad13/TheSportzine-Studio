@@ -759,7 +759,7 @@ async function auditSeoPublicUrl(raw,options={}) {
     ],
     technical:[
       {ok:!!robotsResponse?.ok,name:"robots.txt availability",detail:robotsResponse?.ok?"robots.txt is reachable.":"robots.txt could not be fetched successfully."},
-      {ok:!!sitemapResponse?.ok,name:"XML sitemap availability",detail:sitemapResponse?.ok?"sitemap.xml is reachable.":"No accessible /sitemap.xml was found; verify the sitemap URL in robots.txt."},
+      {ok:!!effectiveSitemapResponse?.ok,name:"XML sitemap availability",detail:effectiveSitemapResponse?.ok?"sitemap.xml is reachable.":"No accessible /sitemap.xml was found; verify the sitemap URL in robots.txt."},
       {ok:!robots.includes("noindex")&&!/\bnoindex\b/i.test(robotsText),name:"Indexing directives",detail:robots.includes("noindex")?"A noindex directive appears in page metadata.":/\bnoindex\b/i.test(robotsText)?"A noindex directive appears in robots.txt.":"No noindex directive detected in page metadata or robots.txt."},
       {ok:robotsPolicy.allowed,name:"Googlebot robots.txt access",detail:robotsPolicy.rule},
       {ok:!!canonicalResolved,name:"Canonical URL validity",detail:canonicalResolved?"Canonical resolves to "+canonicalResolved: "Canonical URL is missing or invalid."},
@@ -810,7 +810,7 @@ async function auditSeoPublicUrl(raw,options={}) {
     ],
     discovery:[
       {ok:!!robotsResponse?.ok,name:"robots.txt",detail:robotsResponse?.ok?"robots.txt is available.":"robots.txt was not found at the site root."},
-      {ok:!!sitemapResponse?.ok,name:"XML sitemap",detail:sitemapResponse?.ok?"sitemap.xml is available.":"sitemap.xml was not found at the site root."},
+      {ok:!!effectiveSitemapResponse?.ok,name:"XML sitemap",detail:effectiveSitemapResponse?.ok?"sitemap.xml is available.":"sitemap.xml was not found at the site root."},
       {ok:!!llmsResponse?.ok,name:"llms.txt",detail:llmsResponse?.ok?"llms.txt is available.":"llms.txt was not found at the site root; it is optional and not a search-engine requirement."},
       {ok:!!llmsText.trim(),name:"llms.txt content",detail:llmsText.trim()?"llms.txt contains "+llmsText.trim().length+" characters.":"No readable llms.txt content found."}
     ]
