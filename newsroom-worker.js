@@ -687,18 +687,18 @@ async function auditSeoPublicUrl(raw) {
   const robotsText=robotsResponse?.ok?await readResponseText(robotsResponse,200000).catch(()=>""):"";
   const sitemapText=sitemapResponse?.ok?await readResponseText(sitemapResponse,300000).catch(()=>""):"";
   const llmsText=llmsResponse?.ok?await readResponseText(llmsResponse,100000).catch(()=>""):"";
-  const imageAltMissing=images.filter(tag=>! /\\balt\\s*=/i.test(tag)).length;
-  const imageAltEmpty=images.filter(tag=>/\\balt\\s*=\\s*["']\\s*["']/i.test(tag)).length;
-  const imageWithoutDimensions=images.filter(tag=>! /\\bwidth\\s*=/i.test(tag)||! /\\bheight\\s*=/i.test(tag)).length;
-  const lazyImages=images.filter(tag=>/\\bloading\\s*=\\s*["']lazy["']/i.test(tag)).length;
-  const anchorTags=html.match(/<a\\b[^>]*>[\\s\\S]*?<\\/a\\s*>/gi)||[];
-  const emptyAnchors=anchorTags.filter(tag=>!decodeHtml(tag.replace(/<[^>]+>/g," ").trim())&&!/\\baria-label\\s*=/i.test(tag)&&!/<img\\b[^>]*\\balt\\s*=\\s*["'][^"']+["']/i.test(tag)).length;
-  const anchorsWithoutHref=anchorTags.filter(tag=>! /\\bhref\\s*=/i.test(tag)).length;
-  const hrefs=[...html.matchAll(/<a\\b[^>]*\\bhref\\s*=\\s*(["'])(.*?)\\1/gi)].map(m=>m[2]).filter(Boolean);
+  const imageAltMissing=images.filter(tag=>! /\balt\s*=/i.test(tag)).length;
+  const imageAltEmpty=images.filter(tag=>/\balt\s*=\s*["']\s*["']/i.test(tag)).length;
+  const imageWithoutDimensions=images.filter(tag=>! /\bwidth\s*=/i.test(tag)||! /\bheight\s*=/i.test(tag)).length;
+  const lazyImages=images.filter(tag=>/\bloading\s*=\s*["']lazy["']/i.test(tag)).length;
+  const anchorTags=html.match(/<a\b[^>]*>[\s\S]*?<\/a\s*>/gi)||[];
+  const emptyAnchors=anchorTags.filter(tag=>!decodeHtml(tag.replace(/<[^>]+>/g," ").trim())&&!/\baria-label\s*=/i.test(tag)&&!/<img\b[^>]*\balt\s*=\s*["'][^"']+["']/i.test(tag)).length;
+  const anchorsWithoutHref=anchorTags.filter(tag=>! /\bhref\s*=/i.test(tag)).length;
+  const hrefs=[...html.matchAll(/<a\b[^>]*\bhref\s*=\s*(["'])(.*?)\1/gi)].map(m=>m[2]).filter(Boolean);
   const resolvedLinks=hrefs.map(href=>{try{return new URL(href,target)}catch{return null}}).filter(Boolean);
   const internalLinks=resolvedLinks.filter(link=>link.origin===target.origin);
   const externalLinks=resolvedLinks.filter(link=>link.origin!==target.origin&&/^https?:$/.test(link.protocol));
-  const schemaBlocks=[...html.matchAll(/<script\\b[^>]*type=["']application\\/ld\\+json["'][^>]*>([\\s\\S]*?)<\\/script\\s*>/gi)].map(m=>m[1]);
+  const schemaBlocks=[...html.matchAll(/<script\b[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script\s*>/gi)].map(m=>m[1]);
   let validSchemaBlocks=0,invalidSchemaBlocks=0,schemaObjects=[];
   for(const rawSchema of schemaBlocks){try{const parsed=JSON.parse(rawSchema);validSchemaBlocks++;const walk=value=>{if(!value||typeof value!=="object")return;if(Array.isArray(value))return value.forEach(walk);schemaObjects.push(value);Object.values(value).forEach(walk)};walk(parsed);}catch{invalidSchemaBlocks++;}}
   const articleSchema=schemaObjects.find(obj=>{const t=Array.isArray(obj["@type"])?obj["@type"]:[obj["@type"]];return t.some(x=>["Article","NewsArticle","BlogPosting"].includes(String(x)))});
@@ -711,8 +711,8 @@ async function auditSeoPublicUrl(raw) {
   const hasArticleHeadline=!!(articleSchema?.headline);
   const hasMainEntity=!!(articleSchema?.mainEntityOfPage);
   const canonicalResolved=canonical?(()=>{try{return new URL(canonical,target).href}catch{return ""}})():"";
-  const canonicalMatches=!!canonicalResolved&&new URL(canonicalResolved).origin===target.origin&&new URL(canonicalResolved).pathname.replace(/\\/$/,"")===target.pathname.replace(/\\/$/,"");
-  const hasAboutContact=/\\b(about|contact|editorial|standards|corrections)\\b/i.test(hrefs.map(h=>{try{return new URL(h,target).pathname}catch{return h}}).join(" "));
+  const canonicalMatches=!!canonicalResolved&&new URL(canonicalResolved).origin===target.origin&&new URL(canonicalResolved).pathname.replace(/\/$/,"")===target.pathname.replace(/\/$/,"");
+  const hasAboutContact=/\b(about|contact|editorial|standards|corrections)\b/i.test(hrefs.map(h=>{try{return new URL(h,target).pathname}catch{return h}}).join(" "));
   const checks={
     seo:[
       {ok:title.length>=30&&title.length<=60,name:"Title tag",detail:title?title.length+" characters; aim for around 30–60.":"No title tag found."},
