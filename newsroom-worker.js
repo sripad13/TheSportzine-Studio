@@ -868,7 +868,8 @@ export default {
         if(!env.DB||typeof env.DB.prepare!=="function")return json({history_available:false,history:[]},200,origin);
         const target=String(url.searchParams.get("url")||"");
         if(!target)return json({error:"Provide a site URL."},400,origin);
-        const host=new URL(target).hostname.toLowerCase();
+        const safeHistoryUrl=isSafePublicTarget(target);if(safeHistoryUrl.error)return json({error:safeHistoryUrl.error},400,origin);
+        const host=safeHistoryUrl.url.hostname.toLowerCase();
         await env.DB.prepare("CREATE TABLE IF NOT EXISTS seo_audit_history (id TEXT PRIMARY KEY, hostname TEXT NOT NULL, url TEXT NOT NULL, score INTEGER NOT NULL, report_json TEXT NOT NULL, audited_at TEXT NOT NULL)").run();
         const rows=await env.DB.prepare("SELECT id,url,score,audited_at FROM seo_audit_history WHERE hostname=? ORDER BY audited_at DESC LIMIT 10").bind(host).all();
         return json({history_available:true,history:rows.results||[]},200,origin);
