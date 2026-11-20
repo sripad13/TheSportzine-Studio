@@ -694,7 +694,7 @@ async function auditSeoPublicUrl(raw,options={}) {
   const robotsText=robotsResponse?.ok?await readResponseText(robotsResponse,200000).catch(()=>""):"";
   const sitemapText=effectiveSitemapResponse?.ok?await readResponseText(effectiveSitemapResponse,300000).catch(()=>""):"";
   const llmsText=llmsResponse?.ok?await readResponseText(llmsResponse,100000).catch(()=>""):"";
-  const propertyMeta=(property)=>{for(const tag of html.match(/<meta\\b[^>]*>/gi)||[])if(extractHtmlAttribute(tag,"property").toLowerCase()===property.toLowerCase())return extractHtmlAttribute(tag,"content");return "";};
+  const propertyMeta=(property)=>{for(const tag of html.match(/<meta\b[^>]*>/gi)||[])if(extractHtmlAttribute(tag,"property").toLowerCase()===property.toLowerCase())return extractHtmlAttribute(tag,"content");return "";};
   const ogTitle=propertyMeta("og:title"),ogDescription=propertyMeta("og:description"),ogImage=propertyMeta("og:image");
   const twitterCard=meta("twitter:card")||propertyMeta("twitter:card");
   const imageAltMissing=images.filter(tag=>! /\balt\s*=/i.test(tag)).length;
