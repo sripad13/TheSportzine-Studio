@@ -743,8 +743,7 @@ async function auditSeoPublicUrl(raw) {
       {ok:/\b(after|before|since|because|following|while|during|compared with|in the context of)\b/i.test(text),name:"Context and relationships",detail:"Explain why the event happened and how it connects to the wider topic."},
       {ok:uniqueSchemas.length>0,name:"Machine-readable entities",detail:uniqueSchemas.length?"Schema types: "+uniqueSchemas.join(", "):"No JSON-LD structured data detected."},
       {ok:!!title&&!!description,name:"Clear page framing",detail:title&&description?"Title and description are both present.":"Title or description is missing."}
-    ]
-  };
+    ],
     technical:[
       {ok:!!robotsResponse?.ok,name:"robots.txt availability",detail:robotsResponse?.ok?"robots.txt is reachable.":"robots.txt could not be fetched successfully."},
       {ok:!!sitemapResponse?.ok,name:"XML sitemap availability",detail:sitemapResponse?.ok?"sitemap.xml is reachable.":"No accessible /sitemap.xml was found; verify the sitemap URL in robots.txt."},
@@ -800,7 +799,8 @@ async function auditSeoPublicUrl(raw) {
       {ok:!!sitemapResponse?.ok,name:"XML sitemap",detail:sitemapResponse?.ok?"sitemap.xml is available.":"sitemap.xml was not found at the site root."},
       {ok:!!llmsResponse?.ok,name:"llms.txt",detail:llmsResponse?.ok?"llms.txt is available.":"llms.txt was not found at the site root; it is optional and not a search-engine requirement."},
       {ok:!!llmsText.trim(),name:"llms.txt content",detail:llmsText.trim()?"llms.txt contains "+llmsText.trim().length+" characters.":"No readable llms.txt content found."}
-    ],
+    ]
+  };
   const score=items=>Math.round(items.filter(x=>x.ok).length/Math.max(1,items.length)*100);
   const categoryScores=Object.fromEntries(Object.entries(checks).map(([key,items])=>[key,score(items)]));
   const priorityFixes=Object.entries(checks).flatMap(([category,items])=>items.filter(item=>!item.ok).map(item=>({category,name:item.name,detail:item.detail,priority:["technical","structured"].includes(category)?"high":["images","links","trust"].includes(category)?"medium":"normal"}))).sort((a,b)=>({high:0,medium:1,normal:2}[a.priority]-{high:0,medium:1,normal:2}[b.priority]));
