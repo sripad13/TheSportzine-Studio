@@ -37,6 +37,26 @@ The API Worker's CORS allowlist includes `https://newsroom.falsewinger.com` and 
 ## RSS terms and editorial use
 Formula1.com is included as requested. Personal use does not by itself establish permission under a publisher's feed terms, so confirm the current terms and keep use within the permitted scope. Feed access is not permission to republish full articles or images. The interface displays headlines and short feed excerpts with links to the publisher. Review each publisher's terms before any wider distribution.
 
+## SEO Studio extended audits
+
+SEO Studio at `/optimize/` now includes expanded public-URL and sitemap-led site audits. The lightweight Worker checks cover:
+- On-page SEO: titles, descriptions, H1 and heading hierarchy, canonical and indexability signals, mobile viewport, content depth, Open Graph and X/Twitter cards.
+- Technical SEO: robots.txt, WordPress sitemap variants (`sitemap.xml`, `sitemap_index.xml`, `wp-sitemap.xml`), canonical consistency, character encoding, redirects and HSTS.
+- Structured data: JSON-LD syntax, Article/NewsArticle properties, author, publisher, publication/update dates and mainEntityOfPage.
+- Content quality: visible content volume, paragraph structure, heading hierarchy and basic template/noise checks.
+- Image SEO: alt attributes, dimensions, lazy-loading signals and image-format hints.
+- Links: internal/external link counts, empty anchor names and missing href attributes.
+- E-E-A-T / publisher transparency: author, publisher, publication/update dates and About/Contact/editorial-policy links.
+- AI discovery: robots.txt, sitemap and optional llms.txt availability/content, alongside the existing AEO/GEO editorial heuristics.
+
+The Article Optimiser keeps one SEO score plus separate AEO and GEO scores. URL analysis displays the extended technical categories and a prioritised fix queue. Site Audit uses a sitemap-led same-origin sample (up to 30 pages) and aggregates recurring findings with affected page URLs.
+
+API endpoints:
+- `POST /api/seo/url-audit` with `{"url":"https://example.com/article/"}` — extended single-page checks.
+- `POST /api/seo/site-audit` with `{"url":"https://example.com/","max_pages":10}` — sitemap-led multi-page audit, maximum 30 pages; rate limited to three runs per IP per hour when D1 rate limiting is available.
+
+Limitations: this is a focused native implementation inspired by SEOmator's audit categories, not a port of its complete 398-rule engine. Checks inspect server-delivered HTML and do not execute JavaScript. Link presence/anchor quality is measured, but destination availability is not tested. Core Web Vitals, browser rendering, accessibility tree checks, mobile parity and render-time asset diagnostics are deliberately deferred. Scores are diagnostic heuristics, not search ranking or AI citation predictions.
+
 ## AI Crawler Audit
 Studio includes an AI Search Visibility Audit at `/audit/` (legacy `/ai-visibility.html` redirects). It accepts any public HTTP/HTTPS website and runs 35 weighted checks across eight categories, including 17 representative AI/search crawler User-Agent probes, readable HTML, JSON-LD, discovery files, Answer Engine Optimisation (AEO) and Generative Engine Optimisation (GEO) signals. AEO checks cover question-led headings, concise answer blocks, FAQ structure, definitions and optional speakable hints. GEO checks cover author/publisher identity, publication dates, source citations, publisher transparency and entity context. These are page-level heuristics, not guarantees of AI citations or rankings.
 
