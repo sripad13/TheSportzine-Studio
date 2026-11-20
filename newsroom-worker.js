@@ -638,7 +638,7 @@ async function listSources(db) {
   return [...builtins,...(result.results||[]).map(row=>({...cleanSource(row),is_default:false}))];
 }
 
-async function auditSeoPublicUrl(raw) {
+async function auditSeoPublicUrl(raw,options={}) {
   const safe=isSafePublicTarget(raw);if(safe.error)return {error:safe.error};
   let target=safe.url,response;
   for(let hop=0;hop<=5;hop++){
@@ -679,7 +679,7 @@ async function auditSeoPublicUrl(raw) {
   const questions=(text.match(/\?/g)||[]).length,faq=/frequently asked questions|\bfaqs?\b/i.test(text)||uniqueSchemas.some(x=>["FAQPage","QAPage"].includes(x));
   const answerParagraph=paragraphs.some(p=>{const n=p.split(/\s+/).length;return n>=20&&n<=90;});
   const originUrl=new URL(target.origin);
-  const [robotsResponse,sitemapResponse,llmsResponse]=await Promise.all([
+  const [robotsResponse,sitemapResponse,llmsResponse]=options.skipSiteFiles?[null,null,null]:await Promise.all([
     publicFetch(new URL("/robots.txt",originUrl),{"User-Agent":"Studio-SEO-Audit/1.0","Accept":"text/plain"},5000).catch(()=>null),
     publicFetch(new URL("/sitemap.xml",originUrl),{"User-Agent":"Studio-SEO-Audit/1.0","Accept":"application/xml,text/xml"},5000).catch(()=>null),
     publicFetch(new URL("/llms.txt",originUrl),{"User-Agent":"Studio-SEO-Audit/1.0","Accept":"text/plain"},5000).catch(()=>null)
@@ -807,6 +807,38 @@ async function auditSeoPublicUrl(raw) {
   return {url:target.href,status:response.status,auditedAt:new Date().toISOString(),title,metaDescription:description,canonical,wordCount,headingCount:headings.length,headings,schemaTypes:uniqueSchemas,metrics:{images:images.length,imagesMissingAlt:imageAltMissing,internalLinks:internalLinks.length,externalLinks:externalLinks.length,validJsonLdBlocks:validSchemaBlocks,invalidJsonLdBlocks:invalidSchemaBlocks},scores:{seo:score(checks.seo),aeo:score(checks.aeo),geo:score(checks.geo)},categoryScores,priorityFixes,checks};
 }
 
+
+async function auditSeoWholeSite(raw,maxPages=10){
+  const safe=isSafePublicTarget(raw);if(safe.error)return {error:safe.error};
+  const discovery=await discoverAuditPages(safe.url.href,maxPages);
+  const urls=discovery.urls.slice(0,maxPages);
+  if(!urls.length)urls.push(safe.url.href);
+  const reports=await mapLimit(urls,3,async(url,index)=>{
+    try{return await auditSeoPublicUrl(url,{skipSiteFiles:index>0});}
+    catch(error){return {error:error.message||"Page audit failed",url};}
+  });
+  const successful=reports.filter(report=>report&&!report.error);
+  const failed=reports.filter(report=>!report||report.error);
+  if(!successful.length)return {error:"No sitemap pages could be audited. Check the sitemap and public page access."};
+  const categoryIds=[...new Set(successful.flatMap(report=>Object.keys(report.checks||{})))];
+  const labels={seo:"On-page SEO",technical:"Technical SEO",structured:"Structured data",content:"Content quality",images:"Image SEO",links:"Internal and external links",trust:"E-E-A-T and publisher trust",discovery:"Search and AI discovery",aeo:"Answer Engine Optimisation",geo:"Generative Engine Optimisation"};
+  const categories=categoryIds.map(id=>{
+    const rows=successful.flatMap(report=>(report.checks?.[id]||[]));
+    const passed=rows.filter(item=>item.ok).length;
+    return {id,label:labels[id]||id,score:rows.length?Math.round(passed/rows.length*100):0,passed,total:rows.length};
+  });
+  const grouped=new Map();
+  for(const report of successful)for(const [category,items] of Object.entries(report.checks||{}))for(const item of items){
+    if(item.ok)continue;
+    const key=category+"|"+item.name;
+    const row=grouped.get(key)||{category,label:item.name,status:"warning",detail:item.detail,affected_pages:[],priority:["technical","structured"].includes(category)?"high":["images","links","trust"].includes(category)?"medium":"normal"};
+    row.affected_pages.push(report.url);grouped.set(key,row);
+  }
+  const fixes=[...grouped.values()].sort((a,b)=>({high:0,medium:1,normal:2}[a.priority]-{high:0,medium:1,normal:2}[b.priority])||b.affected_pages.length-a.affected_pages.length);
+  const score=categories.length?Math.round(categories.reduce((sum,item)=>sum+item.score,0)/categories.length):0;
+  return {url:safe.url.href,score,max_score:100,categories,checks:fixes,warning_count:fixes.length,pages_discovered:discovery.discovered||urls.length,pages_crawled:successful.length,pages_skipped:(discovery.skipped||[]).length+failed.length,page_limit:maxPages,pages:successful.map(report=>({url:report.url,title:report.title,word_count:report.wordCount,warning_count:Object.values(report.checks||{}).flat().filter(item=>!item.ok).length,scores:report.scores})),skipped_pages:[...(discovery.skipped||[]),...failed.map(report=>({url:report?.url||"Unknown",reason:report?.error||"Page could not be audited"}))].slice(0,50),audited_at:new Date().toISOString(),limitations:["Sitemap-led sample of same-origin URLs only; arbitrary internal links are not crawled.","Checks use server-delivered HTML and response headers. JavaScript rendering, Core Web Vitals, INP/LCP/CLS measurement and browser accessibility tests are not included.","A detected link is not proof that its destination is healthy; link destination status checks are not performed.","Scores are diagnostic heuristics, not search ranking or AI citation predictions."]};
+}
+
 export default {
   async fetch(request, env) {
     const origin = request.headers.get("Origin") || "";
@@ -818,6 +850,14 @@ export default {
     if (!ALLOWED_ORIGINS.has(origin) && origin !== "") return json({ error: "Origin not allowed." }, 403, origin);
     try {
 
+      if(request.method==="POST"&&url.pathname==="/api/seo/site-audit"){
+        if(!await allowAuditRequest(request,env,3,"seo-site"))return json({error:"SEO site audit rate limit reached. Maximum 3 site scans per hour per IP."},429,origin);
+        const body=await request.json(),raw=String(body?.url||""),requested=Number(body?.max_pages||10);
+        const maxPages=Math.min(30,Math.max(1,Number.isFinite(requested)?Math.floor(requested):10));
+        const result=await auditSeoWholeSite(raw,maxPages);
+        if(result.error)return json({error:result.error},400,origin);
+        return json(result,200,origin);
+      }
       if(request.method==="POST"&&url.pathname==="/api/seo/url-audit"){
         if(!await allowAuditRequest(request,env,5,"seo-url"))return json({error:"URL analysis rate limit reached. Maximum 5 scans per hour per IP."},429,origin);
         const body=await request.json();
