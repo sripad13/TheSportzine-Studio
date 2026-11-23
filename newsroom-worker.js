@@ -928,7 +928,7 @@ function dataForSeoDomain(value) {
   if (!host || host.length > 253 || !/^(?=.{1,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/i.test(host)) return "";
   return host;
 }
-\n
+
 export default {
   async fetch(request, env) {
     const origin = request.headers.get("Origin") || "";
