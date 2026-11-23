@@ -88,6 +88,20 @@ Additional API endpoints:
 All scores are heuristic diagnostics. They do not represent measured AI citations, ranking, provider indexing or fact verification.
 
 
+## Advanced SEO tools in Optimize
+
+The Optimize page includes publisher-oriented workflows inspired by the MIT-licensed [Claude SEO](https://github.com/AgriciDaniel/claude-seo) project. Studio keeps its own Cloudflare Pages + Worker architecture rather than importing the project's Claude Code runtime.
+
+- **Content Brief:** creates article-format-specific outlines with reader intent, information gain, sourcing, E-E-A-T and internal-link requirements. It does not invent live SERP competitor data or search volumes.
+- **E-E-A-T Review:** editorial presence checklist for first-hand reporting, author expertise, corroborating sources and publisher transparency. This is not a Google ranking score or verified reputation score.
+- **Schema Lab:** generates JSON-LD for common article and publisher entities, and inspects JSON-LD blocks on a fetched public page. Property-level conformance and rich-result eligibility still require Schema.org Validator and Google's Rich Results Test.
+- **AI Agent Readiness:** checks robots.txt, llms.txt, explicit AI crawler groups and optional AI catalog discovery files. It does not test WAF behaviour, accessibility trees or official Lighthouse Agentic Browsing results.
+- **International SEO:** inspects HTML hreflang tags for basic language/region format, duplicates, HTTPS, self-reference and x-default. Reciprocal return tags and alternate-page indexability are not verified yet.
+
+The Worker exposes `POST /api/seo/public-resource` to retrieve bounded public text/HTML/JSON/XML resources for these tools. It uses the same public-target validation and redirect protections as other SEO fetches, has an independent rate limit, and does not accept arbitrary methods or private network destinations. This endpoint returns resource bodies to the Studio UI; do not use it to fetch authenticated/private content.
+
+**Attribution and licence:** Claude SEO is MIT licensed. This integration uses adapted workflow concepts and limited implementation patterns, not its bundled local runtime. The MIT copyright and permission notice are retained in this documentation. Copyright (c) 2026 agricidaniel; original content and repository: https://github.com/AgriciDaniel/claude-seo.
+
 ## Studio brand system
 
 - Product name: **Studio**.
