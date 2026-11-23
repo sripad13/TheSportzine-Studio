@@ -892,6 +892,20 @@ export default {
         }
         return json({...result,history},200,origin);
       }
+
+      if(request.method==="POST"&&url.pathname==="/api/seo/public-resource"){
+        if(!await allowAuditRequest(request,env,20,"seo-resource"))return json({error:"Public-resource rate limit reached."},429,origin);
+        const body=await request.json(),raw=String(body?.url||"");
+        if(!raw||raw.length>2048)return json({error:"Provide a valid public URL."},400,origin);
+        const safe=isSafePublicTarget(raw);if(safe.error)return json({error:safe.error},400,origin);
+        const target=safe.url;
+        const response=await publicFetch(target,{"User-Agent":"Studio-SEO-Analyzer/1.0","Accept":"text/plain,text/markdown,application/json,application/xml,text/html;q=0.8,*/*;q=0.2"},8000);
+        if(!response)return json({error:"The public resource could not be fetched."},502,origin);
+        const type=response.headers.get("content-type")||"";
+        if(!/^(text\\/|application\\/(json|xml|xhtml\\+xml))/.test(type))return json({error:"Unsupported resource content type."},415,origin);
+        const text=await readResponseText(response,250000);
+        return json({url:target.href,status:response.status,content_type:type,body:text},200,origin);
+      }
       if(request.method==="POST"&&url.pathname==="/api/seo/url-audit"){
         if(!await allowAuditRequest(request,env,5,"seo-url"))return json({error:"URL analysis rate limit reached. Maximum 5 scans per hour per IP."},429,origin);
         const body=await request.json();
