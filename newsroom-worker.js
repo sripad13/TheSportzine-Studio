@@ -978,7 +978,7 @@ export default {
         const response=await publicFetch(target,{"User-Agent":"Studio-SEO-Analyzer/1.0","Accept":"text/plain,text/markdown,application/json,application/xml,text/html;q=0.8,*/*;q=0.2"},8000);
         if(!response)return json({error:"The public resource could not be fetched."},502,origin);
         const type=response.headers.get("content-type")||"";
-        if(!/^(text\\/|application\\/(json|xml|xhtml\\+xml))/.test(type))return json({error:"Unsupported resource content type."},415,origin);
+        if(!/^(text\/|application\/(json|xml|xhtml\+xml))/.test(type))return json({error:"Unsupported resource content type."},415,origin);
         const text=await readResponseText(response,250000);
         return json({url:target.href,status:response.status,content_type:type,body:text},200,origin);
       }
