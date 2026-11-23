@@ -112,16 +112,8 @@ The Worker exposes `POST /api/seo/public-resource` to retrieve bounded public te
 - Brand palette: lime `#B7D957`, near-black `#0B0B0D`, white `#FFFFFF`, warm light canvas `#F5F6F2`.
 - The redesign does not change the current hostname, API hostname, route paths, Workers or D1 configuration. URL migration is a separate future phase.
 
-## Analyze — Diib-inspired SEO intelligence
+## Analyze — search intelligence
 
-Analyze is the site-wide SEO intelligence workspace at `/analyze/`; Optimize remains focused on individual article improvements. The workspace includes:
-- DataForSEO keyword ideas and live Google SERP checks by global or country market.
-- Domain ranking distribution and competitor-domain discovery.
-- Ranked-keyword discovery with a RankGuard-style opportunity view for keywords in positions 4–20.
-- Manual ranking snapshots stored in D1, with position-change alerts compared with the previous refresh.
-- Backlink profile summaries, including backlinks, referring domains/pages, broken-link indicators and link spam score where supplied.
-- Links to the existing technical SEO and AI visibility audits.
+Analyze is the search and site-health workspace at `/analyze/`; Optimize remains focused on individual article improvements. It links to first-party Google Search Console property data and Studio's own technical SEO, AEO and GEO diagnostics. Search Console OAuth/import is not currently implemented in Studio, so users open the Google product directly. Studio does not provide third-party keyword-volume, rank-tracking, SERP or backlink-index metrics.
 
-The Worker exposes `POST /api/analyze/keywords`, `/api/analyze/domain`, `/api/analyze/serp`, `/api/analyze/rankings`, `/api/analyze/competitors` and `/api/analyze/backlinks`. Configure `DATAFORSEO_LOGIN` and `DATAFORSEO_PASSWORD` as Cloudflare Worker secrets; never place provider credentials in frontend code. Requests share a 12-per-IP-per-hour allowance and successful responses are cached in Worker memory for 10 minutes where the isolate remains warm. Provider-reported costs are shown in the interface.
-
-Rank snapshots are recorded only when a user manually refreshes rankings; no scheduled daily scans run. Ranking, traffic, difficulty and backlink values are third-party estimates, not first-party Search Console data. Search Console OAuth, automated rank scheduling and measured AI citations remain separate workstreams. API usage is billable by DataForSEO; review endpoint pricing before repeated use.
+The Analyze page stores the selected website locally in the browser. Technical and AI-readiness checks run through the existing Studio audit endpoints; their scores are heuristic diagnostics, not search rankings or measured AI citations. No external SEO data-provider credentials or API integration are required.
