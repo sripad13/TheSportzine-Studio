@@ -371,17 +371,19 @@ async function fetchDiscovery(base,path){
 }
 $('#runAgent').addEventListener('click',async()=>{
  const b=$('#agentUrl').value.trim();try{
-  const base=publicUrl(b);out('agentOutput','<span class="hint">Checking robots.txt, llms.txt, markdown and discovery files…</span>');
-  const paths=['/robots.txt','/llms.txt','/.well-known/ai-plugin.json','/ai-catalog.json'];
+  const base=publicUrl(b);out('agentOutput','<span class="hint">Checking public discovery resources…</span>');
+  const paths=['/robots.txt','/llms.txt','/.well-known/ai-catalog.json','/ai-catalog.json'];
   const items=await Promise.all(paths.map(async p=>{try{const d=await fetchDiscovery(base.href,p);return {path:p,status:d.status,body:d.body||''}}catch(e){return {path:p,error:e.message}}}));
-  const r=items.find(x=>x.path==='/robots.txt'),robots=r?.body||'',agents=['GPTBot','OAI-SearchBot','ClaudeBot','Claude-SearchBot','PerplexityBot','Google-Extended'];
+  const robots=items.find(x=>x.path==='/robots.txt')?.body||'';
+  const agents=['GPTBot','OAI-SearchBot','ClaudeBot','Claude-SearchBot','PerplexityBot','Google-Extended'];
+  const explicit=agents.filter(a=>new RegExp('User-agent:\\s*'+a,'i').test(robots));
   const checks=[
-   ['robots.txt reachable',!!r&&r.status>=200&&r.status<400,r?.error||('HTTP '+(r?.status??'unknown'))],
-   ['llms.txt discovery',items.some(x=>x.path==='/llms.txt'&&x.status>=200&&x.status<400), 'Optional discovery file; absence is informational.'],
-   ['AI crawler policy is explicit',agents.some(a=>new RegExp('User-agent:\\s*'+a,'i').test(robots)), 'Review crawler groups individually; training, search and user-triggered agents are different purposes.'],
-   ['AI catalog discovery',items.some(x=>x.path==='/ai-catalog.json'&&x.status>=200&&x.status<400),'Optional; only useful when the site exposes resources for agents.']
+   ['robots.txt reachable',items[0].status>=200&&items[0].status<400,'HTTP '+(items[0].status??'unavailable')],
+   ['llms.txt present',items.some(x=>x.path==='/llms.txt'&&x.status>=200&&x.status<400),'Optional discovery file; absence is informational.'],
+   ['AI-specific crawler groups found',explicit.length>0,explicit.length?explicit.join(', '):'No explicit AI crawler groups detected. Review general policy and purpose-specific policies separately.'],
+   ['AI catalog present',items.some(x=>x.path.includes('ai-catalog')&&x.status>=200&&x.status<400),'Optional discovery file; only meaningful when agent resources are provided.']
   ];
-  out('agentOutput','<h3>Agent readiness checks</h3>'+checks.map(x=>'<div class="finding"><strong class="'+(x[1]?'result-pass':'result-warn')+'">'+(x[1]?'✓':'!')+' '+esc(x[0])+'</strong><small>'+esc(x[2])+'</small></div>').join('')+'<h3>Fetched discovery resources</h3>'+items.map(x=>'<div class="finding"><strong>'+esc(x.path)+'</strong><small>HTTP '+esc(x.status??x.error??'unavailable')+'</small></div>').join('')+'<p class="hint">This lightweight check does not test WAF behaviour, the accessibility tree, Markdown negotiation, WebMCP registration or official Lighthouse Agentic Browsing audits.</p>');
+  out('agentOutput','<h3>Agent readiness signals</h3>'+checks.map(x=>'<div class="finding"><strong class="'+(x[1]?'result-pass':'result-warn')+'">'+(x[1]?'✓':'!')+' '+esc(x[0])+'</strong><small>'+esc(x[2])+'</small></div>').join('')+'<h3>Resources</h3>'+items.map(x=>'<div class="finding"><strong>'+esc(x.path)+'</strong><small>HTTP '+esc(x.status??x.error??'unavailable')+'</small></div>').join('')+'<p class="hint">No requests impersonating AI bots were sent. This does not test WAF rules, user-triggered agent access, accessibility trees, Markdown negotiation, WebMCP registration or official Lighthouse Agentic Browsing.</p>');
  }catch(e){out('agentOutput','<span class="result-warn">'+esc(e.message)+'</span>')}
 });
 $('#runHreflang').addEventListener('click',async()=>{
