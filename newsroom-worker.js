@@ -883,7 +883,7 @@ export default {
         return json({history_available:true,history:rows.results||[]},200,origin);
       }
       if(request.method==="POST"&&url.pathname==="/api/seo/site-audit"){
-        if(!await allowAuditRequest(request,env,3,"seo-site"))return json({error:"SEO site audit rate limit reached. Maximum 3 site scans per hour per IP."},429,origin);
+        if(!await allowAuditRequest(request,env,15,"seo-site"))return json({error:"SEO site audit rate limit reached. Maximum 15 site scans per hour per IP."},429,origin);
         const body=await request.json(),raw=String(body?.url||""),requested=Number(body?.max_pages||10);
         const maxPages=Math.min(30,Math.max(1,Number.isFinite(requested)?Math.floor(requested):10));
         const result=await auditSeoWholeSite(raw,maxPages);
