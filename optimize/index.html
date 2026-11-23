@@ -354,15 +354,15 @@ $('#generateSchema').addEventListener('click',()=>{
 });
 $('#copySchema').addEventListener('click',()=>{if(window.__studioSchema)navigator.clipboard.writeText(window.__studioSchema)});
 async function inspectSource(raw){
- const target=publicUrl(raw),resp=await fetch('https://newsroom-api.falsewinger.com/api/seo/url-audit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:target.href})});
- const data=await resp.json();if(!resp.ok)throw new Error(data.error||'URL audit failed.');
+ const target=publicUrl(raw),data=await fetchDiscovery(target.href,'/');
  return {target,data};
 }
 $('#inspectSchema').addEventListener('click',async()=>{
  try{
-  const {target,data}=await inspectSource($('#schemaUrl').value);
-  const types=data.schemaTypes||[],issues=(data.checks?.structured||[]).filter(x=>!x.ok);
-  out('schemaOutput','<h3>Detected structured data</h3><p>'+esc(types.length?types.join(' · '):'No schema types detected')+'</p>'+issues.map(x=>'<div class="finding"><strong class="result-warn">'+esc(x.name)+'</strong><small>'+esc(x.detail)+'</small></div>').join('')+'<p class="hint">The page audit reports detected types and structural heuristics. Use Schema.org Validator and Google Rich Results Test for full validation.</p>');
+  const {data}=await inspectSource($('#schemaUrl').value),source=data.body||'',blocks=[...source.matchAll(/<script\\b[^>]*type=["']application\\/ld\\+json["'][^>]*>([\\s\\S]*?)<\\/script\\s*>/gi)];
+  if(!blocks.length){out('schemaOutput','<p>No JSON-LD blocks were detected in the fetched HTML. Microdata and RDFa were not fully inspected.</p>');return}
+  const reports=blocks.map((m,i)=>{try{const parsed=JSON.parse(m[1]),types=[];const walk=v=>{if(!v||typeof v!=="object")return;if(Array.isArray(v))return v.forEach(walk);if(v["@type"])types.push(...(Array.isArray(v["@type"])?v["@type"]:[v["@type"]]));Object.values(v).forEach(walk)};walk(parsed);const issues=[];if(!parsed["@context"]&&!parsed["@graph"])issues.push("Missing document-level @context");if(!types.length)issues.push("No typed entities found");const faq=types.includes("FAQPage");if(faq)issues.push("FAQPage does not currently provide a Google rich result; do not remove existing markup solely for that reason.");return '<div class="finding"><strong class="'+(issues.length?'result-warn':'result-pass')+'">Block '+(i+1)+': '+esc(types.join(', ')||'Untyped JSON-LD')+'</strong><small>'+(issues.length?issues.map(esc).join(' · '):'JSON parses successfully; typed entities detected.')+'</small></div>'}catch(e){return '<div class="finding"><strong class="result-fail">Block '+(i+1)+': invalid JSON</strong><small>'+esc(e.message)+'</small></div>'}}).join('');
+  out('schemaOutput','<h3>JSON-LD inspection</h3>'+reports+'<p class="hint">This checks JSON syntax and basic graph/entity presence. Property-level validation and Google rich-result eligibility require the official validators.</p>');
  }catch(e){out('schemaOutput','<span class="result-warn">'+esc(e.message)+'</span>')}
 });
 async function fetchDiscovery(base,path){
