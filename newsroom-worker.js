@@ -793,7 +793,7 @@ async function auditSeoPublicUrl(raw,options={}) {
       {ok:imageAltEmpty===0,name:"Non-empty image descriptions",detail:imageAltEmpty+" images have empty alt attributes; use empty alt only for decorative images."},
       {ok:images.length===0||imageWithoutDimensions===0,name:"Image dimensions",detail:imageWithoutDimensions+" of "+images.length+" images lack width or height attributes."},
       {ok:images.length===0||lazyImages>0,name:"Lazy loading",detail:lazyImages+" of "+images.length+" images use loading=lazy. Keep the likely LCP/hero image eager."},
-      {ok:images.every(tag=>!/(?:src|srcset)\s*=\s*["'][^"']+\.(?:bmp|tiff?)(?:[?#][^"']*)?["']/i.test(tag),name:"Modern image formats",detail:"Review large images and prefer AVIF or WebP where supported."}
+      {ok:images.every(tag=>!/(?:src|srcset)\s*=\s*["'][^"']+\.(?:bmp|tiff?)(?:[?#][^"']*)?["']/i.test(tag)),name:"Modern image formats",detail:"Review large images and prefer AVIF or WebP where supported."}
     ],
     links:[
       {ok:internalLinks.length>0,name:"Internal linking",detail:internalLinks.length+" same-origin links detected."},
