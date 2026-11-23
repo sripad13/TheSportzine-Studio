@@ -324,9 +324,16 @@ async function auditSiteUrl(raw,options={}){
   publicFetch(new URL("/sitemap.xml",origin),{"User-Agent":"TheSportzine-AI-Visibility-Audit/1.0","Accept":"application/xml,text/xml"}).catch(()=>null),
   publicFetch(new URL("/llms.txt",origin),{"User-Agent":"TheSportzine-AI-Visibility-Audit/1.0","Accept":"text/plain"}).catch(()=>null)
  ]);
+ let effectiveSitemapResponse=sitemapResponse;
+ if(!options.skipSiteFiles&&!effectiveSitemapResponse?.ok){
+  for(const path of ["/sitemap_index.xml","/wp-sitemap.xml"]){
+   const candidate=await publicFetch(new URL(path,origin),{"User-Agent":"TheSportzine-AI-Visibility-Audit/1.0","Accept":"application/xml,text/xml"},5000).catch(()=>null);
+   if(candidate?.ok){effectiveSitemapResponse=candidate;break;}
+  }
+ }
  let robotsText="",sitemapText="",llmsText="";
  if(robotsResponse?.ok)robotsText=await readResponseText(robotsResponse,300000).catch(()=> "");
- if(sitemapResponse?.ok)sitemapText=await readResponseText(sitemapResponse,500000).catch(()=> "");
+ if(effectiveSitemapResponse?.ok)sitemapText=await readResponseText(effectiveSitemapResponse,500000).catch(()=> "");
  if(llmsResponse?.ok)llmsText=await readResponseText(llmsResponse,300000).catch(()=> "");
  const robotsGroups=parseRobots(robotsText),robotsAvailable=!!robotsResponse&&robotsResponse.status===200;
  const titleMatch=html.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i);
