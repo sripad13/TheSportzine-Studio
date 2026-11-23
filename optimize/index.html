@@ -388,9 +388,23 @@ $('#runAgent').addEventListener('click',async()=>{
 });
 $('#runHreflang').addEventListener('click',async()=>{
  try{
-  const {target,data}=await inspectSource($('#hreflangUrl').value);
-  const checks=data.checks?.discovery||[],display=checks.map(x=>'<div class="finding"><strong class="'+(x.ok?'result-pass':'result-warn')+'">'+(x.ok?'✓':'!')+' '+esc(x.name)+'</strong><small>'+esc(x.detail)+'</small></div>').join('');
-  out('hreflangOutput','<h3>International signals</h3>'+display+'<p class="hint">The current URL audit only exposes limited discovery checks. Full hreflang validation (reciprocal return tags, language/region codes and canonical alignment) requires source-level alternate URL extraction. This first-pass result must not be treated as a complete hreflang conformance report.</p>');
+  const target=publicUrl($('#hreflangUrl').value),resource=await fetchDiscovery(target.href,'/'),source=resource.body||'';
+  const tagList=[...source.matchAll(/<link\\b[^>]*>/gi)].map(m=>m[0]);
+  const attr=(tag,key)=>{const escaped=key.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&');const m=tag.match(new RegExp('\\\\b'+escaped+'\\\\s*=\\\\s*([\\\\"\\\\'])(.*?)\\\\1','i'));return m?m[2]:''};
+  const alts=tagList.filter(t=>/rel\\s*=\\s*["'][^"']*alternate/i.test(t)&&/hreflang\\s*=/i.test(t)).map(t=>({lang:attr(t,'hreflang'),href:(()=>{try{return new URL(attr(t,'href'),target).href}catch{return ''}})()}));
+  const canonicalTag=tagList.find(t=>/rel\\s*=\\s*["']canonical["']/i.test(t));let canonical='';try{canonical=canonicalTag?new URL(attr(canonicalTag,'href'),target).href:''}catch{}
+  const issues=[],seen=new Set();
+  if(!alts.length)issues.push('No HTML hreflang alternate tags found.');
+  for(const a of alts){
+   if(!a.lang||!a.href){issues.push('An alternate tag is missing a valid language or URL.');continue}
+   if(seen.has(a.lang.toLowerCase()))issues.push('Duplicate language tag: '+a.lang);seen.add(a.lang.toLowerCase());
+   if(a.lang!=='x-default'&&!/^[a-z]{2,3}(?:-[A-Za-z]{4})?(?:-(?:[A-Z]{2}|\\d{3}))?$/.test(a.lang))issues.push('Potentially invalid language/region code: '+a.lang);
+   if(!a.href.startsWith('https://'))issues.push('Non-HTTPS alternate URL: '+a.href);
+  }
+  const self=alts.some(a=>a.href===target.href||!!canonical&&a.href===canonical),fallback=alts.some(a=>a.lang==='x-default');
+  if(!self)issues.push('No self-referencing alternate exactly matching the page URL or canonical.');
+  const rows=alts.map(a=>'<div class="finding"><strong>'+esc(a.lang)+'</strong><small>'+esc(a.href)+'</small></div>').join('');
+  out('hreflangOutput','<h3>Hreflang inspection</h3><div class="finding"><strong>Canonical</strong><small>'+esc(canonical||'Not specified')+'</small></div><div class="finding"><strong class="'+(self?'result-pass':'result-warn')+'">'+(self?'✓':'!')+' Self-reference '+(self?'found':'not found')+'</strong></div><div class="finding"><strong class="'+(fallback?'result-pass':'result-warn')+'">'+(fallback?'✓':'!')+' x-default '+(fallback?'found':'not found')+'</strong><small>Recommended when a language selector or fallback exists.</small></div>'+rows+(issues.length?'<h3>Potential issues</h3>'+issues.map(x=>'<div class="finding"><strong class="result-warn">!</strong><small>'+esc(x)+'</small></div>').join(''):'<p class="result-pass">No basic format issues detected.</p>')+'<p class="hint">Reciprocal return tags and indexability of alternate pages are not verified in this page-level check.</p>');
  }catch(e){out('hreflangOutput','<span class="result-warn">'+esc(e.message)+'</span>')}
 });
 
