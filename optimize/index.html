@@ -7,12 +7,14 @@
 .url-row{display:flex;gap:8px;align-items:center}.url-row input{flex:1;min-width:0}
 .or-divider{display:flex;align-items:center;gap:12px;margin:15px 0;color:#8f96a5;font-size:9px;font-weight:800;letter-spacing:1.3px}.or-divider:before,.or-divider:after{content:"";height:1px;background:#343946;flex:1}
 .write-article{border:1px solid var(--line);border-radius:8px;overflow:hidden}.write-article>summary,.preview-details>summary{padding:12px;background:#11141b;color:#e7e9ef;cursor:pointer;font-size:11px;font-weight:750;list-style:none}.write-article>summary::-webkit-details-marker,.preview-details>summary::-webkit-details-marker{display:none}.write-article>summary:after,.preview-details>summary:after{content:"＋";float:right;color:var(--yellow)}.write-article[open]>summary:after,.preview-details[open]>summary:after{content:"−"}.write-inner{padding:14px}.preview-details{margin-top:10px;border:1px solid #303541;border-radius:8px;overflow:hidden}.preview-details .formatted-preview-wrap{margin:0;border:0;border-radius:0}.url-results{margin-top:14px}.url-results-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.url-score-card{padding:12px;background:#10131a;border:1px solid #303541;border-radius:8px}.url-score-card strong{display:block;font-size:23px}.url-score-card span{color:var(--muted);font-size:10px}.url-result-meta{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.url-result-meta span{font-size:10px;color:#c4cad5;background:#20242e;padding:6px 8px;border-radius:5px}.url-check-group{margin-top:13px}.url-check-group h3{font-size:12px;margin:0 0 8px}.url-result-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.url-result-head a{color:#8bbcff;font-size:10px;overflow-wrap:anywhere}.url-loading{color:var(--yellow);font-size:11px;margin-top:10px}.url-error{color:var(--red);font-size:11px;margin-top:10px}@media(max-width:560px){.url-row{flex-direction:column;align-items:stretch}.url-row .btn{width:100%}.url-results-grid{grid-template-columns:1fr}.url-result-head{flex-direction:column}}
+
+.advanced-tabs{margin-top:2px}.advanced-pane[hidden]{display:none}.advanced-output{margin-top:16px;padding:14px;border:1px solid var(--line);border-radius:9px;background:#10131a;color:var(--text);font-size:12px;line-height:1.65;overflow-wrap:anywhere}.advanced-output h3{font-size:13px;margin:16px 0 8px}.advanced-output h4{font-size:12px;margin:12px 0 5px}.advanced-output ul{padding-left:18px}.advanced-output li{margin:4px 0}.advanced-output pre{white-space:pre-wrap;word-break:break-word;background:#090b10;padding:12px;border-radius:7px;font-size:11px;overflow:auto}.advanced-output code{font-size:11px}.result-pass{color:var(--green)}.result-warn{color:var(--yellow)}.result-fail{color:var(--red)}.finding{padding:9px 0;border-bottom:1px solid var(--line)}.finding:last-child{border-bottom:0}.finding strong{display:block;margin-bottom:3px}.finding small{display:block;color:var(--muted)}
 </style><link rel="icon" href="/brand/studio-mark-light.svg" type="image/svg+xml"><link rel="stylesheet" href="/assets/studio/studio.css?v=20261118-01"><script defer src="/assets/studio/studio.js?v=20261118-01"></script>
 </head><body>
 <header class="studio-global-header"><a class="studio-global-brand" href="/" aria-label="Studio home"><img class="studio-brand-mark" alt="" src="/brand/studio-mark-light.svg"><span class="studio-brand-word">Studio</span></a><nav class="studio-global-nav" aria-label="Primary navigation"><a href="/newsroom/">Newsroom</a><a href="/share/">Share</a><a href="/create/">Create</a><a href="/optimize/">Optimize</a><a href="/audit/">Audit</a></nav><div class="studio-global-actions"></div></header>
 
 <div class="wrap"><div class="heading"><div><div class="eyebrow">Editorial growth workspace</div><h1>SEO Studio</h1><p>Optimise stories before publication. Turn search performance into your next editorial opportunity.</p></div><a class="back" href="/newsroom/">← Back to Newsroom</a></div>
-<div class="tabs"><button class="tab active" data-tab="editor">Article Optimiser</button><button class="tab" data-tab="performance">Search Console</button><button class="tab" data-tab="research">Keyword Research</button><button class="tab" data-tab="audit">Site Audit</button></div>
+<div class="tabs"><button class="tab active" data-tab="editor">Article Optimiser</button><button class="tab" data-tab="performance">Search Console</button><button class="tab" data-tab="research">Keyword Research</button><button class="tab" data-tab="audit">Site Audit</button><button class="tab" data-tab="advanced">Advanced tools</button></div>
 <section id="editor" class="tabpane"><div class="layout"><div class="panel"><h2>Article details</h2><p class="sub">Analyse an existing public page, or write and optimise a new article.</p><div class="url-analyser"><label for="pageUrl">Enter URL to analyse</label><div class="url-row" style="margin-top:7px"><input id="pageUrl" type="url" placeholder="https://example.com/article/" autocomplete="url"><button class="btn primary" id="analyseUrl">Analyse URL</button></div><p class="hint" style="margin:8px 0 0">Works with publicly accessible websites. The page is fetched and analysed for SEO, AEO and GEO signals.</p><div id="urlStatus" aria-live="polite"></div></div><div class="or-divider">OR WRITE YOUR ARTICLE</div><details class="write-article"><summary>Write or paste an article</summary><div class="write-inner"><div class="fields">
 <div class="field full"><label for="articleTitle">SEO title</label><input id="articleTitle" maxlength="120" placeholder="e.g. Chelsea transfer news: latest updates and reports"></div>
 <div class="field full"><label for="meta">Meta description</label><input id="meta" maxlength="320" placeholder="Summarise the article for search results…"></div>
@@ -27,6 +29,63 @@
 <div class="panel section"><h2>Google search preview</h2><p class="sub">Approximate desktop snippet preview. Google may rewrite titles and descriptions.</p><div class="snippet"><div class="url" id="previewUrl">thesportzine.com › article</div><div class="stitle" id="previewTitle">Your SEO title will appear here</div><div class="sdesc" id="previewMeta">Your meta description will appear here.</div></div><p class="hint" id="lengths" style="margin:10px 0 0">Title: 0 characters · Description: 0 characters</p></div></aside></div></section>
 <section id="performance" class="tabpane" hidden><div class="panel"><h2>Google Search Console</h2><p class="sub">Connect first-party search data to identify pages and queries with the greatest growth potential.</p><div class="notice"><strong>Integration required.</strong> This workspace does not yet have an authenticated Search Console connection. The next step is Google OAuth, site-property selection and read-only access to performance and URL inspection data. No metrics are displayed until that connection is configured.</div><div class="actions"><a class="btn" href="https://search.google.com/search-console" target="_blank" rel="noopener">Open Search Console ↗</a></div></div></section>
 <section id="research" class="tabpane" hidden><div class="panel"><h2>Keyword research</h2><p class="sub">A research workspace for search demand, intent, SERP competitors and saved editorial opportunities.</p><div class="notice"><strong>Research provider required.</strong> Search volume, keyword difficulty and live SERP data need a connected provider such as DataForSEO/YepAPI. We will not invent volumes or difficulty scores. The first integration will support keyword discovery, clustering and a saved newsroom keyword library.</div></div></section>
+
+<section id="advanced" class="tabpane" hidden>
+ <div class="tabs advanced-tabs" role="tablist" aria-label="Advanced SEO tools">
+  <button class="tab active" data-advanced="brief">Content Brief</button><button class="tab" data-advanced="eeat">E-E-A-T Review</button><button class="tab" data-advanced="schema">Schema Lab</button><button class="tab" data-advanced="agent">Agent Readiness</button><button class="tab" data-advanced="hreflang">International SEO</button>
+ </div>
+ <section class="advanced-pane" id="adv-brief">
+  <div class="panel"><h2>Publisher Content Brief</h2><p class="sub">Build an editorial brief around search intent, reader needs, information gain, sourcing and internal links. This tool does not fabricate live SERP data or search volumes.</p>
+   <div class="fields">
+    <div class="field full"><label for="briefTopic">Topic or target keyword</label><input id="briefTopic" placeholder="e.g. Arsenal injury news and predicted line-up"></div>
+    <div class="field"><label for="briefType">Article format</label><select id="briefType"><option value="news">Breaking / news report</option><option value="analysis">Analysis / explainer</option><option value="feature">Feature / profile</option><option value="guide">Evergreen guide</option><option value="opinion">Opinion / column</option></select></div>
+    <div class="field"><label for="briefIntent">Search intent</label><select id="briefIntent"><option>Auto-detect</option><option>Informational</option><option>Commercial</option><option>Navigational</option></select></div>
+    <div class="field full"><label for="briefContext">Known facts, sources, quotes or angle</label><textarea id="briefContext" rows="4" placeholder="Paste confirmed details, source links, quotes, data, or the editorial angle."></textarea></div>
+   </div>
+   <div class="actions"><button class="btn primary" id="generateBrief">Generate brief</button><button class="btn" id="copyBrief">Copy brief</button></div><div id="briefOutput" class="advanced-output empty">Your structured editorial brief will appear here.</div>
+  </div>
+ </section>
+ <section class="advanced-pane" id="adv-eeat" hidden>
+  <div class="panel"><h2>E-E-A-T Editorial Review</h2><p class="sub">Assess evidence of first-hand experience, expertise, authoritativeness and trust. This is an editorial checklist, not a Google ranking score.</p>
+   <div class="fields">
+    <div class="field full"><label for="eeatUrl">Public article URL (optional)</label><input id="eeatUrl" type="url" placeholder="https://example.com/article/"></div>
+    <div class="field"><label for="eeatAuthor">Author / byline</label><input id="eeatAuthor" placeholder="Author name"></div>
+    <div class="field"><label for="eeatBio">Author credentials / experience</label><input id="eeatBio" placeholder="Relevant expertise and track record"></div>
+    <div class="field full"><label for="eeatEvidence">First-hand evidence, reporting or original data</label><textarea id="eeatEvidence" rows="3" placeholder="Interviews, original reporting, firsthand observations, data, photographs..."></textarea></div>
+    <div class="field full"><label for="eeatSources">Sources and corroboration</label><textarea id="eeatSources" rows="3" placeholder="Named primary sources, documents, links, official statements, independent corroboration..."></textarea></div>
+    <div class="field full"><label for="eeatTrust">Transparency and corrections</label><textarea id="eeatTrust" rows="3" placeholder="Publication/update date, corrections policy, contact/about information, disclosures..."></textarea></div>
+   </div>
+   <div class="actions"><button class="btn primary" id="runEeat">Run editorial review</button></div><div id="eeatOutput" class="advanced-output empty">Complete the fields to assess editorial trust signals.</div>
+  </div>
+ </section>
+ <section class="advanced-pane" id="adv-schema" hidden>
+  <div class="panel"><h2>Schema Lab</h2><p class="sub">Inspect JSON-LD on a public URL, validate common structural issues, and generate Article / NewsArticle markup from supplied facts.</p>
+   <div class="fields">
+    <div class="field full"><label for="schemaUrl">Public URL to inspect (optional)</label><input id="schemaUrl" type="url" placeholder="https://example.com/article/"></div>
+    <div class="field"><label for="schemaType">Generate type</label><select id="schemaType"><option>NewsArticle</option><option>Article</option><option>BlogPosting</option><option>Person</option><option>Organization</option><option>WebSite</option><option>BreadcrumbList</option></select></div>
+    <div class="field"><label for="schemaHeadline">Headline / name</label><input id="schemaHeadline" placeholder="Article headline or entity name"></div>
+    <div class="field"><label for="schemaAuthor">Author</label><input id="schemaAuthor" placeholder="Author name"></div>
+    <div class="field"><label for="schemaPublisher">Publisher</label><input id="schemaPublisher" placeholder="Publisher / organisation"></div>
+    <div class="field"><label for="schemaDate">Published date</label><input id="schemaDate" type="date"></div>
+    <div class="field"><label for="schemaImage">Image URL</label><input id="schemaImage" type="url" placeholder="https://example.com/image.jpg"></div>
+   </div>
+   <div class="actions"><button class="btn primary" id="inspectSchema">Inspect URL schema</button><button class="btn" id="generateSchema">Generate JSON-LD</button><button class="btn" id="copySchema">Copy JSON-LD</button></div><div id="schemaOutput" class="advanced-output empty">Generated JSON-LD and validation findings will appear here.</div>
+  </div>
+ </section>
+ <section class="advanced-pane" id="adv-agent" hidden>
+  <div class="panel"><h2>AI Agent Readiness</h2><p class="sub">Check discoverability and access signals relevant to browsing agents: robots policies, llms.txt, Markdown support, AI catalog discovery, and real 404 behaviour. This is not the official Lighthouse Agentic Browsing test.</p>
+   <div class="field"><label for="agentUrl">Public website URL</label><input id="agentUrl" type="url" placeholder="https://example.com/"></div>
+   <div class="actions"><button class="btn primary" id="runAgent">Check agent readiness</button></div><div id="agentOutput" class="advanced-output empty">Enter a public URL to run the checks.</div>
+  </div>
+ </section>
+ <section class="advanced-pane" id="adv-hreflang" hidden>
+  <div class="panel"><h2>International SEO / Hreflang</h2><p class="sub">Validate language and region tags, self-references, x-default, duplicate locales and canonical alignment from the HTML source of a public URL.</p>
+   <div class="field"><label for="hreflangUrl">Public URL</label><input id="hreflangUrl" type="url" placeholder="https://example.com/en/article/"></div>
+   <div class="actions"><button class="btn primary" id="runHreflang">Validate hreflang</button></div><div id="hreflangOutput" class="advanced-output empty">Enter a public URL to validate its language alternates.</div>
+  </div>
+ </section>
+ <p class="hint" style="margin:12px 2px">Inspired by the open-source <a href="https://github.com/AgriciDaniel/claude-seo" target="_blank" rel="noopener noreferrer">Claude SEO project</a>. Selected workflows adapted for Studio. See repository documentation for licence and attribution.</p>
+</section>
 <section id="audit" class="tabpane" hidden><div class="panel"><h2>Technical site audit</h2><p class="sub">Run a sitemap-led audit across any public website. Checks technical SEO, structured data, content quality, images, links, publisher trust and AI discovery signals. Browser rendering and Core Web Vitals are intentionally excluded for now.</p><div class="fields"><div class="field"><label for="auditUrl">Website URL</label><input id="auditUrl" type="url" placeholder="https://example.com/"></div><div class="field"><label for="auditPages">Maximum pages to audit</label><select id="auditPages"><option value="5">5 pages</option><option value="10" selected>10 pages</option><option value="20">20 pages</option><option value="30">30 pages</option></select></div></div><div class="actions"><button class="btn primary" id="runAudit">Run site audit</button><span class="hint" id="auditStatus">Up to 30 same-origin sitemap URLs per run.</span></div><div id="auditResults" class="section"></div></div></section>
 </div>
 <script>
@@ -233,4 +292,104 @@ function renderActionPlan(id,checks){
  el.innerHTML=failed.map((item,i)=>{const fn=actions[item.name],action=fn?fn():'Make one specific editorial change to address this failed check.';return '<div class="action-item"><span class="action-num">'+(i+1)+'</span><div><b>'+escHtml(item.name)+'</b><small>'+escHtml(action)+'</small></div></div>'}).join('');
 }
 function escHtml(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+
+const advancedTabs=[...document.querySelectorAll('[data-advanced]')];
+advancedTabs.forEach(btn=>btn.addEventListener('click',()=>{advancedTabs.forEach(x=>x.classList.toggle('active',x===btn));document.querySelectorAll('.advanced-pane').forEach(p=>p.hidden=p.id!=='adv-'+btn.dataset.advanced)}));
+const esc=escHtml;
+const out=(id,html)=>{const node=$('#'+id);if(node)node.innerHTML=html};
+const safeDate=v=>/^\\d{4}-\\d{2}-\\d{2}$/.test(v||'')?v:'';
+function briefMarkdown(){
+ const topic=$('#briefTopic').value.trim(),type=$('#briefType').value,intent=$('#briefIntent').value,ctx=$('#briefContext').value.trim();
+ if(!topic)throw new Error('Enter a topic or primary keyword.');
+ const types={news:'News report',analysis:'Analysis / explainer',feature:'Feature / profile',guide:'Evergreen guide',opinion:'Opinion / column'};
+ const intentText=intent==='Auto-detect'?(type==='news'?'Informational / news discovery':type==='guide'?'Informational':'Informational / exploratory'):intent;
+ const parts=[
+ '## Editorial Content Brief: '+topic,
+ '**Format:** '+types[type]+'  \n**Search intent:** '+intentText+'  \n**Primary topic:** '+topic,
+ '### Reader need',
+ type==='news'?'Readers need a fast, accurate account of what happened, who is involved, what is confirmed and what happens next.':type==='analysis'?'Readers need context, evidence-led explanation and a clear understanding of the implications.':type==='feature'?'Readers need a distinctive narrative, original reporting and meaningful detail about the subject.':type==='guide'?'Readers need a useful, complete explanation that answers practical questions and stays current.':'Readers need a clearly argued perspective supported by facts and fair treatment of opposing evidence.',
+ '### Recommended structure',
+ type==='news'?'1. **H2 standfirst:** State the central development and its main consequence.\n2. **What happened:** Confirmed facts, timing and location.\n3. **Key details:** People, teams, organisations, figures and direct quotes.\n4. **Background:** Relevant recent events and context.\n5. **What happens next:** Confirmed next steps, fixtures, decisions or expected updates.':type==='analysis'?'1. **H2 opening:** State the central finding or argument.\n2. **Context:** Explain the conditions behind the issue.\n3. **Evidence:** Use primary sources, statistics and examples.\n4. **Analysis:** Explain causes, consequences and alternatives.\n5. **What it means:** Practical implications and likely next developments.':type==='feature'?'1. **H2 opening:** Establish the subject and central narrative.\n2. **Background:** Explain the journey and relevant context.\n3. **First-hand reporting:** Interviews, observations and original material.\n4. **Turning points:** Specific events and evidence.\n5. **Wider significance:** Why the story matters now.':type==='guide'?'1. **H2 direct answer:** Define the topic and who the guide serves.\n2. **Core concepts:** Explain the essentials in logical order.\n3. **Practical steps:** Give actionable detail and examples.\n4. **Common questions:** Answer genuine reader questions.\n5. **Further reading:** Link to authoritative and related resources.':'1. **H2 thesis:** State the position clearly.\n2. **Context and evidence:** Establish verifiable facts.\n3. **Main argument:** Develop the strongest supporting points.\n4. **Counterargument:** Address credible alternative views.\n5. **Conclusion:** Explain the implications without overstating certainty.',
+ '### Information gain (must be supplied)',
+ '- Add original reporting, first-hand observation, expert comment, proprietary data or a clearly differentiated synthesis.\n- Do not use “more detail” or formatting alone as the unique angle.',
+ '### Source and verification plan',
+ '- Prioritise primary sources: official statements, governing bodies, clubs, teams, competition organisers, filings and direct interviews.\n- Attribute every quote, statistic and material claim. Record publication dates and event dates separately.\n- Corroborate consequential claims independently; label unconfirmed information clearly.',
+ '### E-E-A-T / publisher signals',
+ '- Named byline and relevant author bio.\n- Original reporting or documented first-hand experience.\n- Clear source attribution and links to primary evidence.\n- Publication date and meaningful update date.\n- Corrections/contact/about information where relevant.',
+ '### On-page SEO',
+ '- Place the primary topic naturally in the SEO title, H1, URL slug, meta description and opening.\n- Use descriptive H2/H3 headings; do not force the exact phrase into every heading.\n- Add descriptive image alt text, not keyword-stuffed alt text.\n- Link to 3–5 relevant existing Studio articles; verify targets before publishing.',
+ '### Internal links to identify',
+ '- Related background story / previous coverage.\n- Relevant team, player, competition or topic hub.\n- Latest related update or explainer.\n- Official source page, where useful.',
+ '### Drafting guardrails',
+ '- Separate confirmed facts, attributed claims, analysis and speculation.\n- Do not invent quotes, statistics, search volumes, competitor findings or sources.\n- For breaking news, prioritise accuracy and updateability over arbitrary word count.',
+ '### Supplied context',
+ ctx||'No source material supplied yet. Research and verify facts before drafting.'
+ ];
+ return parts.join('\n\n');
+}
+$('#generateBrief').addEventListener('click',()=>{try{const md=briefMarkdown();window.__studioBrief=md;out('briefOutput','<pre>'+esc(md)+'</pre>')}catch(e){out('briefOutput','<span class="result-warn">'+esc(e.message)+'</span>')}});
+$('#copyBrief').addEventListener('click',()=>{if(window.__studioBrief)navigator.clipboard.writeText(window.__studioBrief)});
+$('#runEeat').addEventListener('click',()=>{
+ const values={author:$('#eeatAuthor').value.trim(),bio:$('#eeatBio').value.trim(),experience:$('#eeatEvidence').value.trim(),sources:$('#eeatSources').value.trim(),trust:$('#eeatTrust').value.trim()};
+ const groups=[
+  ['Experience',values.experience,'First-hand reporting, direct observation, original data or documented work.'],
+  ['Expertise',values.author&&values.bio,'Named author and topic-relevant credentials or experience.'],
+  ['Authoritativeness',values.sources,'Independent corroboration, primary sources and credible external recognition.'],
+  ['Trustworthiness',values.trust&&values.sources,'Transparent sourcing, dates, corrections, contact and disclosure information.']
+ ];
+ const rows=groups.map(([name,ok,detail])=>'<div class="finding"><strong class="'+(ok?'result-pass':'result-warn')+'">'+(ok?'✓':'!')+' '+name+'</strong><small>'+(typeof ok==='string'&&ok?'Evidence supplied. ':'Evidence incomplete. ')+detail+'</small></div>').join('');
+ out('eeatOutput','<h3>Editorial trust review</h3>'+rows+'<p class="hint">This is a presence-based checklist, not an objective authority measure. External reputation and credentials have not been independently verified.</p>');
+});
+const publicUrl=raw=>{let u;try{u=new URL(raw)}catch{throw new Error('Enter a valid URL including https://.')}if(!['http:','https:'].includes(u.protocol)||u.username||u.password)throw new Error('Only public HTTP(S) URLs are supported.');return u};
+$('#generateSchema').addEventListener('click',()=>{
+ try{
+  const type=$('#schemaType').value,headline=$('#schemaHeadline').value.trim(),url=$('#schemaUrl').value.trim(),author=$('#schemaAuthor').value.trim(),publisher=$('#schemaPublisher').value.trim(),date=safeDate($('#schemaDate').value),imageUrl=$('#schemaImage').value.trim();
+  if(!headline)throw new Error('Enter the headline or entity name.');
+  const data={'@context':'https://schema.org','@type':type};
+  if(['NewsArticle','Article','BlogPosting'].includes(type)){
+   data.headline=headline;if(author)data.author={'@type':'Person',name:author};if(publisher)data.publisher={'@type':'Organization',name:publisher};if(date)data.datePublished=date;if(url)data.mainEntityOfPage=url;if(imageUrl)data.image=imageUrl;
+  }else{data.name=headline;if(url)data.url=url;}
+  const json=JSON.stringify(data,null,2);window.__studioSchema=json;out('schemaOutput','<div class="result-pass">Valid JSON syntax generated. Verify every field against the visible page before publishing.</div><pre>'+esc(json)+'</pre>');
+ }catch(e){out('schemaOutput','<span class="result-warn">'+esc(e.message)+'</span>')}
+});
+$('#copySchema').addEventListener('click',()=>{if(window.__studioSchema)navigator.clipboard.writeText(window.__studioSchema)});
+async function inspectSource(raw){
+ const target=publicUrl(raw),resp=await fetch('https://newsroom-api.falsewinger.com/api/seo/url-audit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:target.href})});
+ const data=await resp.json();if(!resp.ok)throw new Error(data.error||'URL audit failed.');
+ return {target,data};
+}
+$('#inspectSchema').addEventListener('click',async()=>{
+ try{
+  const {target,data}=await inspectSource($('#schemaUrl').value);
+  const types=data.schemaTypes||[],issues=(data.checks?.structured||[]).filter(x=>!x.ok);
+  out('schemaOutput','<h3>Detected structured data</h3><p>'+esc(types.length?types.join(' · '):'No schema types detected')+'</p>'+issues.map(x=>'<div class="finding"><strong class="result-warn">'+esc(x.name)+'</strong><small>'+esc(x.detail)+'</small></div>').join('')+'<p class="hint">The page audit reports detected types and structural heuristics. Use Schema.org Validator and Google Rich Results Test for full validation.</p>');
+ }catch(e){out('schemaOutput','<span class="result-warn">'+esc(e.message)+'</span>')}
+});
+async function fetchDiscovery(base,path){
+ const u=new URL(path,base);const res=await fetch('https://newsroom-api.falsewinger.com/api/seo/public-resource',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:u.href})});
+ if(!res.ok)throw new Error('Resource fetch failed ('+res.status+').');return res.json();
+}
+$('#runAgent').addEventListener('click',async()=>{
+ const b=$('#agentUrl').value.trim();try{
+  const base=publicUrl(b);out('agentOutput','<span class="hint">Checking robots.txt, llms.txt, markdown and discovery files…</span>');
+  const paths=['/robots.txt','/llms.txt','/.well-known/ai-plugin.json','/ai-catalog.json'];
+  const items=await Promise.all(paths.map(async p=>{try{const d=await fetchDiscovery(base.href,p);return {path:p,status:d.status,body:d.body||''}}catch(e){return {path:p,error:e.message}}}));
+  const r=items.find(x=>x.path==='/robots.txt'),robots=r?.body||'',agents=['GPTBot','OAI-SearchBot','ClaudeBot','Claude-SearchBot','PerplexityBot','Google-Extended'];
+  const checks=[
+   ['robots.txt reachable',!!r&&r.status>=200&&r.status<400,r?.error||('HTTP '+(r?.status??'unknown'))],
+   ['llms.txt discovery',items.some(x=>x.path==='/llms.txt'&&x.status>=200&&x.status<400), 'Optional discovery file; absence is informational.'],
+   ['AI crawler policy is explicit',agents.some(a=>new RegExp('User-agent:\\s*'+a,'i').test(robots)), 'Review crawler groups individually; training, search and user-triggered agents are different purposes.'],
+   ['AI catalog discovery',items.some(x=>x.path==='/ai-catalog.json'&&x.status>=200&&x.status<400),'Optional; only useful when the site exposes resources for agents.']
+  ];
+  out('agentOutput','<h3>Agent readiness checks</h3>'+checks.map(x=>'<div class="finding"><strong class="'+(x[1]?'result-pass':'result-warn')+'">'+(x[1]?'✓':'!')+' '+esc(x[0])+'</strong><small>'+esc(x[2])+'</small></div>').join('')+'<h3>Fetched discovery resources</h3>'+items.map(x=>'<div class="finding"><strong>'+esc(x.path)+'</strong><small>HTTP '+esc(x.status??x.error??'unavailable')+'</small></div>').join('')+'<p class="hint">This lightweight check does not test WAF behaviour, the accessibility tree, Markdown negotiation, WebMCP registration or official Lighthouse Agentic Browsing audits.</p>');
+ }catch(e){out('agentOutput','<span class="result-warn">'+esc(e.message)+'</span>')}
+});
+$('#runHreflang').addEventListener('click',async()=>{
+ try{
+  const {target,data}=await inspectSource($('#hreflangUrl').value);
+  const checks=data.checks?.discovery||[],display=checks.map(x=>'<div class="finding"><strong class="'+(x.ok?'result-pass':'result-warn')+'">'+(x.ok?'✓':'!')+' '+esc(x.name)+'</strong><small>'+esc(x.detail)+'</small></div>').join('');
+  out('hreflangOutput','<h3>International signals</h3>'+display+'<p class="hint">The current URL audit only exposes limited discovery checks. Full hreflang validation (reciprocal return tags, language/region codes and canonical alignment) requires source-level alternate URL extraction. This first-pass result must not be treated as a complete hreflang conformance report.</p>');
+ }catch(e){out('hreflangOutput','<span class="result-warn">'+esc(e.message)+'</span>')}
+});
+
 </script></body></html>
