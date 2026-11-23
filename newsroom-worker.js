@@ -853,6 +853,82 @@ async function auditSeoWholeSite(raw,maxPages=10){
   return {url:safe.url.href,score,max_score:100,categories,checks:fixes,warning_count:fixes.length,pages_discovered:discovery.discovered||urls.length,pages_crawled:successful.length,pages_skipped:(discovery.skipped||[]).length+failed.length,page_limit:maxPages,pages:successful.map(report=>({url:report.url,title:report.title,word_count:report.wordCount,warning_count:Object.values(report.checks||{}).flat().filter(item=>!item.ok).length,scores:report.scores})),skipped_pages:[...(discovery.skipped||[]),...failed.map(report=>({url:report?.url||"Unknown",reason:report?.error||"Page could not be audited"}))].slice(0,50),audited_at:new Date().toISOString(),limitations:["Sitemap-led sample of same-origin URLs only; arbitrary internal links are not crawled.","Checks use server-delivered HTML and response headers. JavaScript rendering, Core Web Vitals, INP/LCP/CLS measurement and browser accessibility tests are not included.","A detected link is not proof that its destination is healthy; link destination status checks are not performed.","Scores are diagnostic heuristics, not search ranking or AI citation predictions."]};
 }
 
+const ANALYZE_SCHEMA_READY = new WeakMap();
+async function ensureAnalyzeSchema(db) {
+  if (!db || typeof db.prepare !== "function") return;
+  if (!ANALYZE_SCHEMA_READY.has(db)) {
+    const promise = db.batch([
+      db.prepare("CREATE TABLE IF NOT EXISTS analyze_rank_snapshots (id TEXT PRIMARY KEY, domain TEXT NOT NULL, keyword TEXT NOT NULL, country TEXT NOT NULL, position INTEGER, page_url TEXT, search_volume INTEGER, checked_at TEXT NOT NULL)"),
+      db.prepare("CREATE INDEX IF NOT EXISTS idx_analyze_rank_history ON analyze_rank_snapshots(domain,keyword,country,checked_at)"),
+      db.prepare("CREATE TABLE IF NOT EXISTS analyze_domain_snapshots (id TEXT PRIMARY KEY, domain TEXT NOT NULL, kind TEXT NOT NULL, payload_json TEXT NOT NULL, checked_at TEXT NOT NULL)"),
+      db.prepare("CREATE INDEX IF NOT EXISTS idx_analyze_domain_history ON analyze_domain_snapshots(domain,kind,checked_at)")
+    ]).catch(error => { ANALYZE_SCHEMA_READY.delete(db); throw error; });
+    ANALYZE_SCHEMA_READY.set(db, promise);
+  }
+  await ANALYZE_SCHEMA_READY.get(db);
+}
+function analyzeRankItem(item) {
+  const keywordData = item.keyword_data || {};
+  const serp = item.ranked_serp_element?.serp_item || item.ranked_serp_element || {};
+  const info = keywordData.keyword_info || {};
+  const props = keywordData.keyword_properties || {};
+  const position = Number(serp.rank_group ?? serp.rank_absolute ?? item.rank_group ?? item.position);
+  return {
+    keyword: String(keywordData.keyword || item.keyword || "").slice(0, 200),
+    position: Number.isFinite(position) && position > 0 ? position : null,
+    url: String(serp.url || serp.relative_url || "").slice(0, 2048),
+    title: String(serp.title || "").slice(0, 300),
+    search_volume: info.search_volume == null ? null : Number(info.search_volume),
+    difficulty: props.keyword_difficulty == null ? null : Number(props.keyword_difficulty),
+    updated_at: serp.last_updated_time || item.last_updated_time || null
+  };
+}
+
+const DATAFORSEO_CACHE = new Map();
+async function dataForSeoRequest(env, endpoint, payload) {
+  const login = env.DATAFORSEO_LOGIN;
+  const password = env.DATAFORSEO_PASSWORD;
+  if (!login || !password) return { error: "DataForSEO is not configured. Add DATAFORSEO_LOGIN and DATAFORSEO_PASSWORD as Cloudflare Worker secrets." , status: 503 };
+  const cacheKey = endpoint + ":" + JSON.stringify(payload);
+  const cached = DATAFORSEO_CACHE.get(cacheKey);
+  if (cached && Date.now() - cached.at < 10 * 60 * 1000) return { data: cached.data, cached: true };
+  const auth = btoa(login + ":" + password);
+  let response;
+  try {
+    response = await fetch("https://api.dataforseo.com/v3/" + endpoint, {
+      method: "POST",
+      headers: { "Authorization": "Basic " + auth, "Content-Type": "application/json" },
+      body: JSON.stringify([payload]),
+      signal: AbortSignal.timeout(25000)
+    });
+  } catch (error) {
+    return { error: error?.name === "TimeoutError" ? "DataForSEO request timed out. Try again." : "Could not reach DataForSEO. Try again.", status: 504 };
+  }
+  const raw = await response.text();
+  let data;
+  try { data = JSON.parse(raw); } catch { return { error: "DataForSEO returned an unreadable response.", status: 502 }; }
+  if (!response.ok || data.status_code !== 20000 || Number(data.tasks_error || 0) > 0) {
+    const task = data.tasks?.[0];
+    return { error: String(task?.status_message || data.status_message || "DataForSEO request failed.").slice(0, 260), status: response.status === 429 ? 429 : 502 };
+  }
+  const result = { data, cached: false };
+  DATAFORSEO_CACHE.set(cacheKey, { at: Date.now(), data });
+  if (DATAFORSEO_CACHE.size > 250) DATAFORSEO_CACHE.delete(DATAFORSEO_CACHE.keys().next().value);
+  return result;
+}
+function dataForSeoLocation(body) {
+  const locations = { US: 2840, GB: 2826, IN: 2356, AU: 2036, CA: 2124, DE: 2276, FR: 2250, ES: 2724, IT: 2380, BR: 2076, JP: 2392, SG: 2702, ZA: 2710, AE: 2784 };
+  const country = String(body.country || "GLOBAL").toUpperCase();
+  return locations[country] ? { location_code: locations[country], language_code: String(body.language || "en").slice(0, 5) } : {};
+}
+function dataForSeoDomain(value) {
+  let host = "";
+  try { host = new URL(/^https?:\/\//i.test(value) ? value : "https://" + value).hostname.toLowerCase(); } catch {}
+  host = host.replace(/^www\./, "");
+  if (!host || host.length > 253 || !/^(?=.{1,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/i.test(host)) return "";
+  return host;
+}
+\n
 export default {
   async fetch(request, env) {
     const origin = request.headers.get("Origin") || "";
@@ -906,6 +982,98 @@ export default {
         const text=await readResponseText(response,250000);
         return json({url:target.href,status:response.status,content_type:type,body:text},200,origin);
       }
+if (request.method === "POST" && url.pathname.startsWith("/api/analyze/")) {
+        if (!await allowAuditRequest(request, env, 12, "dataforseo")) return json({ error: "Analyze usage limit reached. Maximum 12 requests per hour per IP." }, 429, origin);
+        const body = await request.json().catch(() => ({}));
+        const location = dataForSeoLocation(body);
+        let endpoint = "", payload = {};
+        if (url.pathname === "/api/analyze/keywords") {
+          const keywords = [...new Set((Array.isArray(body.keywords) ? body.keywords : String(body.keyword || "").split(/[\n,]/)).map(x => String(x).trim()).filter(Boolean))].slice(0, 5);
+          if (!keywords.length || keywords.some(x => x.length > 120)) return json({ error: "Enter between 1 and 5 keywords (maximum 120 characters each)." }, 400, origin);
+          endpoint = "dataforseo_labs/google/keyword_ideas/live";
+          payload = { keywords, ...location, limit: 50, include_serp_info: false };
+        } else if (url.pathname === "/api/analyze/domain") {
+          const target = dataForSeoDomain(String(body.domain || ""));
+          if (!target) return json({ error: "Enter a valid public domain, such as example.com." }, 400, origin);
+          endpoint = "dataforseo_labs/google/domain_rank_overview/live";
+          payload = { target, ...location, limit: 1 };
+        } else if (url.pathname === "/api/analyze/rankings") {
+          const target = dataForSeoDomain(String(body.domain || ""));
+          if (!target) return json({ error: "Enter a valid public domain, such as example.com." }, 400, origin);
+          endpoint = "dataforseo_labs/google/ranked_keywords/live";
+          payload = { target, ...location, limit: 100, load_rank_absolute: true, filters: [["keyword_data.keyword_info.search_volume", ">", 0]] };
+        } else if (url.pathname === "/api/analyze/competitors") {
+          const target = dataForSeoDomain(String(body.domain || ""));
+          if (!target) return json({ error: "Enter a valid public domain, such as example.com." }, 400, origin);
+          endpoint = "dataforseo_labs/google/competitors_domain/live";
+          payload = { target, ...location, limit: 20, exclude_unknown: true };
+        } else if (url.pathname === "/api/analyze/backlinks") {
+          const target = dataForSeoDomain(String(body.domain || ""));
+          if (!target) return json({ error: "Enter a valid public domain, such as example.com." }, 400, origin);
+          endpoint = "backlinks/summary/live";
+          payload = { target, include_subdomains: true, exclude_internal_backlinks: true, backlinks_status_type: "live" };
+        } else if (url.pathname === "/api/analyze/serp") {
+          const keyword = String(body.keyword || "").trim();
+          if (!keyword || keyword.length > 200) return json({ error: "Enter a search query (maximum 200 characters)." }, 400, origin);
+          endpoint = "serp/google/organic/live/advanced";
+          payload = { keyword, ...location, device: body.device === "mobile" ? "mobile" : "desktop", depth: 20 };
+        } else return json({ error: "Analyze endpoint not found." }, 404, origin);
+        const upstream = await dataForSeoRequest(env, endpoint, payload);
+        if (upstream.error) return json({ error: upstream.error }, upstream.status || 502, origin);
+        const task = upstream.data.tasks?.[0];
+        const result = task?.result?.[0] || {};
+        const items = Array.isArray(result.items) ? result.items : [];
+        let data;
+        if (url.pathname.endsWith("/keywords")) {
+          data = items.map(item => ({
+            keyword: item.keyword,
+            search_volume: item.keyword_info?.search_volume ?? null,
+            cpc: item.keyword_info?.cpc ?? null,
+            competition: item.keyword_info?.competition ?? null,
+            competition_level: item.keyword_info?.competition_level ?? null,
+            monthly_searches: item.keyword_info?.monthly_searches ?? [],
+            intent: item.search_intent_info?.main_intent ?? null,
+            keyword_difficulty: item.keyword_properties?.keyword_difficulty ?? null
+          }));
+        } else if (url.pathname.endsWith("/domain")) {
+          data = items[0] || null;
+        } else if (url.pathname.endsWith("/rankings")) {
+          data = items.map(analyzeRankItem).filter(item => item.keyword);
+          let history_available = false;
+          if (env.DB && typeof env.DB.prepare === "function") {
+            await ensureAnalyzeSchema(env.DB); history_available = true;
+            const checkedAt = new Date().toISOString(), country = String(body.country || "GLOBAL").toUpperCase();
+            const statements = [];
+            for (const item of data) {
+              const previous = await env.DB.prepare("SELECT position,checked_at FROM analyze_rank_snapshots WHERE domain=? AND keyword=? AND country=? ORDER BY checked_at DESC LIMIT 1").bind(dataForSeoDomain(String(body.domain || "")),item.keyword,country).first();
+              item.previous_position = previous?.position == null ? null : Number(previous.position);
+              item.position_change = previous?.position == null || item.position == null ? null : Number(previous.position) - item.position;
+              statements.push(env.DB.prepare("INSERT INTO analyze_rank_snapshots (id,domain,keyword,country,position,page_url,search_volume,checked_at) VALUES (?,?,?,?,?,?,?,?)").bind(crypto.randomUUID(),dataForSeoDomain(String(body.domain || "")),item.keyword,country,item.position,item.url,item.search_volume,checkedAt));
+            }
+            if (statements.length) await env.DB.batch(statements);
+            data = { keywords: data, history_available, checked_at: checkedAt };
+          } else data = { keywords: data, history_available, checked_at: new Date().toISOString() };
+        } else if (url.pathname.endsWith("/competitors")) {
+          data = items.map(item => ({ domain: item.domain || item.target || "", organic_traffic: item.metrics?.organic?.etv ?? item.organic_etv ?? null, ranking_keywords: item.metrics?.organic?.count ?? item.organic_count ?? null, avg_position: item.avg_position ?? null, intersections: item.intersections ?? null })).filter(item => item.domain);
+        } else if (url.pathname.endsWith("/backlinks")) {
+          data = result || items[0] || null;
+          if (env.DB && typeof env.DB.prepare === "function" && data) {
+            await ensureAnalyzeSchema(env.DB);
+            await env.DB.prepare("INSERT INTO analyze_domain_snapshots (id,domain,kind,payload_json,checked_at) VALUES (?,?,?,?,?)").bind(crypto.randomUUID(),data.target||data.info?.target||dataForSeoDomain(String(body.domain||"")),"backlinks",JSON.stringify(data),new Date().toISOString()).run();
+          }
+        } else {
+          data = {
+            search_information: result,
+            organic: items.filter(item => item.type === "organic").map(item => ({
+              position: item.rank_absolute ?? item.rank_group ?? null,
+              title: item.title || "", domain: item.domain || "", url: item.url || "", description: item.description || ""
+            })),
+            features: [...new Set(items.filter(item => item.type !== "organic").map(item => item.type))]
+          };
+        }
+        return json({ ok: true, endpoint, location: body.country || "GLOBAL", cost_usd: Number(task?.cost ?? upstream.data.cost ?? 0), cached: upstream.cached, fetched_at: new Date().toISOString(), data }, 200, origin);
+      }
+      
       if(request.method==="POST"&&url.pathname==="/api/seo/url-audit"){
         if(!await allowAuditRequest(request,env,5,"seo-url"))return json({error:"URL analysis rate limit reached. Maximum 5 scans per hour per IP."},429,origin);
         const body=await request.json();
