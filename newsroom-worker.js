@@ -1006,7 +1006,7 @@ if (request.method === "POST" && url.pathname.startsWith("/api/analyze/")) {
           const target = dataForSeoDomain(String(body.domain || ""));
           if (!target) return json({ error: "Enter a valid public domain, such as example.com." }, 400, origin);
           endpoint = "dataforseo_labs/google/competitors_domain/live";
-          payload = { target, ...location, limit: 20, exclude_unknown: true };
+          payload = { target, ...location, limit: 20, exclude_top_domains: true };
         } else if (url.pathname === "/api/analyze/backlinks") {
           const target = dataForSeoDomain(String(body.domain || ""));
           if (!target) return json({ error: "Enter a valid public domain, such as example.com." }, 400, origin);
@@ -1054,7 +1054,7 @@ if (request.method === "POST" && url.pathname.startsWith("/api/analyze/")) {
             data = { keywords: data, history_available, checked_at: checkedAt };
           } else data = { keywords: data, history_available, checked_at: new Date().toISOString() };
         } else if (url.pathname.endsWith("/competitors")) {
-          data = items.map(item => ({ domain: item.domain || item.target || "", organic_traffic: item.metrics?.organic?.etv ?? item.organic_etv ?? null, ranking_keywords: item.metrics?.organic?.count ?? item.organic_count ?? null, avg_position: item.avg_position ?? null, intersections: item.intersections ?? null })).filter(item => item.domain);
+          data = items.map(item => ({ domain: item.domain || item.target || "", organic_traffic: item.full_domain_metrics?.organic?.etv ?? item.metrics?.organic?.etv ?? item.organic_etv ?? null, ranking_keywords: item.full_domain_metrics?.organic?.count ?? item.metrics?.organic?.count ?? item.organic_count ?? null, avg_position: item.avg_position ?? null, intersections: item.intersections ?? null })).filter(item => item.domain);
         } else if (url.pathname.endsWith("/backlinks")) {
           data = result || items[0] || null;
           if (env.DB && typeof env.DB.prepare === "function" && data) {
