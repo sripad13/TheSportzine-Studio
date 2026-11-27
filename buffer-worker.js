@@ -10,9 +10,17 @@ function cors(origin) {
   return {
     "Access-Control-Allow-Origin": ALLOWED_ORIGINS.has(origin) ? origin : "null",
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Headers": "Content-Type, X-Studio-Key",
     "Vary": "Origin"
   };
+}
+// Same check as the Newsroom Worker: the Origin header can be forged, so every call needs the
+// STUDIO_WRITE_KEY secret in X-Studio-Key. Without the secret configured, nothing is allowed.
+function timingSafeEqual(a, b) {
+  const x = new TextEncoder().encode(String(a)), y = new TextEncoder().encode(String(b));
+  let diff = x.length ^ y.length;
+  for (let i = 0; i < Math.max(x.length, y.length); i++) diff |= (x[i] || 0) ^ (y[i] || 0);
+  return diff === 0;
 }
 function json(data, status, origin) {
   return new Response(JSON.stringify(data), {
@@ -67,6 +75,9 @@ export default {
       return new Response(null, { status: 204, headers: cors(origin) });
     }
     if (!ALLOWED_ORIGINS.has(origin)) return json({ error: "Origin not allowed." }, 403, origin);
+    if (!env.STUDIO_WRITE_KEY) return json({ error: "Set the STUDIO_WRITE_KEY secret on the Buffer Worker to enable Buffer.", auth_required: true }, 503, origin);
+    const supplied = request.headers.get("X-Studio-Key") || "";
+    if (!supplied || !timingSafeEqual(supplied, env.STUDIO_WRITE_KEY)) return json({ error: "Buffer needs the Studio write key. Add it under Newsroom settings.", auth_required: true }, 401, origin);
     if (!env.BUFFER_API_KEY) return json({ error: "Buffer API key is not configured on the Worker." }, 503, origin);
     const url = new URL(request.url);
     try {

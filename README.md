@@ -1,6 +1,6 @@
 # Studio — Sports content workspace
 
-Studio brings Newsroom, Create, Optimize and Audit workflows together. The original **Graphics editor** remains available at `/graphics.html`.
+Studio brings Newsroom, Share, Create, Optimize and Audit together. Run the Worker tests with `node --test`.
 
 ## Newsroom interface
 The root page is the Studio landing page. The live editorial workspace remains available at `/newsroom/` with independently scrolling, resizable columns; All Sports, Football, Formula 1 and Breaking workspaces (buttons on desktop, a menu on mobile); keyword columns (comma-separated keywords match any); Newest/Priority sorting per column; saved stories synced through D1; and a right-side story inspection drawer.
@@ -11,7 +11,7 @@ The Worker exposes:
 - `GET /api/feed` — fetches the configured RSS/Atom feeds, extracts headlines/excerpts and source links, and groups stories that share a URL or a near-identical headline. Feed responses are cached in the Worker for 3 minutes; `?fresh=1` (the Refresh button) reuses only results younger than 30 seconds.
 - `GET /api/search?keyword=...` — searches headlines and excerpts across the configured feeds. Separate several keywords with commas to match any of them (used by Priority Desk).
 - `GET/POST/DELETE /api/saved` — saved stories, stored in D1 with a copy of each story so they stay available after the RSS feed drops them. Without D1, saved stories stay in the browser.
-- `POST /api/ideas` — generates social post ideas via OpenAI; limited to 30 requests per IP per hour.
+- `POST /api/short-title` — shortens a headline with Workers AI. Needs the Studio write key.
 
 Configured feeds: BBC Sport Football, Sky Sports Football, BBC Sport Formula 1, Sky Sports Formula 1, Autosport F1, Motorsport.com F1 and Formula1.com. Feed availability and formats can change; individual failures are returned in the `feeds` array while other sources continue to load. The initial editorial priority/breaking flags are keyword heuristics, not AI analysis or fact-checking.
 
@@ -24,10 +24,11 @@ Pushing changes to `newsroom-worker.js`, `wrangler.toml` or `newsroom-schema.sql
 Check `https://newsroom-api.falsewinger.com/api/health`: `database` should be `connected`.
 
 ### Write protection
-Adding, editing or deleting sources and saving stories are write actions. By default the Worker only accepts them from the Studio origins. For real protection, set a secret and enter the same value once per browser under Newsroom → Settings → **Studio write key**:
+Every write (sources, saved stories, short links), every paid AI call and every Buffer request needs the `STUDIO_WRITE_KEY` secret. The `Origin` header can be forged, so it is not used as protection. Until the secret is set on a Worker, that Worker refuses these requests. Set the same value on both Workers, then enter it once per browser under Newsroom → Settings → **Studio write key**:
 
 ```
 npx wrangler secret put STUDIO_WRITE_KEY --config wrangler.toml
+npx wrangler secret put STUDIO_WRITE_KEY --config buffer-wrangler.toml
 ```
 
 `/api/health` reports `write_key: required` once the secret is active. Cloudflare Access can be added on top if you want sign-in protection.
@@ -37,9 +38,9 @@ The API Worker's CORS allowlist includes `https://newsroom.falsewinger.com` and 
 ## RSS terms and editorial use
 Formula1.com is included as requested. Personal use does not by itself establish permission under a publisher's feed terms, so confirm the current terms and keep use within the permitted scope. Feed access is not permission to republish full articles or images. The interface displays headlines and short feed excerpts with links to the publisher. Review each publisher's terms before any wider distribution.
 
-## SEO Studio extended audits
+## Optimize checks
 
-SEO Studio at `/optimize/` now includes expanded public-URL and sitemap-led site audits. The lightweight Worker checks cover:
+Optimize at `/optimize/` checks a single public URL or a draft. The lightweight Worker checks cover:
 - On-page SEO: titles, descriptions, H1 and heading hierarchy, canonical and indexability signals, mobile viewport, content depth, Open Graph and X/Twitter cards.
 - Technical SEO: robots.txt, WordPress sitemap variants (`sitemap.xml`, `sitemap_index.xml`, `wp-sitemap.xml`), canonical consistency, character encoding, redirects and HSTS.
 - Structured data: JSON-LD syntax, Article/NewsArticle properties, author, publisher, publication/update dates and mainEntityOfPage.
@@ -53,8 +54,8 @@ The Article Optimiser keeps one SEO score plus separate AEO and GEO scores. URL 
 
 API endpoints:
 - `POST /api/seo/url-audit` with `{"url":"https://example.com/article/"}` — extended single-page checks.
-- `POST /api/seo/site-audit` with `{"url":"https://example.com/","max_pages":10}` — sitemap-led multi-page audit, maximum 30 pages; rate limited to three runs per IP per hour when D1 rate limiting is available.
-- `GET /api/seo/site-audit/history?url=https://example.com/` — the latest 10 saved site-audit runs for a hostname. Each new site audit stores its report in D1 and returns the previous score for comparison.
+
+Multi-page audits live under Audit (`/audit/site/`).
 
 Limitations: this is a focused native implementation inspired by SEOmator's audit categories, not a port of its complete 398-rule engine. Checks inspect server-delivered HTML and do not execute JavaScript. Link presence/anchor quality is measured, but destination availability is not tested. Core Web Vitals, browser rendering, accessibility tree checks, mobile parity and render-time asset diagnostics are deliberately deferred. Scores are diagnostic heuristics, not search ranking or AI citation predictions.
 
@@ -64,15 +65,14 @@ Studio includes an AI Search Visibility Audit at `/audit/` (legacy `/ai-visibili
 The Worker exposes:
 - `POST /api/ai-audit` with JSON body `{"url":"https://example.com"}`.
 - `GET /api/seo/audit?url=...` as a backwards-compatible route.
-- `GET /api/ai-audit/history?url=...` and `POST /api/ai-audit/history` for D1-backed scan history.
+- `GET /api/ai-audit/history?url=...` for D1-backed scan history. Each `/api/ai-audit` run is saved by the Worker itself.
 
 Audit history and hashed-IP rate limits are stored in D1 when the existing `DB` binding is configured; the Worker creates their tables on first use. Without D1, the interface keeps recent history in the current browser and the Worker applies a best-effort per-isolate rate limit. Audits are limited to five requests per IP per hour when D1 is available. Each tool (single-page audit, site audit, SEO URL check, pre-publish check) has its own separate limit. Private/local hostnames, IP-literal destinations, non-standard ports and redirects are rejected to reduce SSRF risk.
 
 Crawler checks use representative User-Agent headers and respect matching `robots.txt` disallow rules (a blocked probe is skipped). Results do not prove provider indexing, citation, ranking or future crawl behaviour. The scanner inspects server-delivered HTML and does not execute JavaScript. CORS is not authentication; protect the API Worker with Cloudflare Access and configure Cloudflare edge rate limiting for production.
 
 ## Graphics module
-The original graphics editor remains preserved at `graphics.html`. Its Buffer integration continues to use `buffer-worker.js`; the Studio frontend hostname has been added to that Worker's CORS allowlist.
-
+The graphics editor is part of Create (`/create/`; `/graphics.html` redirects there). Its Buffer integration uses `buffer-worker.js`, which needs the Studio write key.
 
 ## Expanded AI Search Visibility tools
 
@@ -87,7 +87,6 @@ Additional API endpoints:
 
 All scores are heuristic diagnostics. They do not represent measured AI citations, ranking, provider indexing or fact verification.
 
-
 ## Advanced SEO tools in Optimize
 
 The Optimize page includes publisher-oriented workflows inspired by the MIT-licensed [Claude SEO](https://github.com/AgriciDaniel/claude-seo) project. Studio keeps its own Cloudflare Pages + Worker architecture rather than importing the project's Claude Code runtime.
@@ -95,7 +94,7 @@ The Optimize page includes publisher-oriented workflows inspired by the MIT-lice
 - **Content Brief:** creates article-format-specific outlines with reader intent, information gain, sourcing, E-E-A-T and internal-link requirements. It does not invent live SERP competitor data or search volumes.
 - **E-E-A-T Review:** editorial presence checklist for first-hand reporting, author expertise, corroborating sources and publisher transparency. This is not a Google ranking score or verified reputation score.
 - **Schema Lab:** generates JSON-LD for common article and publisher entities, and inspects JSON-LD blocks on a fetched public page. Property-level conformance and rich-result eligibility still require Schema.org Validator and Google's Rich Results Test.
-- **AI Agent Readiness:** checks robots.txt, llms.txt, explicit AI crawler groups and optional AI catalog discovery files. It does not test WAF behaviour, accessibility trees or official Lighthouse Agentic Browsing results.
+
 - **International SEO:** inspects HTML hreflang tags for basic language/region format, duplicates, HTTPS, self-reference and x-default. Reciprocal return tags and alternate-page indexability are not verified yet.
 
 The Worker exposes `POST /api/seo/public-resource` to retrieve bounded public text/HTML/JSON/XML resources for these tools. It uses the same public-target validation and redirect protections as other SEO fetches, has an independent rate limit, and does not accept arbitrary methods or private network destinations. This endpoint returns resource bodies to the Studio UI; do not use it to fetch authenticated/private content.
@@ -107,13 +106,7 @@ The Worker exposes `POST /api/seo/public-resource` to retrieve bounded public te
 - Product name: **Studio**.
 - Official brand assets are in `/brand/`.
 - Shared navigation and theme styles are in `/assets/studio/`.
-- The header is shared across the landing page and application pages. Navigation order: Newsroom, Create, Optimize, Audit.
-- Theme choices: System, Light and Dark. The selection persists in the browser.
+- The header is built by `assets/studio/studio.js` from one list, so every page shows the same menu: Newsroom, Share, Create, Optimize, Audit.
+- Theme choices: System, Light and Dark, from the header button. The selection persists in the browser.
 - Brand palette: lime `#B7D957`, near-black `#0B0B0D`, white `#FFFFFF`, warm light canvas `#F5F6F2`.
 - The redesign does not change the current hostname, API hostname, route paths, Workers or D1 configuration. URL migration is a separate future phase.
-
-## Analyze — search intelligence
-
-Analyze is the search and site-health workspace at `/analyze/`; Optimize remains focused on individual article improvements. It links to first-party Google Search Console property data and Studio's own technical SEO, AEO and GEO diagnostics. Search Console OAuth/import is not currently implemented in Studio, so users open the Google product directly. Studio does not provide third-party keyword-volume, rank-tracking, SERP or backlink-index metrics.
-
-The Analyze page stores the selected website locally in the browser. Technical and AI-readiness checks run through the existing Studio audit endpoints; their scores are heuristic diagnostics, not search rankings or measured AI citations. No external SEO data-provider credentials or API integration are required.

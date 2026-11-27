@@ -79,7 +79,8 @@ export default {
     if (request.method !== "GET" && request.method !== "HEAD") {
       return new Response("Method not allowed.", { status: 405, headers: { allow: "GET, HEAD" } });
     }
-    const code = decodeURIComponent(pathname).replace(/^\/+|\/+$/g, "");
+    let code;
+    try { code = decodeURIComponent(pathname).replace(/^\/+|\/+$/g, ""); } catch { return notFound(); }
     if (!code) return Response.redirect(HOME, 302);
     if (!CODE_PATTERN.test(code) || !env.DB) return notFound();
     try {
