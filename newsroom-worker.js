@@ -125,7 +125,9 @@ async function ensureNewsroomSchema(db) {
       db.prepare("CREATE TABLE IF NOT EXISTS newsroom_source_overrides (feed_url TEXT PRIMARY KEY, deleted INTEGER NOT NULL DEFAULT 0, updated_at TEXT NOT NULL)"),
       db.prepare("CREATE TABLE IF NOT EXISTS newsroom_source_edits (feed_url TEXT PRIMARY KEY, name TEXT, override_feed_url TEXT, sport TEXT, updated_at TEXT NOT NULL)"),
       db.prepare("CREATE TABLE IF NOT EXISTS newsroom_saved_stories (id TEXT PRIMARY KEY, story_json TEXT NOT NULL, saved_at TEXT NOT NULL)"),
-      db.prepare("CREATE TABLE IF NOT EXISTS newsroom_links (code TEXT PRIMARY KEY, target TEXT NOT NULL, created_at TEXT NOT NULL, clicks INTEGER NOT NULL DEFAULT 0, last_clicked_at TEXT)")
+      db.prepare("CREATE TABLE IF NOT EXISTS newsroom_links (code TEXT PRIMARY KEY, target TEXT NOT NULL, created_at TEXT NOT NULL, clicks INTEGER NOT NULL DEFAULT 0, last_clicked_at TEXT)"),
+      db.prepare("CREATE TABLE IF NOT EXISTS ai_audit_history (id TEXT PRIMARY KEY, url TEXT NOT NULL, score INTEGER NOT NULL, report_json TEXT NOT NULL, audited_at TEXT NOT NULL)"),
+      db.prepare("CREATE TABLE IF NOT EXISTS ai_audit_rate_limits (ip_hash TEXT PRIMARY KEY, window_start INTEGER NOT NULL, request_count INTEGER NOT NULL)")
     ]).catch(error => { schemaReady = null; throw error; });
   }
   await schemaReady;
@@ -225,11 +227,13 @@ const AUDIT_RATE_LIMITS=new Map();
 async function allowAuditRequest(request,env,limit=5,bucket="audit"){
  const ip=bucket+":"+(request.headers.get("CF-Connecting-IP")||"unknown"),now=Date.now(),windowMs=60*60*1000;
  if(env.DB && typeof env.DB.prepare === "function"){
-  await env.DB.prepare("CREATE TABLE IF NOT EXISTS ai_audit_rate_limits (ip_hash TEXT PRIMARY KEY, window_start INTEGER NOT NULL, request_count INTEGER NOT NULL)").run();
+  await ensureNewsroomSchema(env.DB);
   const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(ip));
   const key=[...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,"0")).join("");
   const windowStart=Math.floor(now/windowMs)*windowMs;
   const row=await env.DB.prepare("INSERT INTO ai_audit_rate_limits (ip_hash,window_start,request_count) VALUES (?,?,1) ON CONFLICT(ip_hash) DO UPDATE SET request_count=CASE WHEN ai_audit_rate_limits.window_start < excluded.window_start THEN 1 ELSE ai_audit_rate_limits.request_count+1 END,window_start=CASE WHEN ai_audit_rate_limits.window_start < excluded.window_start THEN excluded.window_start ELSE ai_audit_rate_limits.window_start END RETURNING request_count").bind(key,windowStart).first();
+  // shortcut: rows from past windows are pruned on about 1 in 50 requests rather than on a schedule.
+  if(Math.random()<0.02)await env.DB.prepare("DELETE FROM ai_audit_rate_limits WHERE window_start < ?").bind(windowStart).run();
   return Number(row?.request_count||0)<=limit;
  }
  if(AUDIT_RATE_LIMITS.size>5000){for(const [key,value] of AUDIT_RATE_LIMITS)if(now-value.windowStart>=windowMs)AUDIT_RATE_LIMITS.delete(key);}
@@ -568,16 +572,12 @@ function timingSafeEqual(a, b) {
   for (let i = 0; i < Math.max(x.length, y.length); i++) diff |= (x[i] || 0) ^ (y[i] || 0);
   return diff === 0;
 }
-// Write protection for source management and saved stories.
-// If the STUDIO_WRITE_KEY secret is set, every write must send it in X-Studio-Key.
-// Without the secret, writes must at least come from an allowed browser origin.
+// Write protection for writes and paid AI calls. The Origin header can be forged, so the
+// STUDIO_WRITE_KEY secret is required: without it configured, every protected request is refused.
 function writeDenied(request, env, origin) {
-  if (env.STUDIO_WRITE_KEY) {
-    const supplied = request.headers.get("X-Studio-Key") || "";
-    if (!supplied || !timingSafeEqual(supplied, env.STUDIO_WRITE_KEY)) return json({ error: "This change needs the Studio write key. Add it under Newsroom settings.", auth_required: true }, 401, origin);
-    return null;
-  }
-  if (!ALLOWED_ORIGINS.has(origin)) return json({ error: "Changes are only accepted from the Studio app." }, 403, origin);
+  if (!env.STUDIO_WRITE_KEY) return json({ error: "Writes are disabled until the STUDIO_WRITE_KEY secret is set on the Newsroom Worker.", auth_required: true }, 503, origin);
+  const supplied = request.headers.get("X-Studio-Key") || "";
+  if (!supplied || !timingSafeEqual(supplied, env.STUDIO_WRITE_KEY)) return json({ error: "This change needs the Studio write key. Add it under Newsroom settings.", auth_required: true }, 401, origin);
   return null;
 }
 const LINK_BASE = "https://link.falsewinger.com";
@@ -829,38 +829,6 @@ async function auditSeoPublicUrl(raw,options={}) {
 }
 
 
-async function auditSeoWholeSite(raw,maxPages=10){
-  const safe=isSafePublicTarget(raw);if(safe.error)return {error:safe.error};
-  const discovery=await discoverAuditPages(safe.url.href,maxPages);
-  const urls=discovery.urls.slice(0,maxPages);
-  if(!urls.length)urls.push(safe.url.href);
-  const reports=await mapLimit(urls,3,async(url,index)=>{
-    try{return await auditSeoPublicUrl(url,{skipSiteFiles:index>0});}
-    catch(error){return {error:error.message||"Page audit failed",url};}
-  });
-  const successful=reports.filter(report=>report&&!report.error);
-  const failed=reports.filter(report=>!report||report.error);
-  if(!successful.length)return {error:"No sitemap pages could be audited. Check the sitemap and public page access."};
-  const categoryIds=[...new Set(successful.flatMap(report=>Object.keys(report.checks||{})))];
-  const labels={seo:"On-page SEO",technical:"Technical SEO",structured:"Structured data",content:"Content quality",images:"Image SEO",links:"Internal and external links",trust:"E-E-A-T and publisher trust",discovery:"Search and AI discovery",aeo:"Answer Engine Optimisation",geo:"Generative Engine Optimisation"};
-  const categories=categoryIds.map(id=>{
-    const rows=successful.flatMap(report=>(report.checks?.[id]||[]));
-    const passed=rows.filter(item=>item.ok).length;
-    return {id,label:labels[id]||id,score:rows.length?Math.round(passed/rows.length*100):0,passed,total:rows.length};
-  });
-  const grouped=new Map();
-  for(const report of successful)for(const [category,items] of Object.entries(report.checks||{}))for(const item of items){
-    if(item.ok)continue;
-    const key=category+"|"+item.name;
-    const row=grouped.get(key)||{category,label:item.name,status:"warning",detail:item.detail,affected_pages:[],priority:["technical","structured"].includes(category)?"high":["images","links","trust"].includes(category)?"medium":"normal"};
-    row.affected_pages.push(report.url);grouped.set(key,row);
-  }
-  const fixes=[...grouped.values()].sort((a,b)=>({high:0,medium:1,normal:2}[a.priority]-{high:0,medium:1,normal:2}[b.priority])||b.affected_pages.length-a.affected_pages.length);
-  const score=categories.length?Math.round(categories.reduce((sum,item)=>sum+item.score,0)/categories.length):0;
-  return {url:safe.url.href,score,max_score:100,categories,checks:fixes,warning_count:fixes.length,pages_discovered:discovery.discovered||urls.length,pages_crawled:successful.length,pages_skipped:(discovery.skipped||[]).length+failed.length,page_limit:maxPages,pages:successful.map(report=>({url:report.url,title:report.title,word_count:report.wordCount,warning_count:Object.values(report.checks||{}).flat().filter(item=>!item.ok).length,scores:report.scores})),skipped_pages:[...(discovery.skipped||[]),...failed.map(report=>({url:report?.url||"Unknown",reason:report?.error||"Page could not be audited"}))].slice(0,50),audited_at:new Date().toISOString(),limitations:["Sitemap-led sample of same-origin URLs only; arbitrary internal links are not crawled.","Checks use server-delivered HTML and response headers. JavaScript rendering, Core Web Vitals, INP/LCP/CLS measurement and browser accessibility tests are not included.","A detected link is not proof that its destination is healthy; link destination status checks are not performed.","Scores are diagnostic heuristics, not search ranking or AI citation predictions."]};
-}
-
-
 export default {
   async fetch(request, env) {
     const origin = request.headers.get("Origin") || "";
@@ -871,35 +839,6 @@ export default {
     }
     if (!ALLOWED_ORIGINS.has(origin) && origin !== "") return json({ error: "Origin not allowed." }, 403, origin);
     try {
-
-      if(request.method==="GET"&&url.pathname==="/api/seo/site-audit/history"){
-        if(!env.DB||typeof env.DB.prepare!=="function")return json({history_available:false,history:[]},200,origin);
-        const target=String(url.searchParams.get("url")||"");
-        if(!target)return json({error:"Provide a site URL."},400,origin);
-        const safeHistoryUrl=isSafePublicTarget(target);if(safeHistoryUrl.error)return json({error:safeHistoryUrl.error},400,origin);
-        const host=safeHistoryUrl.url.hostname.toLowerCase();
-        await env.DB.prepare("CREATE TABLE IF NOT EXISTS seo_audit_history (id TEXT PRIMARY KEY, hostname TEXT NOT NULL, url TEXT NOT NULL, score INTEGER NOT NULL, report_json TEXT NOT NULL, audited_at TEXT NOT NULL)").run();
-        const rows=await env.DB.prepare("SELECT id,url,score,audited_at FROM seo_audit_history WHERE hostname=? ORDER BY audited_at DESC LIMIT 10").bind(host).all();
-        return json({history_available:true,history:rows.results||[]},200,origin);
-      }
-      if(request.method==="POST"&&url.pathname==="/api/seo/site-audit"){
-        if(!await allowAuditRequest(request,env,15,"seo-site"))return json({error:"SEO site audit rate limit reached. Maximum 15 site scans per hour per IP."},429,origin);
-        const body=await request.json(),raw=String(body?.url||""),requested=Number(body?.max_pages||10);
-        const maxPages=Math.min(30,Math.max(1,Number.isFinite(requested)?Math.floor(requested):10));
-        const result=await auditSeoWholeSite(raw,maxPages);
-        if(result.error)return json({error:result.error},400,origin);
-        let history={available:false,previous:null};
-        if(env.DB&&typeof env.DB.prepare==="function"){
-          await env.DB.prepare("CREATE TABLE IF NOT EXISTS seo_audit_history (id TEXT PRIMARY KEY, hostname TEXT NOT NULL, url TEXT NOT NULL, score INTEGER NOT NULL, report_json TEXT NOT NULL, audited_at TEXT NOT NULL)").run();
-          const host=new URL(result.url).hostname.toLowerCase();
-          const previous=await env.DB.prepare("SELECT id,score,audited_at FROM seo_audit_history WHERE hostname=? ORDER BY audited_at DESC LIMIT 1").bind(host).first();
-          const id=crypto.randomUUID(),auditedAt=result.audited_at||new Date().toISOString();
-          const serialized=JSON.stringify(result);
-          if(serialized.length<=350000)await env.DB.prepare("INSERT INTO seo_audit_history (id,hostname,url,score,report_json,audited_at) VALUES (?,?,?,?,?,?)").bind(id,host,result.url,result.score,serialized,auditedAt).run();
-          history={available:true,id,previous:previous?{id:previous.id,score:previous.score,audited_at:previous.audited_at}:null};
-        }
-        return json({...result,history},200,origin);
-      }
 
       if(request.method==="POST"&&url.pathname==="/api/seo/public-resource"){
         if(!await allowAuditRequest(request,env,20,"seo-resource"))return json({error:"Public-resource rate limit reached."},429,origin);
@@ -927,7 +866,16 @@ if(request.method==="POST"&&url.pathname==="/api/seo/url-audit"){
         const raw=request.method==="GET"?(url.searchParams.get("url")||""):String((await request.json()).url||"");
         const result=await auditSiteUrl(raw);
         if(result.error)return json({error:result.error},400,origin);
-        return json(result,200,origin);
+        let historySaved=false;
+        if(env.DB&&typeof env.DB.prepare==="function"){
+          const serialized=JSON.stringify(result);
+          if(serialized.length<=250000){
+            await ensureNewsroomSchema(env.DB);
+            await env.DB.prepare("INSERT INTO ai_audit_history (id,url,score,report_json,audited_at) VALUES (?,?,?,?,?)").bind(crypto.randomUUID(),result.url,result.score,serialized,result.audited_at||new Date().toISOString()).run();
+            historySaved=true;
+          }
+        }
+        return json({...result,history_saved:historySaved},200,origin);
       }
       if(request.method==="POST"&&url.pathname==="/api/ai-audit/site"){
         if(!await allowAuditRequest(request,env,5,"site"))return json({error:"Site audit rate limit reached. Maximum 5 site scans per hour per IP."},429,origin);
@@ -946,20 +894,9 @@ if(request.method==="POST"&&url.pathname==="/api/seo/url-audit"){
       }
       if (url.pathname === "/api/ai-audit/history" && request.method === "GET") {
         if(!env.DB || typeof env.DB.prepare !== "function")return json({history_available:false,history:[]},200,origin);
-        await env.DB.prepare("CREATE TABLE IF NOT EXISTS ai_audit_history (id TEXT PRIMARY KEY, url TEXT NOT NULL, score INTEGER NOT NULL, report_json TEXT NOT NULL, audited_at TEXT NOT NULL)").run();
+        await ensureNewsroomSchema(env.DB);
         const rows=await env.DB.prepare("SELECT id,url,score,audited_at FROM ai_audit_history WHERE url=? ORDER BY audited_at DESC LIMIT 20").bind(url.searchParams.get("url")||"").all();
         return json({history_available:true,history:rows.results||[]},200,origin);
-      }
-      if (url.pathname === "/api/ai-audit/history" && request.method === "POST") {
-        if(!env.DB || typeof env.DB.prepare !== "function")return json({error:"Audit history requires the newsroom D1 database binding."},503,origin);
-        const report=await request.json();
-        if(!report||typeof report.url!=="string"||!Number.isInteger(report.score)||!Array.isArray(report.checks))return json({error:"Invalid audit report."},400,origin);
-        const serialized=JSON.stringify(report);
-        if(serialized.length>250000)return json({error:"Audit report exceeds the storage limit."},413,origin);
-        await env.DB.prepare("CREATE TABLE IF NOT EXISTS ai_audit_history (id TEXT PRIMARY KEY, url TEXT NOT NULL, score INTEGER NOT NULL, report_json TEXT NOT NULL, audited_at TEXT NOT NULL)").run();
-        const id=crypto.randomUUID(),auditedAt=report.audited_at||new Date().toISOString();
-        await env.DB.prepare("INSERT INTO ai_audit_history (id,url,score,report_json,audited_at) VALUES (?,?,?,?,?)").bind(id,report.url,report.score,serialized,auditedAt).run();
-        return json({saved:true,id,audited_at:auditedAt},201,origin);
       }
       if (request.method === "GET" && url.pathname === "/api/trends") {
         const windowName=url.searchParams.get("window")||"rising";
@@ -992,57 +929,8 @@ if(request.method==="POST"&&url.pathname==="/api/seo/url-audit"){
         for(const candidate of candidates){if(!validFeedUrl(candidate))continue;try{const res=await fetch(candidate,{headers:{"Accept":"application/rss+xml, application/atom+xml, application/xml, text/xml, text/html","User-Agent":"TheSportzine-Newsroom/1.0"},signal:AbortSignal.timeout(6000)});if(!res.ok)continue;const bodyText=await res.text();if(/<(rss|feed|rdf:RDF)\b/i.test(bodyText)){found.push({url:candidate,title:base.hostname});break;}if(candidate===homepage){const tags=bodyText.match(/<link\b[^>]*>/gi)||[];for(const tagText of tags){if(!/alternate/i.test(tagText)||!/(rss|atom)\+xml/i.test(tagText))continue;const href=tagText.match(/href=["']([^"']+)["']/i);if(href){const feedHref=new URL(decodeHtml(href[1]),homepage).href;if(validFeedUrl(feedHref))found.push({url:feedHref,title:base.hostname});}}}}catch{}}
         return json({feeds:found},200,origin);
       }
-      if (request.method === "POST" && url.pathname === "/api/ideas") {
-        if(!await allowAuditRequest(request,env,30,"ideas"))return json({error:"Idea generation rate limit reached. Maximum 30 requests per hour per IP."},429,origin);
-        if (!env.OPENAI_API_KEY) return json({error:"OpenAI is not configured on the Newsroom Worker. Add the OPENAI_API_KEY secret in Cloudflare."},503,origin);
-        const body=await request.json();
-        const account=String(body.account||"").toLowerCase();
-        if(!["boxedninja","factodile"].includes(account))return json({error:"Account must be boxedninja or factodile."},400,origin);
-        const boxed=account==="boxedninja";
-        const instructions=boxed
-          ? "You are the dedicated Instagram micro-copywriter for @boxedninja. The character is a cute black-clad ninja mascot with a bright pink headband. Write witty, relatable, short one-line jokes about everyday life: overthinking, procrastination, introversion, snacks, low battery, unread messages, sleep, motivation and small failures. Match the samples' tone: punchy, instantly understandable, playful and suitable as large text on a vertical social graphic. Vary the joke structures. No hashtags, emojis, image directions, numbering or explanations."
-          : "You are the fact editor for @factodile, an Instagram account with a friendly crocodile mascot. Write surprising, genuinely accurate, accessible one-line facts across animals, nature, science, space, geography and history. Use well-established facts only; never invent statistics, records, dates or superlatives. Avoid myths and disputed claims. Each line should be specific, memorable and suitable as large text on a vertical social graphic. No hashtags, emojis, image directions, numbering or explanations.";
-        const requestBody={
-          model:"gpt-5.5",
-          instructions,
-          input:boxed
-            ? "Create exactly 10 fresh, original one-line Instagram text ideas. Aim for 5–12 words each. Keep the set varied and avoid generic recycled meme phrases. Return only valid JSON in this exact shape: {\"ideas\":[\"...\", \"...\"]}."
-            : "Create exactly 10 varied one-line factual posts. Aim for 8–18 words each. Return only valid JSON in this exact shape: {\"ideas\":[\"...\", \"...\"]}. Choose facts you are confident are established.",
-          text:{format:{type:"json_object"}},
-          max_output_tokens:900,
-          temperature:0.85,
-          store:false
-        };
-        let response;
-        try{
-          response=await fetch("https://api.openai.com/v1/responses",{
-            method:"POST",
-            headers:{"Authorization":"Bearer "+env.OPENAI_API_KEY,"Content-Type":"application/json"},
-            body:JSON.stringify(requestBody),
-            signal:AbortSignal.timeout(26000)
-          });
-        }catch(error){
-          const timedOut=error?.name==="TimeoutError"||error?.name==="AbortError";
-          return json({error:timedOut?"OpenAI took longer than 26 seconds. Please try again.":"Could not connect to OpenAI. Please try again."},504,origin);
-        }
-        const rawBody=await response.text();
-        let payload={};try{payload=JSON.parse(rawBody)}catch{}
-        if(!response.ok){
-          const detail=payload?.error?.message||("OpenAI API returned HTTP "+response.status);
-          return json({error:detail.slice(0,260)},response.status===429?429:502,origin);
-        }
-        let output=typeof payload.output_text==="string"?payload.output_text:"";
-        if(!output&&Array.isArray(payload.output)){
-          output=payload.output.flatMap(item=>Array.isArray(item.content)?item.content.map(part=>part.text||""):[]).join("\n");
-        }
-        let parsed;try{parsed=JSON.parse(output)}catch{}
-        let ideas=Array.isArray(parsed?.ideas)?parsed.ideas:[];
-        ideas=ideas.map(x=>String(x).replace(/\s+/g," ").trim()).filter(x=>x&&x.length<=180).slice(0,10);
-        if(ideas.length!==10)return json({error:"OpenAI responded, but did not return exactly 10 usable ideas. Please generate again."},502,origin);
-        return json({account,ideas,generated_at:new Date().toISOString(),model:"gpt-5.5",note:boxed?null:"Verify each factual claim against a reliable source before publishing."},200,origin);
-      }
-
       if (request.method === "POST" && url.pathname === "/api/short-title") {
+        const deniedTitle = writeDenied(request, env, origin); if (deniedTitle) return deniedTitle;
         if (!env.AI) return json({ error: "Workers AI binding AI is not configured." }, 503, origin);
         const body = await request.json();
         const title = typeof body.title === "string" ? body.title.trim() : "";

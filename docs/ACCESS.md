@@ -20,5 +20,5 @@ The landing page (`/`) is public. Every other Studio page requires a Cloudflare 
 ## Open items
 
 - **Read access to `/api/links` is currently public.** `GET /api/links` returns every short link and its destination, with no sign-in check. Protecting the pages does not protect this data. Options: an Access application on the API host (the browser calls the API cross-origin, so that needs testing), or a read key checked by the Worker.
-- The API host (`newsroom-api`) is not behind Access yet. Writes are only blocked by the Studio write key, so `STUDIO_WRITE_KEY` should also be set on the Worker.
+- The API host (`newsroom-api`) is not behind Access. Writes, paid AI calls and Buffer requests are refused unless they carry `STUDIO_WRITE_KEY`, so set that secret on both the Newsroom and Buffer Workers.
 - `studio.falsewinger.com` is not live yet. Until the Pages cutover, the same rules apply to `newsroom.falsewinger.com`.

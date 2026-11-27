@@ -42,3 +42,19 @@ CREATE TABLE IF NOT EXISTS newsroom_links (
   image_url TEXT,
   title TEXT
 );
+
+-- AI audit reports, saved by the Worker after each /api/ai-audit run.
+CREATE TABLE IF NOT EXISTS ai_audit_history (
+  id TEXT PRIMARY KEY,
+  url TEXT NOT NULL,
+  score INTEGER NOT NULL,
+  report_json TEXT NOT NULL,
+  audited_at TEXT NOT NULL
+);
+
+-- Hourly per-IP request counts for the audit and AI endpoints. Old windows are pruned by the Worker.
+CREATE TABLE IF NOT EXISTS ai_audit_rate_limits (
+  ip_hash TEXT PRIMARY KEY,
+  window_start INTEGER NOT NULL,
+  request_count INTEGER NOT NULL
+);
